@@ -1,4 +1,4 @@
-import { Category, LuandaZone, Product, AppUser } from '../types';
+import { Category, LuandaZone, Product, AppUser, PayoutRequest } from '../types';
 
 export const INITIAL_USERS: AppUser[] = [
   {
@@ -821,6 +821,74 @@ export const INITIAL_PRODUCTS: Product[] = [
 ];
 
 export const COURIER_COMMISSION_PER_DELIVERY_AOA = 1000;
+
+export const INITIAL_PAYOUT_REQUESTS: PayoutRequest[] = [
+  {
+    id: 'payout-aff-1',
+    type: 'afiliado',
+    requesterId: 'user-affiliate-1',
+    requesterName: 'Teresa Gonçalves (Afiliada Luanda)',
+    requesterPhone: '+244 945 220 114',
+    requesterRole: 'affiliate',
+    affiliateCode: 'TERESA-01',
+    amount: 35000,
+    iban: 'AO06.0040.0000.5544.3322.1100.9',
+    multicaixaExpressPhone: '+244 945 220 114',
+    bankName: 'Banco BAI',
+    notes: 'Solicitação de saque de comissões acumuladas de vendas de iPhone e Perucas.',
+    status: 'pendente',
+    requestedAt: Date.now() - 4 * 3600000
+  },
+  {
+    id: 'payout-cour-1',
+    type: 'entregador',
+    requesterId: 'user-courier-1',
+    requesterName: 'António Kapanda',
+    requesterPhone: '+244 931 889 004',
+    requesterRole: 'courier',
+    amount: 25000,
+    iban: 'AO06.0040.0000.9876.5432.1098.7',
+    multicaixaExpressPhone: '+244 931 889 004',
+    bankName: 'Banco BFA',
+    notes: 'Saque de 25 entregas concluídas em Luanda (25 x 1.000 Kz).',
+    status: 'pendente',
+    requestedAt: Date.now() - 2 * 3600000
+  },
+  {
+    id: 'payout-cour-2',
+    type: 'entregador',
+    requesterId: 'user-courier-3',
+    requesterName: 'Domingos Ndala (Flash Luanda)',
+    requesterPhone: '+244 923 774 210',
+    requesterRole: 'courier',
+    amount: 30000,
+    iban: 'AO06.0040.0000.1122.3344.5566.7',
+    multicaixaExpressPhone: '+244 923 774 210',
+    bankName: 'Banco Millennium Atlântico',
+    notes: 'Saque de 30 entregas concluídas.',
+    status: 'pendente',
+    requestedAt: Date.now() - 1 * 3600000
+  },
+  {
+    id: 'payout-aff-2',
+    type: 'afiliado',
+    requesterId: 'user-affiliate-1',
+    requesterName: 'Teresa Gonçalves (Afiliada Luanda)',
+    requesterPhone: '+244 945 220 114',
+    requesterRole: 'affiliate',
+    affiliateCode: 'TERESA-01',
+    amount: 51000,
+    iban: 'AO06.0040.0000.5544.3322.1100.9',
+    multicaixaExpressPhone: '+244 945 220 114',
+    bankName: 'Banco BAI',
+    notes: 'Comissões de divulgação do mês anterior.',
+    status: 'pago',
+    requestedAt: Date.now() - 7 * 86400000,
+    paidAt: Date.now() - 6 * 86400000,
+    paymentProofReference: 'TRANSF-BAI-994821',
+    paidByAdminName: 'Paulino Armando (ADM)'
+  }
+];
 
 export function formatKwanzas(value: number): string {
   return new Intl.NumberFormat('pt-AO', {

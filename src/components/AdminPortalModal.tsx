@@ -59,7 +59,8 @@ import {
   Order, 
   CategoryId, 
   OrderStatus, 
-  AdminTab 
+  AdminTab,
+  PayoutRequest
 } from '../types';
 import { CATEGORIES, formatKwanzas } from '../data/mockData';
 
@@ -80,6 +81,9 @@ interface AdminPortalModalProps {
   orders: Order[];
   onUpdateOrderStatus: (orderId: string, status: OrderStatus) => void;
   onAssignCourierToOrder: (orderId: string, courierId: string) => void;
+  payoutRequests?: PayoutRequest[];
+  onApprovePayoutRequest?: (requestId: string, transactionRef?: string) => void;
+  onRejectPayoutRequest?: (requestId: string, reason?: string) => void;
   currentUser?: AppUser | null;
   onUpdateAdminProfile?: (updatedUser: AppUser) => void;
   initialTab?: AdminTab;
@@ -111,11 +115,19 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
   orders,
   onUpdateOrderStatus,
   onAssignCourierToOrder,
+  payoutRequests = [],
+  onApprovePayoutRequest,
+  onRejectPayoutRequest,
   currentUser,
   onUpdateAdminProfile,
   initialTab = 'dashboard'
 }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
+
+  // Paying request state
+  const [payingRequestId, setPayingRequestId] = useState<string | null>(null);
+  const [paymentRefInput, setPaymentRefInput] = useState('');
+  const [payoutSuccessMessage, setPayoutSuccessMessage] = useState<string | null>(null);
 
   // Product Create/Edit form state (3 image slots with upload support)
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
@@ -1287,6 +1299,208 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                   <span className="font-mono font-bold text-lg text-blue-600 block">{formatKwanzas(totalCommissionsOwed)}</span>
                   <span className="text-[10px] text-stone-500">Vendas por link de divulgação</span>
                 </div>
+              </div>
+
+              {/* PAYOUT REQUESTS SECTION (Afiliados e Entregadores) */}
+              <div className="p-6 rounded-3xl bg-white border border-stone-200 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-100 pb-4">
+                  <div>
+                    <h4 className="font-black text-sm text-stone-900 flex items-center gap-2">
+                      <Banknote className="w-5 h-5 text-red-600" />
+                      <span>Solicitações de Pagamento & Saques (Afiliados e Entregadores)</span>
+                    </h4>
+                    <p className="text-xs text-stone-500 mt-0.5">
+                      Pague as comissões solicitadas pelos Afiliados e os saques de fretes solicitados pelos Entregadores.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold px-3 py-1 rounded-xl bg-amber-50 text-amber-900 border border-amber-200 font-mono">
+                      {payoutRequests.filter(p => p.status === 'pendente').length} Pendentes
+                    </span>
+                    <span className="text-xs font-bold px-3 py-1 rounded-xl bg-stone-100 text-stone-700 font-mono">
+                      {payoutRequests.length} Total
+                    </span>
+                  </div>
+                </div>
+
+                {payoutRequests.length === 0 ? (
+                  <div className="py-8 text-center bg-stone-50 rounded-2xl border border-stone-200 space-y-2">
+                    <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
+                    <p className="text-xs font-bold text-stone-700">Nenhuma solicitação de saque no momento.</p>
+                    <p className="text-[11px] text-stone-500">Quando os afiliados ou entregadores pedirem pagamento na carteira, aparecerá aqui para você pagar com um clique.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {payoutRequests.map((payout) => {
+                      const isAffiliate = payout.type === 'afiliado';
+                      const isPending = payout.status === 'pendente';
+                      const isPaid = payout.status === 'pago';
+                      const isBeingPaid = payingRequestId === payout.id;
+
+                      return (
+                        <div
+                          key={payout.id}
+                          className={`p-4 rounded-2xl border transition-all ${
+                            isPending
+                              ? 'bg-amber-50/40 border-amber-200 shadow-2xs'
+                              : isPaid
+                              ? 'bg-emerald-50/30 border-emerald-200'
+                              : 'bg-stone-50 border-stone-200 opacity-75'
+                          }`}
+                        >
+                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            {/* Requester Info */}
+                            <div className="space-y-1 min-w-[240px]">
+                              <div className="flex items-center gap-2">
+                                <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-lg border uppercase ${
+                                  isAffiliate 
+                                    ? 'bg-blue-100 text-blue-800 border-blue-200' 
+                                    : 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                                }`}>
+                                  {isAffiliate ? '👤 Afiliado' : '🛵 Entregador'}
+                                </span>
+                                <span className="font-bold text-xs text-stone-900">{payout.requesterName}</span>
+                              </div>
+                              <p className="text-[11px] text-stone-500">{payout.requesterRole}</p>
+                              <div className="text-[11px] text-stone-600 flex items-center gap-2 pt-0.5">
+                                <Clock className="w-3.5 h-3.5 text-stone-400" />
+                                <span>Solicitado: <strong>{typeof payout.requestedAt === 'number' ? new Date(payout.requestedAt).toLocaleDateString('pt-AO') + ' ' + new Date(payout.requestedAt).toLocaleTimeString('pt-AO', { hour: '2-digit', minute: '2-digit' }) : payout.requestedAt}</strong></span>
+                              </div>
+                            </div>
+
+                            {/* Bank / Express Details */}
+                            <div className="p-3 rounded-xl bg-white border border-stone-200 text-xs space-y-1 flex-1">
+                              <span className="text-[10px] uppercase font-bold text-stone-400 block">Dados para Pagamento</span>
+                              {payout.paymentMethod === 'multicaixa_express' || (!payout.iban && payout.multicaixaExpressPhone) ? (
+                                <div className="space-y-0.5">
+                                  <div className="font-bold text-stone-900 flex items-center gap-1.5">
+                                    <span>📱 Multicaixa Express:</span>
+                                    <span className="font-mono text-blue-700">{payout.multicaixaExpressPhone || payout.requesterPhone || 'Contacto do utilizador'}</span>
+                                  </div>
+                                  <span className="text-[10px] text-stone-500">Titular: {payout.accountHolder || payout.requesterName}</span>
+                                </div>
+                              ) : (
+                                <div className="space-y-0.5">
+                                  <div className="font-bold text-stone-900">
+                                    <span>🏦 IBAN: </span>
+                                    <span className="font-mono text-stone-800 text-[11px]">{payout.iban || 'AO06.0040.0000.0000.0000.0000.0'}</span>
+                                  </div>
+                                  <span className="text-[10px] text-stone-500">{payout.bankName || 'Banco em Angola'} • {payout.accountHolder || payout.requesterName}</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Amount & Status / Actions */}
+                            <div className="flex flex-col sm:flex-row md:flex-col items-start md:items-end justify-between gap-3 min-w-[200px]">
+                              <div className="text-left md:text-right">
+                                <span className="text-[10px] uppercase font-bold text-stone-400 block">Valor a Pagar</span>
+                                <span className="text-xl font-black font-mono text-stone-900 block">
+                                  {formatKwanzas(payout.amountAOA || payout.amount || 0)}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                {isPaid ? (
+                                  <div className="text-right">
+                                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-3 py-1 rounded-xl">
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                      <span>Pago com Sucesso</span>
+                                    </span>
+                                    {(payout.transactionRef || payout.paymentProofReference) && (
+                                      <span className="block text-[10px] font-mono text-emerald-700 mt-0.5">
+                                        Ref: {payout.transactionRef || payout.paymentProofReference}
+                                      </span>
+                                    )}
+                                  </div>
+                                ) : isPending ? (
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <button
+                                      type="button"
+                                      onClick={() => setPayingRequestId(isBeingPaid ? null : payout.id)}
+                                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm cursor-pointer flex items-center gap-1.5 transition-all"
+                                    >
+                                      <CreditCard className="w-3.5 h-3.5" />
+                                      <span>Pagar Agora</span>
+                                    </button>
+
+                                    {onRejectPayoutRequest && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          if (confirm(`Tem a certeza que deseja rejeitar o pedido de ${formatKwanzas(payout.amountAOA || payout.amount || 0)} de ${payout.requesterName}?`)) {
+                                            onRejectPayoutRequest(payout.id, 'Dados bancários divergentes');
+                                          }
+                                        }}
+                                        className="px-3 py-2 rounded-xl bg-stone-200 hover:bg-red-100 hover:text-red-700 text-stone-700 font-bold text-xs transition-colors cursor-pointer"
+                                        title="Rejeitar solicitação"
+                                      >
+                                        Rejeitar
+                                      </button>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-xs font-bold text-red-700 bg-red-100 border border-red-200 px-3 py-1 rounded-xl">
+                                    Rejeitado
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Payment Confirmation Drawer / Inline Box */}
+                          {isBeingPaid && (
+                            <div className="mt-3 pt-3 border-t border-amber-200 bg-white p-4 rounded-xl space-y-3 animate-in fade-in">
+                              <div className="flex items-center justify-between">
+                                <h5 className="font-bold text-xs text-stone-900 flex items-center gap-1.5">
+                                  <CreditCard className="w-4 h-4 text-emerald-600" />
+                                  <span>Confirmar Pagamento de {formatKwanzas(payout.amountAOA || payout.amount || 0)} para {payout.requesterName}</span>
+                                </h5>
+                                <button
+                                  type="button"
+                                  onClick={() => setPayingRequestId(null)}
+                                  className="text-stone-400 hover:text-stone-700 text-xs font-bold"
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+
+                              <p className="text-xs text-stone-600">
+                                Efetue a transferência no seu aplicativo Multicaixa Express / Internet Banking para {payout.paymentMethod === 'multicaixa_express' || (!payout.iban && payout.multicaixaExpressPhone) ? (payout.multicaixaExpressPhone || payout.requesterPhone) : payout.iban} e insira o código de referência abaixo:
+                              </p>
+
+                              <div className="flex flex-col sm:flex-row items-center gap-2">
+                                <input
+                                  type="text"
+                                  placeholder="Ex: MCX-884920 ou BAI-TX-99321 (Opcional)"
+                                  value={paymentRefInput}
+                                  onChange={(e) => setPaymentRefInput(e.target.value)}
+                                  className="w-full sm:flex-1 bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-emerald-500"
+                                />
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const ref = paymentRefInput.trim() || `MCX-${Math.floor(100000 + Math.random() * 900000)}`;
+                                    if (onApprovePayoutRequest) {
+                                      onApprovePayoutRequest(payout.id, ref);
+                                    }
+                                    setPayingRequestId(null);
+                                    setPaymentRefInput('');
+                                    setPayoutSuccessMessage(`Pagamento de ${formatKwanzas(payout.amountAOA || payout.amount || 0)} a ${payout.requesterName} confirmado com sucesso! (Ref: ${ref})`);
+                                    setTimeout(() => setPayoutSuccessMessage(null), 5000);
+                                  }}
+                                  className="w-full sm:w-auto px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm cursor-pointer whitespace-nowrap"
+                                >
+                                  Confirmar e Marcar como Pago
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Transactions Ledger */}

@@ -29,7 +29,7 @@ import {
   CheckCircle,
   Zap
 } from 'lucide-react';
-import { AppUser, Product, Order, AffiliateTab } from '../types';
+import { AppUser, Product, Order, AffiliateTab, PayoutRequest } from '../types';
 import { formatKwanzas } from '../data/mockData';
 
 interface AffiliatePortalModalProps {
@@ -38,6 +38,8 @@ interface AffiliatePortalModalProps {
   currentUser: AppUser;
   products: Product[];
   orders: Order[];
+  payoutRequests?: PayoutRequest[];
+  onRequestPayout?: (request: Omit<PayoutRequest, 'id' | 'requestedAt' | 'status'>) => void;
   onToggleAffiliateProduct?: (productId: string) => void;
   onBatchAffiliateProducts?: (productIds: string[]) => void;
   onUpdateAffiliateProfile?: (updatedUser: AppUser) => void;
@@ -50,6 +52,8 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
   currentUser,
   products,
   orders,
+  payoutRequests = [],
+  onRequestPayout,
   onToggleAffiliateProduct,
   onBatchAffiliateProducts,
   onUpdateAffiliateProfile,
@@ -60,6 +64,7 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
   const [copiedProdId, setCopiedProdId] = useState<string | null>(null);
   const [payoutRequested, setPayoutRequested] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState('');
+  const [payoutMethod, setPayoutMethod] = useState<'multicaixa_express' | 'transferencia_iban'>('multicaixa_express');
   
   // Multi-select batch affiliation state
   const [selectedBatchIds, setSelectedBatchIds] = useState<string[]>([]);
@@ -84,6 +89,11 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
   const balance = currentUser.balanceAOA || 62000;
   const withdrawn = currentUser.withdrawnAOA || 86000;
   const affiliatedIds = currentUser.affiliatedProductIds || [];
+
+  // Payout requests for this affiliate
+  const myPayoutRequests = payoutRequests.filter(
+    req => req.requesterId === currentUser.id || req.type === 'afiliado' || req.requesterRole === 'affiliate'
+  );
 
   // Filter orders made through this affiliate
   const affiliateOrders = orders.filter(o => o.affiliateCode === affiliateCode || true).slice(0, 10);
@@ -153,6 +163,24 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
 
   const handleRequestPayout = (e: React.FormEvent) => {
     e.preventDefault();
+    const amountNum = Number(payoutAmount) || balance;
+    if (amountNum <= 0) return;
+
+    if (onRequestPayout) {
+      onRequestPayout({
+        type: 'afiliado',
+        requesterId: currentUser.id,
+        requesterName: currentUser.name || 'Afiliado Oficial',
+        requesterRole: 'Afiliado AngolaMarket',
+        amountAOA: amountNum,
+        paymentMethod: payoutMethod,
+        multicaixaExpressPhone: affExpress,
+        iban: affIban,
+        bankName: 'BAI / BFA / BIC / Atlântico',
+        accountHolder: currentUser.name || 'Afiliado Oficial'
+      });
+    }
+
     setPayoutRequested(true);
     setTimeout(() => {
       setPayoutRequested(false);
@@ -443,15 +471,20 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
 
               {/* Payout Request */}
               <div className="p-6 rounded-3xl bg-white border border-stone-200 shadow-sm space-y-4">
-                <h4 className="font-bold text-sm text-stone-900 flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-blue-600" />
-                  <span>Pedir Levantamento de Comissões</span>
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-sm text-stone-900 flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-blue-600" />
+                    <span>Pedir Levantamento de Comissões ao ADM</span>
+                  </h4>
+                  <span className="text-[11px] font-bold text-stone-500">
+                    Disponível: <strong className="text-blue-600 font-mono">{formatKwanzas(balance)}</strong>
+                  </span>
+                </div>
 
                 {payoutRequested ? (
                   <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center gap-2">
                     <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                    <span>Pedido de levantamento de {formatKwanzas(Number(payoutAmount) || balance)} enviado com sucesso! O valor será processado pelo ADM.</span>
+                    <span>Pedido de levantamento de {formatKwanzas(Number(payoutAmount) || balance)} enviado com sucesso! O Administrador irá processar o pagamento na aba Gestão Financeira.</span>
                   </div>
                 ) : (
                   <form onSubmit={handleRequestPayout} className="space-y-3">
@@ -461,29 +494,103 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
                         <input
                           type="number"
                           required
-                          max={balance}
+                          min={1000}
+                          max={balance > 0 ? balance : 1000000}
                           value={payoutAmount}
                           onChange={(e) => setPayoutAmount(e.target.value)}
-                          placeholder={`Máximo: ${balance}`}
-                          className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs font-mono font-bold text-stone-900"
+                          placeholder={`Ex: ${balance > 0 ? balance : 25000}`}
+                          className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-blue-500"
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-stone-700">Receber Por</label>
-                        <select className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 font-bold">
-                          <option>Multicaixa Express ({affExpress})</option>
-                          <option>Transferência Bancária / IBAN</option>
+                        <label className="text-xs font-bold text-stone-700">Canal de Recebimento</label>
+                        <select 
+                          value={payoutMethod}
+                          onChange={(e) => setPayoutMethod(e.target.value as any)}
+                          className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 font-bold focus:outline-none focus:border-blue-500"
+                        >
+                          <option value="multicaixa_express">📱 Multicaixa Express ({affExpress || currentUser.phone || '9XX XXX XXX'})</option>
+                          <option value="transferencia_iban">🏦 Transferência Bancária IBAN ({affIban ? affIban.slice(0, 14) + '...' : 'IBAN'})</option>
                         </select>
                       </div>
                     </div>
 
-                    <button
-                      type="submit"
-                      className="px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm cursor-pointer"
-                    >
-                      Confirmar Solicitação de Levantamento
-                    </button>
+                    <div className="flex items-center justify-between pt-1">
+                      <button
+                        type="submit"
+                        disabled={balance <= 0 && !payoutAmount}
+                        className="px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs shadow-sm cursor-pointer transition-all"
+                      >
+                        Enviar Solicitação ao ADM
+                      </button>
+                      <span className="text-[11px] text-stone-400">
+                        Processamento direto pelo painel de gestão do ADM
+                      </span>
+                    </div>
                   </form>
+                )}
+              </div>
+
+              {/* Payout History List */}
+              <div className="p-6 rounded-3xl bg-white border border-stone-200 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-sm text-stone-900 flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-stone-500" />
+                    <span>Histórico de Solicitações de Saque</span>
+                  </h4>
+                  <span className="text-xs text-stone-500">{myPayoutRequests.length} solicitações</span>
+                </div>
+
+                {myPayoutRequests.length === 0 ? (
+                  <p className="text-xs text-stone-400 py-3 text-center">Nenhuma solicitação enviada ainda.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-stone-50 text-stone-400 uppercase text-[10px] border-b border-stone-200">
+                        <tr>
+                          <th className="py-2 px-3">Data</th>
+                          <th className="py-2 px-3">Montante</th>
+                          <th className="py-2 px-3">Método / Conta</th>
+                          <th className="py-2 px-3">Comprovativo</th>
+                          <th className="py-2 px-3 text-right">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stone-100">
+                        {myPayoutRequests.map((req) => (
+                          <tr key={req.id}>
+                            <td className="py-2.5 px-3 font-mono text-stone-600">{typeof req.requestedAt === 'number' ? new Date(req.requestedAt).toLocaleDateString('pt-AO') : req.requestedAt}</td>
+                            <td className="py-2.5 px-3 font-mono font-bold text-stone-900">{formatKwanzas(req.amountAOA || req.amount || 0)}</td>
+                            <td className="py-2.5 px-3 text-stone-600">
+                              {req.paymentMethod === 'multicaixa_express' || (!req.iban && req.multicaixaExpressPhone)
+                                ? `📱 Express (${req.multicaixaExpressPhone || req.requesterPhone})`
+                                : `🏦 IBAN (${(req.iban || '').slice(0, 16)}...)`}
+                            </td>
+                            <td className="py-2.5 px-3 font-mono text-stone-500 text-[11px]">
+                              {req.transactionRef ? (
+                                <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-200 font-bold">
+                                  {req.transactionRef}
+                                </span>
+                              ) : (
+                                <span className="text-stone-400">-</span>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-3 text-right">
+                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 ${
+                                req.status === 'pago'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : req.status === 'rejeitado'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-amber-100 text-amber-800 animate-pulse'
+                              }`}>
+                                {req.status === 'pago' && <CheckCircle2 className="w-3 h-3" />}
+                                {req.status === 'pago' ? 'Pago' : req.status === 'rejeitado' ? 'Rejeitado' : 'Pendente ADM'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </div>
             </div>

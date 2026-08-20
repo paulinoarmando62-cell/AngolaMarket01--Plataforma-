@@ -9,20 +9,20 @@ import {
   AlertCircle, 
   KeyRound, 
   DollarSign, 
-  ShieldCheck,
-  Check,
-  ExternalLink,
-  Navigation,
-  Home,
-  LayoutDashboard,
-  Wallet,
-  Layers,
-  User,
-  CreditCard,
-  Banknote,
-  Send
+  ShieldCheck, 
+  Check, 
+  ExternalLink, 
+  Navigation, 
+  Home, 
+  LayoutDashboard, 
+  Wallet, 
+  Layers, 
+  User, 
+  CreditCard, 
+  Banknote, 
+  Send 
 } from 'lucide-react';
-import { AppUser, Order, OrderStatus, CourierTab } from '../types';
+import { AppUser, Order, OrderStatus, CourierTab, PayoutRequest } from '../types';
 import { formatKwanzas, COURIER_COMMISSION_PER_DELIVERY_AOA } from '../data/mockData';
 
 interface CourierPortalModalProps {
@@ -30,6 +30,8 @@ interface CourierPortalModalProps {
   onClose: () => void;
   currentUser: AppUser;
   orders: Order[];
+  payoutRequests?: PayoutRequest[];
+  onRequestPayout?: (request: Omit<PayoutRequest, 'id' | 'requestedAt' | 'status'>) => void;
   onCompleteDelivery: (orderId: string, enteredPin?: string) => boolean;
   onUpdateCourierProfile?: (updatedUser: AppUser) => void;
   initialTab?: CourierTab;
@@ -40,6 +42,8 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
   onClose,
   currentUser,
   orders,
+  payoutRequests = [],
+  onRequestPayout,
   onCompleteDelivery,
   onUpdateCourierProfile,
   initialTab = 'pedidos'
@@ -58,6 +62,11 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
 
   // Settlement with Admin
   const [depositSettled, setDepositSettled] = useState(false);
+  
+  // Payout request states
+  const [courierPayoutAmount, setCourierPayoutAmount] = useState('');
+  const [courierPayoutMethod, setCourierPayoutMethod] = useState<'multicaixa_express' | 'transferencia_iban'>('multicaixa_express');
+  const [courierPayoutRequested, setCourierPayoutRequested] = useState(false);
 
   if (!isOpen) return null;
 
@@ -108,6 +117,38 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
     setDepositSettled(true);
     setTimeout(() => setDepositSettled(false), 3500);
   };
+
+  const handleCourierRequestPayout = (e: React.FormEvent) => {
+    e.preventDefault();
+    const amountNum = Number(courierPayoutAmount) || totalEarnedDeliveryFees;
+    if (amountNum <= 0) return;
+
+    if (onRequestPayout) {
+      onRequestPayout({
+        type: 'entregador',
+        requesterId: currentUser.id,
+        requesterName: currentUser.name || 'Estafeta Oficial',
+        requesterRole: `Entregador Oficial (${currentUser.vehicle || 'Moto Luanda'})`,
+        amountAOA: amountNum,
+        paymentMethod: courierPayoutMethod,
+        multicaixaExpressPhone: courierExpress || currentUser.phone,
+        iban: courierIban,
+        bankName: 'BAI / BFA / BIC / Atlântico',
+        accountHolder: currentUser.name || 'Estafeta Luanda'
+      });
+    }
+
+    setCourierPayoutRequested(true);
+    setTimeout(() => {
+      setCourierPayoutRequested(false);
+      setCourierPayoutAmount('');
+    }, 3500);
+  };
+
+  // Filter payout requests for this courier
+  const myCourierPayoutRequests = payoutRequests.filter(
+    (p) => p.requesterId === currentUser.id || p.type === 'entregador'
+  );
 
   const navTabs: { tab: CourierTab; label: string; icon: React.ReactNode; badge?: number }[] = [
     { tab: 'home', label: 'Home', icon: <Home className="w-4 h-4" /> },
@@ -387,6 +428,131 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
                     Valor total cobrado em mão aos clientes para depósito ou prestação de contas.
                   </p>
                 </div>
+              </div>
+
+              {/* Payout / Withdrawal Request for Couriers */}
+              <div className="p-6 rounded-3xl bg-white border border-stone-200 shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-sm text-stone-900 flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-emerald-600" />
+                    <span>Solicitar Saque de Ganhos de Entrega ao ADM</span>
+                  </h4>
+                  <span className="text-[11px] font-bold text-stone-500">
+                    Disponível: <strong className="text-emerald-600 font-mono">{formatKwanzas(totalEarnedDeliveryFees)}</strong>
+                  </span>
+                </div>
+
+                {courierPayoutRequested ? (
+                  <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                    <span>Solicitação de saque de {formatKwanzas(Number(courierPayoutAmount) || totalEarnedDeliveryFees)} enviada com sucesso! O Administrador irá processar e efetuar o pagamento na aba Gestão Financeira.</span>
+                  </div>
+                ) : (
+                  <form onSubmit={handleCourierRequestPayout} className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-stone-700">Valor do Saque (Kz) *</label>
+                        <input
+                          type="number"
+                          required
+                          min={1000}
+                          max={totalEarnedDeliveryFees > 0 ? totalEarnedDeliveryFees : 500000}
+                          value={courierPayoutAmount}
+                          onChange={(e) => setCourierPayoutAmount(e.target.value)}
+                          placeholder={`Ex: ${totalEarnedDeliveryFees > 0 ? totalEarnedDeliveryFees : 15000}`}
+                          className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-stone-700">Forma de Recebimento</label>
+                        <select 
+                          value={courierPayoutMethod}
+                          onChange={(e) => setCourierPayoutMethod(e.target.value as any)}
+                          className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 font-bold focus:outline-none focus:border-emerald-500"
+                        >
+                          <option value="multicaixa_express">📱 Multicaixa Express ({courierExpress || currentUser.phone || '9XX XXX XXX'})</option>
+                          <option value="transferencia_iban">🏦 Transferência Bancária IBAN ({courierIban ? courierIban.slice(0, 16) + '...' : 'IBAN'})</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <button
+                        type="submit"
+                        disabled={totalEarnedDeliveryFees <= 0 && !courierPayoutAmount}
+                        className="px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs shadow-sm cursor-pointer transition-all"
+                      >
+                        Enviar Solicitação de Saque
+                      </button>
+                      <span className="text-[11px] text-stone-400">
+                        O ADM pagará via Express ou Transferência Bancária
+                      </span>
+                    </div>
+                  </form>
+                )}
+              </div>
+
+              {/* Courier Payout History List */}
+              <div className="p-6 rounded-3xl bg-white border border-stone-200 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-sm text-stone-900 flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-stone-500" />
+                    <span>Histórico de Saques do Entregador</span>
+                  </h4>
+                  <span className="text-xs text-stone-500">{myCourierPayoutRequests.length} solicitações</span>
+                </div>
+
+                {myCourierPayoutRequests.length === 0 ? (
+                  <p className="text-xs text-stone-400 py-3 text-center">Nenhum pedido de saque submetido ainda.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-stone-50 text-stone-400 uppercase text-[10px] border-b border-stone-200">
+                        <tr>
+                          <th className="py-2 px-3">Data</th>
+                          <th className="py-2 px-3">Montante</th>
+                          <th className="py-2 px-3">Método / Conta</th>
+                          <th className="py-2 px-3">Comprovativo</th>
+                          <th className="py-2 px-3 text-right">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stone-100">
+                        {myCourierPayoutRequests.map((req) => (
+                          <tr key={req.id}>
+                            <td className="py-2.5 px-3 font-mono text-stone-600">{req.requestedAt}</td>
+                            <td className="py-2.5 px-3 font-mono font-bold text-emerald-700">{formatKwanzas(req.amountAOA)}</td>
+                            <td className="py-2.5 px-3 text-stone-600">
+                              {req.paymentMethod === 'multicaixa_express' 
+                                ? `📱 Express (${req.multicaixaExpressPhone})`
+                                : `🏦 IBAN (${req.iban?.slice(0, 16)}...)`}
+                            </td>
+                            <td className="py-2.5 px-3 font-mono text-stone-500 text-[11px]">
+                              {req.transactionRef ? (
+                                <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-200 font-bold">
+                                  {req.transactionRef}
+                                </span>
+                              ) : (
+                                <span className="text-stone-400">-</span>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-3 text-right">
+                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 ${
+                                req.status === 'pago'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : req.status === 'rejeitado'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-amber-100 text-amber-800 animate-pulse'
+                              }`}>
+                                {req.status === 'pago' && <CheckCircle2 className="w-3 h-3" />}
+                                {req.status === 'pago' ? 'Pago' : req.status === 'rejeitado' ? 'Rejeitado' : 'Pendente ADM'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
 
               {/* Settle cash form */}

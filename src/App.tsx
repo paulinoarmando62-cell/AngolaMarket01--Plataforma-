@@ -52,13 +52,15 @@ import {
   OrderCustomerInfo, 
   LuandaZone, 
   OrderStatus,
-  AppUser 
+  AppUser,
+  PayoutRequest 
 } from './types';
 import { 
   INITIAL_PRODUCTS, 
   CATEGORIES, 
   LUANDA_ZONES, 
   INITIAL_USERS,
+  INITIAL_PAYOUT_REQUESTS,
   formatKwanzas 
 } from './data/mockData';
 import { 
@@ -72,7 +74,8 @@ import {
   PlusCircle,
   Clock,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Banknote
 } from 'lucide-react';
 
 const LOCAL_STORAGE_CART_KEY = 'angolamarket01_cart';
@@ -82,6 +85,7 @@ const LOCAL_STORAGE_ZONE_KEY = 'angolamarket01_zone';
 const LOCAL_STORAGE_ZONES_LIST_KEY = 'angolamarket01_zones_list';
 const LOCAL_STORAGE_USERS_KEY = 'angolamarket01_users';
 const LOCAL_STORAGE_CURRENT_USER_KEY = 'angolamarket01_current_user';
+const LOCAL_STORAGE_PAYOUT_REQUESTS_KEY = 'angolamarket01_payout_requests';
 
 export default function App() {
   // Users state (Admin, Couriers, Affiliates, Buyers)
@@ -214,6 +218,20 @@ export default function App() {
     return [sampleOrder];
   });
 
+  // Payout Requests state (Commission & Delivery earnings withdrawals)
+  const [payoutRequests, setPayoutRequests] = useState<PayoutRequest[]>(() => {
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_PAYOUT_REQUESTS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      // fallback
+    }
+    return INITIAL_PAYOUT_REQUESTS;
+  });
+
   // Navigation & Filtering
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<CategoryId>('todos');
@@ -324,6 +342,60 @@ export default function App() {
       localStorage.setItem(LOCAL_STORAGE_ZONE_KEY, JSON.stringify(selectedZone));
     } catch (e) { /* ignore */ }
   }, [selectedZone]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_PAYOUT_REQUESTS_KEY, JSON.stringify(payoutRequests));
+    } catch (e) { /* ignore */ }
+  }, [payoutRequests]);
+
+  // Payout Handlers (Afiliados & Entregadores)
+  const handleRequestPayout = (newRequestData: Omit<PayoutRequest, 'id' | 'requestedAt' | 'status'>) => {
+    const newReq: PayoutRequest = {
+      ...newRequestData,
+      id: `payout-${Date.now()}`,
+      amount: newRequestData.amount || newRequestData.amountAOA || 0,
+      amountAOA: newRequestData.amountAOA || newRequestData.amount || 0,
+      status: 'pendente',
+      requestedAt: new Date().toLocaleDateString('pt-AO') + ' ' + new Date().toLocaleTimeString('pt-AO', { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setPayoutRequests(prev => [newReq, ...prev]);
+    showToast(`Solicitação de saque de ${formatKwanzas(newReq.amount)} enviada ao Administrador!`);
+  };
+
+  const handleApprovePayout = (requestId: string, transactionRef?: string) => {
+    setPayoutRequests(prev => prev.map(req => {
+      if (req.id === requestId) {
+        return {
+          ...req,
+          status: 'pago',
+          paidAt: new Date().toLocaleDateString('pt-AO') + ' ' + new Date().toLocaleTimeString('pt-AO', { hour: '2-digit', minute: '2-digit' }),
+          transactionRef: transactionRef || `MCX-${Math.floor(100000 + Math.random() * 900000)}`,
+          paymentProofReference: transactionRef || `MCX-${Math.floor(100000 + Math.random() * 900000)}`,
+          paidByAdminName: currentUser?.name || 'Administrador Geral'
+        };
+      }
+      return req;
+    }));
+
+    showToast('Pagamento confirmado e marcado como pago com sucesso!');
+  };
+
+  const handleRejectPayout = (requestId: string, reason?: string) => {
+    setPayoutRequests(prev => prev.map(req => {
+      if (req.id === requestId) {
+        return {
+          ...req,
+          status: 'rejeitado',
+          notes: reason || 'Rejeitado pelo Administrador'
+        };
+      }
+      return req;
+    }));
+
+    showToast('Solicitação de saque rejeitada.');
+  };
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -874,7 +946,7 @@ export default function App() {
         adminExists={adminExists}
       />
 
-      {/* Admin Portal Modal (Manage Products, Luanda Neighborhood Fees, Couriers, Orders, Affiliates) */}
+      {/* Admin Portal Modal (Manage Products, Luanda Neighborhood Fees, Couriers, Orders, Affiliates, Financial Payouts) */}
       <AdminPortalModal
         isOpen={isAdminPortalOpen}
         onClose={() => setIsAdminPortalOpen(false)}
@@ -892,21 +964,28 @@ export default function App() {
         orders={orders}
         onUpdateOrderStatus={handleUpdateOrderStatus}
         onAssignCourierToOrder={handleAssignCourierToOrder}
+        payoutRequests={payoutRequests}
+        onApprovePayoutRequest={handleApprovePayout}
+        onRejectPayoutRequest={handleRejectPayout}
+        currentUser={currentUser || undefined}
+        onUpdateAdminProfile={handleUpdateUserProfile}
       />
 
-      {/* Courier Portal Modal (Active Deliveries & PIN Verification) */}
+      {/* Courier Portal Modal (Active Deliveries, PIN Verification & Payout / Saque Requests) */}
       {currentUser && (
         <CourierPortalModal
           isOpen={isCourierPortalOpen}
           onClose={() => setIsCourierPortalOpen(false)}
           currentUser={currentUser}
           orders={orders}
+          payoutRequests={payoutRequests}
+          onRequestPayout={handleRequestPayout}
           onCompleteDelivery={handleCourierCompleteDelivery}
           onUpdateCourierProfile={handleUpdateUserProfile}
         />
       )}
 
-      {/* Affiliate Portal Modal (Referral Link & Commissions) */}
+      {/* Affiliate Portal Modal (Referral Link, Commissions & Payout / Saque Requests) */}
       {currentUser && (
         <AffiliatePortalModal
           isOpen={isAffiliatePortalOpen}
@@ -914,6 +993,8 @@ export default function App() {
           currentUser={currentUser}
           products={products}
           orders={orders}
+          payoutRequests={payoutRequests}
+          onRequestPayout={handleRequestPayout}
           onToggleAffiliateProduct={handleToggleAffiliateProduct}
           onBatchAffiliateProducts={handleBatchAffiliateProducts}
           onUpdateAffiliateProfile={handleUpdateUserProfile}

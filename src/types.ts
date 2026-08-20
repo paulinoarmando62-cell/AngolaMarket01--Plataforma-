@@ -161,6 +161,33 @@ export interface Order {
   };
 }
 
+export type PayoutRequestType = 'afiliado' | 'entregador';
+export type PayoutRequestStatus = 'pendente' | 'pago' | 'rejeitado';
+
+export interface PayoutRequest {
+  id: string;
+  type: PayoutRequestType;
+  requesterId: string;
+  requesterName: string;
+  requesterPhone?: string;
+  requesterRole: 'affiliate' | 'courier' | string;
+  affiliateCode?: string;
+  amount: number; // in AOA (Kwanzas)
+  amountAOA?: number; // alias for amount in AOA
+  iban?: string;
+  multicaixaExpressPhone?: string;
+  bankName?: string;
+  accountHolder?: string;
+  paymentMethod?: 'multicaixa_express' | 'transferencia_iban' | string;
+  notes?: string;
+  status: PayoutRequestStatus;
+  requestedAt: number | string;
+  paidAt?: number | string;
+  transactionRef?: string;
+  paymentProofReference?: string;
+  paidByAdminName?: string;
+}
+
 // Exact tab definitions as requested:
 export type AdminTab = 
   | 'home'
