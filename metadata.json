@@ -1,0 +1,6 @@
+{
+  "name": "AngolaMarket 01",
+  "description": "Plataforma de marketplace para Angola com entregas locais e pagamento na entrega (Dinheiro Físico / Multicaixa Express) na província de Luanda.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
