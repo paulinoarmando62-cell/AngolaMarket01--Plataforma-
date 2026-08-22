@@ -42,6 +42,9 @@ import {
   AffiliatePortalModal 
 } from './components/AffiliatePortalModal';
 import { 
+  UserProfileModal 
+} from './components/UserProfileModal';
+import { 
   MobileBottomNav 
 } from './components/MobileBottomNav';
 import { 
@@ -233,6 +236,7 @@ export default function App() {
   
   // Role-Based Portals Modals
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
   const [isAdminPortalOpen, setIsAdminPortalOpen] = useState(false);
   const [isCourierPortalOpen, setIsCourierPortalOpen] = useState(false);
   const [isAffiliatePortalOpen, setIsAffiliatePortalOpen] = useState(false);
@@ -801,6 +805,7 @@ export default function App() {
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onLogout={handleLogout}
+        onOpenUserProfile={() => setIsUserProfileOpen(true)}
         onOpenAdminPortal={handleOpenAdminPortal}
         onOpenCourierPortal={handleOpenCourierPortal}
         onOpenAffiliatePortal={handleOpenAffiliatePortal}
@@ -1017,6 +1022,16 @@ export default function App() {
         />
       )}
 
+      {/* User Profile & Payment Methods Modal (Photo upload, IBAN, Multicaixa, Address) */}
+      {currentUser && (
+        <UserProfileModal
+          isOpen={isUserProfileOpen}
+          onClose={() => setIsUserProfileOpen(false)}
+          currentUser={currentUser}
+          onUpdateUser={handleUpdateUserProfile}
+        />
+      )}
+
       {/* Footer */}
       <Footer
         onOpenDeliveryInfo={() => setIsDeliveryInfoModalOpen(true)}
@@ -1045,6 +1060,7 @@ export default function App() {
         cartCount={cartCount}
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthModalOpen(true)}
+        onOpenUserProfile={() => setIsUserProfileOpen(true)}
         onOpenAdminPortal={handleOpenAdminPortal}
         onOpenCourierPortal={handleOpenCourierPortal}
         onOpenAffiliatePortal={handleOpenAffiliatePortal}

@@ -161,41 +161,54 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   return (
     <div 
-      id="auth-modal-container"
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center p-3 sm:p-6 overflow-y-auto text-stone-900 animate-in fade-in"
+      id="auth-fullscreen-page"
+      className="fixed inset-0 z-50 bg-stone-100 text-stone-900 overflow-y-auto flex flex-col min-h-screen animate-in fade-in"
     >
-      <div className="bg-white border border-stone-200 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-stone-200 bg-stone-50 sticky top-0 z-10 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-red-600 text-white flex items-center justify-center font-black text-sm shadow-sm">
-              AO01
-            </div>
-            <div>
-              <h2 className="font-bold text-sm sm:text-base text-stone-900">
-                {tab === 'login' ? 'Entrar na sua Conta' : 'Criar Nova Conta'}
-              </h2>
-              <p className="text-[11px] text-stone-500 font-medium">AngolaMarket 01 • Luanda</p>
-            </div>
+      {/* Top Header */}
+      <header className="sticky top-0 z-20 bg-white border-b border-stone-200 shadow-xs px-4 sm:px-8 py-3.5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-red-600 text-white flex items-center justify-center font-black text-sm shadow-sm">
+            AO01
           </div>
-
-          <button
-            onClick={onClose}
-            className="p-2 rounded-2xl bg-white border border-stone-200 text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div>
+            <h1 className="font-black text-sm sm:text-base text-stone-900">
+              {tab === 'login' ? 'Entrar no AngolaMarket 01' : 'Registar Nova Conta'}
+            </h1>
+            <p className="text-[11px] text-stone-500 font-medium">Plataforma Oficial de Luanda • Pagamento na Entrega</p>
+          </div>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-5">
+        <button
+          onClick={onClose}
+          className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold transition-all cursor-pointer"
+        >
+          <X className="w-4 h-4" />
+          <span className="hidden sm:inline">Voltar à Loja</span>
+        </button>
+      </header>
+
+      {/* Main Container */}
+      <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 w-full max-w-xl mx-auto">
+        <div className="bg-white border border-stone-200 w-full rounded-3xl overflow-hidden shadow-xl flex flex-col p-6 sm:p-8 space-y-6">
+          {/* Brand Presentation */}
+          <div className="text-center space-y-1">
+            <h2 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight">
+              {tab === 'login' ? 'Bem-vindo de Volta!' : 'Junte-se ao AngolaMarket 01'}
+            </h2>
+            <p className="text-xs text-stone-500 max-w-sm mx-auto">
+              {tab === 'login' 
+                ? 'Inicie sessão para gerir compras, estafetas ou aceder ao painel.' 
+                : 'Crie a sua conta de cliente, entregador ou afiliado em segundos.'}
+            </p>
+          </div>
+
           {/* Tab Selector */}
-          <div className="p-1 bg-stone-100 rounded-2xl border border-stone-200">
-            <div className="grid grid-cols-2 gap-1">
+          <div className="p-1.5 bg-stone-100 rounded-2xl border border-stone-200">
+            <div className="grid grid-cols-2 gap-1.5">
               <button
                 type="button"
                 onClick={() => { setTab('login'); setLoginError(''); }}
-                className={`py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                className={`py-3 text-xs font-bold rounded-xl transition-all cursor-pointer ${
                   tab === 'login' 
                     ? 'bg-white text-stone-900 shadow-sm' 
                     : 'text-stone-600 hover:text-stone-900'
@@ -206,7 +219,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <button
                 type="button"
                 onClick={() => { setTab('register'); setLoginError(''); }}
-                className={`py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                className={`py-3 text-xs font-bold rounded-xl transition-all cursor-pointer ${
                   tab === 'register' 
                     ? 'bg-white text-stone-900 shadow-sm' 
                     : 'text-stone-600 hover:text-stone-900'
@@ -221,7 +234,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             /* LOGIN FORM */
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               {loginError && (
-                <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+                <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2.5">
                   <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
                   <span>{loginError}</span>
                 </div>
@@ -235,7 +248,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     required
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder="Seu e-mail ou +244 9..."
+                    placeholder="exemplo@gmail.com ou +244 9..."
                     className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-3 pl-10 text-xs sm:text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white"
                   />
                   <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-3.5" />
@@ -244,8 +257,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-stone-700">Senha de Acesso</label>
-                  <span className="text-[11px] text-stone-400">Proteção de conta</span>
+                  <label className="text-xs font-bold text-stone-700">Palavra-passe de Acesso</label>
+                  <span className="text-[11px] text-stone-400">Protegida</span>
                 </div>
                 <div className="relative">
                   <input
@@ -253,7 +266,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     required
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
-                    placeholder="Digite a sua senha"
+                    placeholder="Digite a sua palavra-passe"
                     className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-3 pl-10 pr-10 text-xs sm:text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white"
                   />
                   <Lock className="w-4 h-4 text-stone-400 absolute left-3.5 top-3.5" />
@@ -269,15 +282,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <button
                 type="submit"
-                className="w-full py-3.5 px-4 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm shadow-sm flex items-center justify-center gap-2 transition-all transform active:scale-98 cursor-pointer mt-2"
+                className="w-full py-4 px-4 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 transition-all transform active:scale-98 cursor-pointer mt-2"
               >
                 <span>Entrar no AngolaMarket 01</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 
-              <div className="pt-3 text-center">
-                <p className="text-[11px] text-stone-500">
-                  Precisa de ajuda com a sua conta? Contacte o suporte oficial no WhatsApp: <strong className="text-stone-800">+244 923 000 001</strong>
+              <div className="pt-4 text-center border-t border-stone-100">
+                <p className="text-xs text-stone-500">
+                  Precisa de assistência? Contacte a nossa equipa: <strong className="text-stone-800 font-mono">938 243 909 / 950 461 466</strong>
                 </p>
               </div>
             </form>
@@ -285,14 +298,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             /* REGISTER FORM */
             <form onSubmit={handleRegisterSubmit} className="space-y-4">
               {regError && (
-                <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+                <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2.5">
                   <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
                   <span>{regError}</span>
                 </div>
               )}
 
               {regSuccessMessage && (
-                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs flex items-center gap-2">
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs flex items-center gap-2.5">
                   <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-600" />
                   <span>{regSuccessMessage}</span>
                 </div>
@@ -315,7 +328,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       </div>
                       <div>
                         <span className="font-bold text-xs text-stone-900 block">Cliente / Comprador</span>
-                        <span className="text-[11px] text-stone-500 block">Compre com pagamento na entrega e rastreie pedidos</span>
+                        <span className="text-[11px] text-stone-500 block">Compre com pagamento no ato e rastreie entregas</span>
                       </div>
                     </div>
                     <input 
@@ -385,8 +398,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     required
                     value={regName}
                     onChange={(e) => setRegName(e.target.value)}
-                    placeholder="Ex: João da Silva"
-                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 pl-10 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white"
+                    placeholder="Ex: João Manuel"
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 pl-10 text-xs sm:text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white"
                   />
                   <User className="w-4 h-4 text-stone-400 absolute left-3.5 top-3" />
                 </div>
@@ -402,7 +415,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       value={regEmail}
                       onChange={(e) => setRegEmail(e.target.value)}
                       placeholder="exemplo@gmail.com"
-                      className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 pl-10 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white"
+                      className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 pl-10 text-xs sm:text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white"
                     />
                     <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-3" />
                   </div>
@@ -417,7 +430,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       value={regPhone}
                       onChange={(e) => setRegPhone(e.target.value)}
                       placeholder="+244 9..."
-                      className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 pl-10 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white font-mono"
+                      className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 pl-10 text-xs sm:text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white font-mono"
                     />
                     <Phone className="w-4 h-4 text-stone-400 absolute left-3.5 top-3" />
                   </div>
@@ -425,7 +438,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-700">Definir Senha</label>
+                <label className="text-xs font-bold text-stone-700">Definir Palavra-passe</label>
                 <div className="relative">
                   <input
                     type={showRegPassword ? 'text' : 'password'}
@@ -433,7 +446,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     value={regPassword}
                     onChange={(e) => setRegPassword(e.target.value)}
                     placeholder="Mínimo 6 caracteres"
-                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 pl-10 pr-10 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white"
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 pl-10 pr-10 text-xs sm:text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white"
                   />
                   <Lock className="w-4 h-4 text-stone-400 absolute left-3.5 top-3" />
                   <button
@@ -492,7 +505,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <button
                 type="submit"
-                className="w-full py-3.5 px-4 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm shadow-sm flex items-center justify-center gap-2 transition-all transform active:scale-98 cursor-pointer mt-3"
+                className="w-full py-4 px-4 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 transition-all transform active:scale-98 cursor-pointer mt-3"
               >
                 <span>Criar Conta Oficial</span>
                 <ArrowRight className="w-4 h-4" />

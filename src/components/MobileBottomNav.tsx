@@ -21,6 +21,7 @@ interface MobileBottomNavProps {
   cartCount: number;
   currentUser: AppUser | null;
   onOpenAuth: () => void;
+  onOpenUserProfile?: () => void;
   onOpenAdminPortal: () => void;
   onOpenCourierPortal: () => void;
   onOpenAffiliatePortal: () => void;
@@ -36,6 +37,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   cartCount,
   currentUser,
   onOpenAuth,
+  onOpenUserProfile,
   onOpenAdminPortal,
   onOpenCourierPortal,
   onOpenAffiliatePortal,
@@ -132,6 +134,18 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                   <span className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-black">Afiliado</span>
                 </button>
               )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowUserMenu(false);
+                  if (onOpenUserProfile) onOpenUserProfile();
+                }}
+                className="w-full p-3 rounded-2xl bg-stone-100 text-stone-900 hover:bg-stone-200 font-bold text-xs flex items-center gap-2.5 transition-colors cursor-pointer"
+              >
+                <User className="w-4 h-4 text-stone-700" />
+                <span>Meu Perfil & Métodos de Pagamento</span>
+              </button>
 
               <button
                 type="button"

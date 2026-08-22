@@ -45,6 +45,12 @@ export interface AppUser {
   createdAt: number;
   iban?: string;
   multicaixaExpressPhone?: string;
+  bankName?: string;
+  preferredPaymentMethod?: PaymentMethodType | 'multicaixa_express' | 'transferencia_iban';
+  defaultNeighborhood?: string;
+  defaultMunicipality?: string;
+  defaultStreetAddress?: string;
+  defaultReferencePoint?: string;
   
   // Entregador fields:
   courierStatus?: 'pendente' | 'aprovado' | 'rejeitado';

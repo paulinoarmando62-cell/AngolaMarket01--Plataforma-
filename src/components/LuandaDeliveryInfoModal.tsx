@@ -171,13 +171,20 @@ export const LuandaDeliveryInfoModal: React.FC<LuandaDeliveryInfoModalProps> = (
               <p className="font-bold text-stone-900 text-xs">Precisa de assistência para uma entrega em Luanda?</p>
               <p className="text-xs text-stone-500">Linha de Apoio AngolaMarket 01 • 08:00 às 20:00</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               <a
-                href="tel:+244923000001"
+                href="tel:+244938243909"
                 className="px-3.5 py-2 rounded-2xl bg-stone-200 hover:bg-stone-300 text-stone-900 font-bold text-xs flex items-center gap-1.5 border border-stone-300"
               >
                 <Phone className="w-3.5 h-3.5 text-red-600" />
-                <span>+244 923 000 001</span>
+                <span>938 243 909</span>
+              </a>
+              <a
+                href="tel:+244950461466"
+                className="px-3.5 py-2 rounded-2xl bg-stone-200 hover:bg-stone-300 text-stone-900 font-bold text-xs flex items-center gap-1.5 border border-stone-300"
+              >
+                <Phone className="w-3.5 h-3.5 text-red-600" />
+                <span>950 461 466</span>
               </a>
             </div>
           </div>

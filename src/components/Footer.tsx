@@ -112,7 +112,7 @@ export const Footer: React.FC<FooterProps> = ({
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-3.5 h-3.5 text-red-500" />
-                <span>Linha Luanda: +244 923 000 001 / +244 931 000 102</span>
+                <span>Linhas de Apoio Luanda: +244 938 243 909 / +244 950 461 466</span>
               </div>
             </div>
           </div>

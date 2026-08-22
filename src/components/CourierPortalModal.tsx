@@ -20,7 +20,11 @@ import {
   User, 
   CreditCard, 
   Banknote, 
-  Send 
+  Send,
+  Camera,
+  Upload,
+  Building2,
+  Smartphone
 } from 'lucide-react';
 import { AppUser, Order, OrderStatus, CourierTab, PayoutRequest } from '../types';
 import { formatKwanzas, COURIER_COMMISSION_PER_DELIVERY_AOA } from '../data/mockData';
@@ -54,11 +58,25 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
   // Profile states
   const [courierName, setCourierName] = useState(currentUser.name || '');
   const [courierPhone, setCourierPhone] = useState(currentUser.phone || '');
+  const [courierAvatar, setCourierAvatar] = useState(currentUser.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80');
   const [courierVehicle, setCourierVehicle] = useState(currentUser.vehicle || 'Moto Haojue 150cc');
   const [courierPlate, setCourierPlate] = useState(currentUser.licensePlate || 'LD-00-00-AA');
   const [courierIban, setCourierIban] = useState(currentUser.iban || 'AO06.0040.0000.9876.5432.1098.7');
+  const [courierBank, setCourierBank] = useState(currentUser.bankName || 'BAI');
   const [courierExpress, setCourierExpress] = useState(currentUser.multicaixaExpressPhone || currentUser.phone || '');
   const [profileSaved, setProfileSaved] = useState(false);
+
+  const handleCourierAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setCourierAvatar(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Settlement with Admin
   const [depositSettled, setDepositSettled] = useState(false);
@@ -103,9 +121,11 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
         ...currentUser,
         name: courierName,
         phone: courierPhone,
+        avatar: courierAvatar,
         vehicle: courierVehicle,
         licensePlate: courierPlate,
         iban: courierIban,
+        bankName: courierBank,
         multicaixaExpressPhone: courierExpress
       });
     }
@@ -749,18 +769,53 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
           {activeTab === 'perfil' && (
             <div className="space-y-6 max-w-2xl mx-auto">
               <div>
-                <h3 className="font-black text-base text-stone-900">Perfil do Entregador</h3>
-                <p className="text-xs text-stone-500">Dados do veículo, matrícula, telefone e dados para recebimento de fretes</p>
+                <h3 className="font-black text-base text-stone-900">Perfil do Estafeta Autorizado</h3>
+                <p className="text-xs text-stone-500">Fotografia, dados do veículo, matrícula, telemóvel e métodos para recebimento de fretes</p>
               </div>
 
               {profileSaved && (
                 <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>Perfil do Entregador atualizado com sucesso!</span>
+                  <span>Perfil do Estafeta e métodos de pagamento atualizados com sucesso!</span>
                 </div>
               )}
 
-              <form onSubmit={handleSaveProfile} className="p-6 rounded-3xl bg-white border border-stone-200 shadow-sm space-y-4">
+              <form onSubmit={handleSaveProfile} className="p-6 rounded-3xl bg-white border border-stone-200 shadow-sm space-y-5">
+                {/* Profile Photo Uploader */}
+                <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 flex flex-col sm:flex-row items-center gap-4">
+                  <div className="relative">
+                    <img 
+                      src={courierAvatar} 
+                      alt="Foto Estafeta" 
+                      className="w-20 h-20 rounded-2xl object-cover border-2 border-amber-500 shadow-xs"
+                      referrerPolicy="no-referrer"
+                    />
+                    <label className="absolute -bottom-1.5 -right-1.5 p-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 shadow-md cursor-pointer transition-transform hover:scale-105">
+                      <Camera className="w-3.5 h-3.5" />
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleCourierAvatarUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  <div className="space-y-1 text-center sm:text-left flex-1">
+                    <span className="font-bold text-xs text-stone-900 block">Fotografia de Perfil do Entregador</span>
+                    <p className="text-[11px] text-stone-500">Adicione uma foto nítida para os clientes e o ADM identificarem a sua entrega.</p>
+                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-stone-200 hover:bg-stone-100 text-stone-800 text-[11px] font-bold cursor-pointer mt-1">
+                      <Upload className="w-3 h-3 text-amber-600" />
+                      <span>Carregar Nova Foto</span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleCourierAvatarUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-stone-700">Nome Completo</label>
                   <input
@@ -768,19 +823,19 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
                     required
                     value={courierName}
                     onChange={(e) => setCourierName(e.target.value)}
-                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900"
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-amber-500"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-stone-700">Telefone de Contacto</label>
+                    <label className="text-xs font-bold text-stone-700">Telefone Principal (WhatsApp)</label>
                     <input
                       type="text"
                       required
                       value={courierPhone}
                       onChange={(e) => setCourierPhone(e.target.value)}
-                      className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 font-mono"
+                      className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 font-mono focus:bg-white focus:outline-none focus:border-amber-500"
                     />
                   </div>
 
@@ -790,7 +845,8 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
                       type="text"
                       value={courierExpress}
                       onChange={(e) => setCourierExpress(e.target.value)}
-                      className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 font-mono"
+                      placeholder="+244 9..."
+                      className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 font-mono focus:bg-white focus:outline-none focus:border-amber-500"
                     />
                   </div>
                 </div>
@@ -803,7 +859,7 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
                       value={courierVehicle}
                       onChange={(e) => setCourierVehicle(e.target.value)}
                       placeholder="Ex: Moto Haojue 150cc, Carrinha..."
-                      className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900"
+                      className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-amber-500"
                     />
                   </div>
 
@@ -814,27 +870,55 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
                       value={courierPlate}
                       onChange={(e) => setCourierPlate(e.target.value)}
                       placeholder="LD-00-00-AA"
-                      className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 font-mono"
+                      className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 font-mono uppercase focus:bg-white focus:outline-none focus:border-amber-500"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-stone-700">IBAN para Recebimento de Fretes</label>
-                  <input
-                    type="text"
-                    value={courierIban}
-                    onChange={(e) => setCourierIban(e.target.value)}
-                    placeholder="AO06.0040..."
-                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 font-mono"
-                  />
+                {/* Métodos de Pagamento e Recebimento de Fretes */}
+                <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-amber-600" />
+                    <span className="text-xs font-black uppercase tracking-wider text-stone-800">Métodos de Pagamento & Liquidação de Fretes</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-stone-700">Banco para Depósito de Saldo</label>
+                      <select
+                        value={courierBank}
+                        onChange={(e) => setCourierBank(e.target.value)}
+                        className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900"
+                      >
+                        <option value="BAI">Banco BAI</option>
+                        <option value="BFA">Banco BFA</option>
+                        <option value="ATLANTICO">Banco Millennium Atlântico</option>
+                        <option value="BIC">Banco BIC</option>
+                        <option value="SOL">Banco Sol</option>
+                        <option value="BPC">Banco BPC</option>
+                        <option value="KEVE">Banco Keve</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-stone-700">IBAN Angolano (AO06...)</label>
+                      <input
+                        type="text"
+                        value={courierIban}
+                        onChange={(e) => setCourierIban(e.target.value)}
+                        placeholder="AO06.0040..."
+                        className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 font-mono uppercase"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full py-3 px-4 rounded-2xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-black text-xs shadow-sm cursor-pointer transition-all"
+                  className="w-full py-3.5 px-4 rounded-2xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-black text-xs shadow-md cursor-pointer transition-all flex items-center justify-center gap-2"
                 >
-                  Guardar Perfil do Entregador
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Guardar Perfil do Entregador e Pagamentos</span>
                 </button>
               </form>
             </div>

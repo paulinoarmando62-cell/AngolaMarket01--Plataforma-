@@ -36,6 +36,7 @@ interface NavbarProps {
   currentUser: AppUser | null;
   onOpenAuth: () => void;
   onLogout: () => void;
+  onOpenUserProfile?: () => void;
   onOpenAdminPortal: () => void;
   onOpenCourierPortal: () => void;
   onOpenAffiliatePortal: () => void;
@@ -58,6 +59,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
   onOpenAuth,
   onLogout,
+  onOpenUserProfile,
   onOpenAdminPortal,
   onOpenCourierPortal,
   onOpenAffiliatePortal,
@@ -272,6 +274,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                       )}
 
                       <button
+                        onClick={() => { if (onOpenUserProfile) onOpenUserProfile(); setShowUserDropdown(false); }}
+                        className="w-full text-left p-2 rounded-xl text-xs font-semibold text-stone-800 hover:bg-stone-100 flex items-center gap-2 cursor-pointer"
+                      >
+                        <User className="w-4 h-4 text-stone-600" /> Meu Perfil & Pagamentos
+                      </button>
+
+                      <button
                         onClick={() => { onOpenOrders(); setShowUserDropdown(false); }}
                         className="w-full text-left p-2 rounded-xl text-xs font-semibold text-stone-700 hover:bg-stone-100 flex items-center gap-2 cursor-pointer"
                       >
@@ -372,6 +381,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="flex-1 py-2.5 rounded-2xl bg-blue-600 text-white text-xs font-bold flex items-center justify-center gap-1.5"
                 >
                   <DollarSign className="w-4 h-4" /> Saldo & Link Afiliado
+                </button>
+              )}
+
+              {currentUser && (
+                <button
+                  onClick={() => { if (onOpenUserProfile) onOpenUserProfile(); setMobileMenuOpen(false); }}
+                  className="w-full py-2.5 rounded-2xl bg-stone-200 hover:bg-stone-300 text-stone-900 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <User className="w-4 h-4 text-stone-700" /> Meu Perfil & Pagamentos
                 </button>
               )}
 
