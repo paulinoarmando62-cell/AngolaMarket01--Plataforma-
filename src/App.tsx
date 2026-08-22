@@ -42,6 +42,9 @@ import {
   AffiliatePortalModal 
 } from './components/AffiliatePortalModal';
 import { 
+  MobileBottomNav 
+} from './components/MobileBottomNav';
+import { 
   Footer 
 } from './components/Footer';
 import { 
@@ -102,7 +105,7 @@ export default function App() {
     return INITIAL_USERS;
   });
 
-  // Current logged in user (defaults to Admin for instant convenient testing, can switch anytime)
+  // Current logged in user (null by default for real public visitors, credentials required for ADM/Couriers/Affiliates)
   const [currentUser, setCurrentUser] = useState<AppUser | null>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_CURRENT_USER_KEY);
@@ -113,7 +116,7 @@ export default function App() {
     } catch (e) {
       // fallback
     }
-    return INITIAL_USERS[0]; // Admin by default so the owner immediately sees full control
+    return null;
   });
 
   // Dynamic Luanda Zones & Neighborhoods managed by the ADM
@@ -169,9 +172,7 @@ export default function App() {
     } catch (e) {
       // fallback
     }
-    return [
-      { product: INITIAL_PRODUCTS[0], quantity: 1 }
-    ];
+    return [];
   });
 
   // Orders state
@@ -747,12 +748,49 @@ export default function App() {
     }
   };
 
+  const handleOpenAdminPortal = () => {
+    if (currentUser?.role === 'admin') {
+      setIsAdminPortalOpen(true);
+    } else {
+      showToast('Acesso restrito. Inicie sessão como Administrador Geral.');
+      setIsAuthModalOpen(true);
+    }
+  };
+
+  const handleOpenCourierPortal = () => {
+    if (currentUser?.role === 'courier') {
+      setIsCourierPortalOpen(true);
+    } else {
+      showToast('Inicie sessão com a sua conta de Entregador / Estafeta.');
+      setIsAuthModalOpen(true);
+    }
+  };
+
+  const handleOpenAffiliatePortal = () => {
+    if (currentUser?.role === 'affiliate') {
+      setIsAffiliatePortalOpen(true);
+    } else {
+      showToast('Inicie sessão com a sua conta de Afiliado.');
+      setIsAuthModalOpen(true);
+    }
+  };
+
+  const handleFocusSearch = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => {
+      const searchInput = document.getElementById('search-input');
+      if (searchInput) {
+        searchInput.focus();
+      }
+    }, 150);
+  };
+
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-900 flex flex-col font-sans selection:bg-red-500 selection:text-white">
+    <div className="min-h-screen bg-stone-50 text-stone-900 flex flex-col font-sans selection:bg-red-500 selection:text-white pb-16 lg:pb-0">
       
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-stone-900 border border-stone-800 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-semibold animate-in fade-in slide-in-from-bottom-5">
+        <div className="fixed bottom-20 lg:bottom-6 right-6 z-50 bg-stone-900 border border-stone-800 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-semibold animate-in fade-in slide-in-from-bottom-5">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
           <span>{toastMessage}</span>
         </div>
@@ -779,9 +817,9 @@ export default function App() {
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onLogout={handleLogout}
-        onOpenAdminPortal={() => setIsAdminPortalOpen(true)}
-        onOpenCourierPortal={() => setIsCourierPortalOpen(true)}
-        onOpenAffiliatePortal={() => setIsAffiliatePortalOpen(true)}
+        onOpenAdminPortal={handleOpenAdminPortal}
+        onOpenCourierPortal={handleOpenCourierPortal}
+        onOpenAffiliatePortal={handleOpenAffiliatePortal}
         pendingCouriersCount={pendingCouriersCount}
       />
 
@@ -811,13 +849,7 @@ export default function App() {
             selectedZone={selectedZone}
             onOpenDeliveryModal={() => setIsDeliveryInfoModalOpen(true)}
             onScrollToCatalog={scrollToCatalog}
-            onOpenSellerModal={() => {
-              if (currentUser?.role === 'admin') {
-                setIsAdminPortalOpen(true);
-              } else {
-                setIsAuthModalOpen(true);
-              }
-            }}
+            onOpenSellerModal={handleOpenAdminPortal}
           />
 
           {/* Category Filter Subnav */}
@@ -835,9 +867,9 @@ export default function App() {
           </div>
 
           {/* Products Grid */}
-          <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
             {filteredProducts.length === 0 ? (
-              <div className="p-16 text-center bg-white border border-stone-200 rounded-3xl space-y-4 max-w-lg mx-auto my-8 shadow-sm">
+              <div className="p-10 sm:p-16 text-center bg-white border border-stone-200 rounded-3xl space-y-4 max-w-lg mx-auto my-8 shadow-sm">
                 <div className="w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center mx-auto text-stone-400">
                   <ShoppingBag className="w-8 h-8" />
                 </div>
@@ -857,7 +889,7 @@ export default function App() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-6">
                 {filteredProducts.map((prod) => (
                   <ProductCard
                     key={prod.id}
@@ -1005,10 +1037,34 @@ export default function App() {
       <Footer
         onOpenDeliveryInfo={() => setIsDeliveryInfoModalOpen(true)}
         onOpenAuth={() => setIsAuthModalOpen(true)}
-        onOpenAdminPortal={() => setIsAdminPortalOpen(true)}
-        onOpenCourierPortal={() => setIsCourierPortalOpen(true)}
-        onOpenAffiliatePortal={() => setIsAffiliatePortalOpen(true)}
+        onOpenAdminPortal={handleOpenAdminPortal}
+        onOpenCourierPortal={handleOpenCourierPortal}
+        onOpenAffiliatePortal={handleOpenAffiliatePortal}
         luandaZones={luandaZones}
+      />
+
+      {/* Mobile Bottom Navigation Bar */}
+      <MobileBottomNav
+        currentView={currentView}
+        onNavigateHome={() => {
+          setCurrentView('marketplace');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onOpenCategories={() => {
+          if (currentView !== 'marketplace') {
+            setCurrentView('marketplace');
+          }
+          setTimeout(scrollToCatalog, 100);
+        }}
+        onFocusSearch={handleFocusSearch}
+        onOpenCart={() => setIsCartOpen(true)}
+        cartCount={cartCount}
+        currentUser={currentUser}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onOpenAdminPortal={handleOpenAdminPortal}
+        onOpenCourierPortal={handleOpenCourierPortal}
+        onOpenAffiliatePortal={handleOpenAffiliatePortal}
+        onOpenOrders={() => setCurrentView('orders')}
       />
 
     </div>

@@ -12,8 +12,8 @@ import {
   CheckCircle2, 
   AlertCircle,
   ArrowRight,
-  Sparkles,
-  KeyRound
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { AppUser, UserRole } from '../types';
 
@@ -39,6 +39,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
 
   // Register form state
@@ -46,7 +47,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [regEmail, setRegEmail] = useState('');
   const [regPhone, setRegPhone] = useState('+244 9');
   const [regPassword, setRegPassword] = useState('');
-  const [regRole, setRegRole] = useState<UserRole>('affiliate');
+  const [showRegPassword, setShowRegPassword] = useState(false);
+  const [regRole, setRegRole] = useState<UserRole>('buyer');
   
   // Courier specific fields
   const [vehicle, setVehicle] = useState('Moto Haojue 150cc');
@@ -63,28 +65,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setLoginError('');
 
     const trimmedInput = loginEmail.trim().toLowerCase();
+    const cleanPhone = trimmedInput.replace(/[\s\-\(\)]/g, '');
+
     const foundUser = users.find(
-      (u) => 
-        (u.email.toLowerCase() === trimmedInput || u.phone.includes(trimmedInput))
+      (u) => {
+        const uEmail = (u.email || '').toLowerCase();
+        const uPhone = (u.phone || '').replace(/[\s\-\(\)]/g, '');
+        return uEmail === trimmedInput || uPhone === cleanPhone || (cleanPhone.length > 6 && uPhone.includes(cleanPhone));
+      }
     );
 
     if (!foundUser) {
-      setLoginError('Utilizador não encontrado. Verifique o e-mail ou telefone.');
+      setLoginError('Credenciais incorretas. Verifique o seu e-mail ou número de telefone.');
       return;
     }
 
-    // Check password if set
+    // Check password
     if (foundUser.password && loginPassword && foundUser.password !== loginPassword) {
-      setLoginError('Senha incorreta.');
+      setLoginError('Senha de acesso incorreta. Tente novamente.');
       return;
     }
 
     onLogin(foundUser);
-    onClose();
-  };
-
-  const handleQuickLogin = (userToLogin: AppUser) => {
-    onLogin(userToLogin);
     onClose();
   };
 
@@ -105,13 +107,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
 
     if (regRole === 'admin' && adminExists) {
-      setRegError('A conta de Administrador principal já foi configurada no AngolaMarket 01.');
+      setRegError('A conta de Administrador Geral já está configurada.');
       return;
     }
 
     let courierStatus: 'pendente' | 'aprovado' | undefined = undefined;
     if (regRole === 'courier') {
-      courierStatus = 'pendente'; // Required to be approved by ADM!
+      courierStatus = 'pendente'; // Required to be approved by ADM
     }
 
     let affiliateCode: string | undefined = undefined;
@@ -126,7 +128,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       email: regEmail.trim(),
       phone: regPhone.trim(),
       role: regRole,
-      password: regPassword || '123',
+      password: regPassword || '123456',
       avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
       createdAt: Date.now(),
       courierStatus,
@@ -143,11 +145,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     onRegister(newUser);
     
     if (regRole === 'courier') {
-      setRegSuccessMessage('Conta de entregador submetida com sucesso! Aguarda aprovação do Administrador.');
+      setRegSuccessMessage('Candidatura de entregador enviada com sucesso! Aguarda validação do Administrador.');
       setTimeout(() => {
         onLogin(newUser);
         onClose();
-      }, 1800);
+      }, 1500);
     } else {
       setRegSuccessMessage('Conta criada com sucesso!');
       setTimeout(() => {
@@ -160,62 +162,63 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   return (
     <div 
       id="auth-modal-container"
-      className="fixed inset-0 z-50 bg-stone-100 flex flex-col w-screen h-screen overflow-hidden text-stone-900 animate-in fade-in"
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center p-3 sm:p-6 overflow-y-auto text-stone-900 animate-in fade-in"
     >
-      <div className="flex flex-col w-full h-full bg-white overflow-hidden">
+      <div className="bg-white border border-stone-200 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200 bg-white sticky top-0 z-10 shrink-0">
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-stone-200 bg-stone-50 sticky top-0 z-10 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-red-600 text-white flex items-center justify-center font-black text-sm shadow-md">
-              01
+            <div className="w-10 h-10 rounded-2xl bg-red-600 text-white flex items-center justify-center font-black text-sm shadow-sm">
+              AO01
             </div>
             <div>
-              <h2 className="font-bold text-base text-stone-900">
-                {tab === 'login' ? 'Aceder à Conta' : 'Criar Nova Conta'}
+              <h2 className="font-bold text-sm sm:text-base text-stone-900">
+                {tab === 'login' ? 'Entrar na sua Conta' : 'Criar Nova Conta'}
               </h2>
-              <p className="text-xs text-stone-500">AngolaMarket 01 • Luanda</p>
+              <p className="text-[11px] text-stone-500 font-medium">AngolaMarket 01 • Luanda</p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-2xl bg-stone-100 text-stone-500 hover:text-stone-900 transition-colors cursor-pointer"
+            className="p-2 rounded-2xl bg-white border border-stone-200 text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Full screen body container */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8 flex justify-center items-start">
-          <div className="w-full max-w-xl bg-white sm:border sm:border-stone-200 rounded-3xl sm:p-8 space-y-6 sm:shadow-sm">
-            {/* Tab Selector */}
-            <div className="p-1 bg-stone-100 rounded-2xl">
-              <div className="grid grid-cols-2 p-1 bg-stone-200 rounded-2xl gap-1">
-                <button
-                  onClick={() => { setTab('login'); setLoginError(''); }}
-                  className={`py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                    tab === 'login' 
-                      ? 'bg-white text-stone-900 shadow-sm' 
-                      : 'text-stone-600 hover:text-stone-900'
-                  }`}
-                >
-                  Iniciar Sessão
-                </button>
-                <button
-                  onClick={() => { setTab('register'); setLoginError(''); }}
-                  className={`py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                    tab === 'register' 
-                      ? 'bg-white text-stone-900 shadow-sm' 
-                      : 'text-stone-600 hover:text-stone-900'
-                  }`}
-                >
-                  Criar Conta
-                </button>
-              </div>
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-5">
+          {/* Tab Selector */}
+          <div className="p-1 bg-stone-100 rounded-2xl border border-stone-200">
+            <div className="grid grid-cols-2 gap-1">
+              <button
+                type="button"
+                onClick={() => { setTab('login'); setLoginError(''); }}
+                className={`py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                  tab === 'login' 
+                    ? 'bg-white text-stone-900 shadow-sm' 
+                    : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                Iniciar Sessão
+              </button>
+              <button
+                type="button"
+                onClick={() => { setTab('register'); setLoginError(''); }}
+                className={`py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                  tab === 'register' 
+                    ? 'bg-white text-stone-900 shadow-sm' 
+                    : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                Criar Conta
+              </button>
             </div>
+          </div>
 
-            {tab === 'login' ? (
-              /* LOGIN FORM */
+          {tab === 'login' ? (
+            /* LOGIN FORM */
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               {loginError && (
                 <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
@@ -224,7 +227,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </div>
               )}
 
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <label className="text-xs font-bold text-stone-700">E-mail ou Telefone</label>
                 <div className="relative">
                   <input
@@ -232,81 +235,50 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     required
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder="admin@angolamarket01.ao ou +244 9..."
-                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 pl-10 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white"
+                    placeholder="Seu e-mail ou +244 9..."
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-3 pl-10 text-xs sm:text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white"
                   />
-                  <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-3" />
+                  <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-3.5" />
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-700">Senha de Acesso</label>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-stone-700">Senha de Acesso</label>
+                  <span className="text-[11px] text-stone-400">Proteção de conta</span>
+                </div>
                 <div className="relative">
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
+                    required
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
-                    placeholder="Introduza a sua senha (padrão: 123)"
-                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 pl-10 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white"
+                    placeholder="Digite a sua senha"
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-3 pl-10 pr-10 text-xs sm:text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white"
                   />
-                  <Lock className="w-4 h-4 text-stone-400 absolute left-3.5 top-3" />
+                  <Lock className="w-4 h-4 text-stone-400 absolute left-3.5 top-3.5" />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-3.5 text-stone-400 hover:text-stone-700 cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3.5 px-4 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
+                className="w-full py-3.5 px-4 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm shadow-sm flex items-center justify-center gap-2 transition-all transform active:scale-98 cursor-pointer mt-2"
               >
                 <span>Entrar no AngolaMarket 01</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 
-              {/* Quick 1-click Test Logins */}
-              <div className="pt-4 border-t border-stone-200 space-y-2.5">
-                <p className="text-[11px] font-bold text-stone-500 uppercase tracking-wider text-center">
-                  Acesso Rápido de Teste por Função:
+              <div className="pt-3 text-center">
+                <p className="text-[11px] text-stone-500">
+                  Precisa de ajuda com a sua conta? Contacte o suporte oficial no WhatsApp: <strong className="text-stone-800">+244 923 000 001</strong>
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {users.map((u) => {
-                    let roleLabel = 'Cliente';
-                    let roleBg = 'bg-stone-50 border-stone-200 text-stone-800';
-                    let icon = <ShoppingBag className="w-3.5 h-3.5 text-stone-600" />;
-
-                    if (u.role === 'admin') {
-                      roleLabel = 'ADM (Dono)';
-                      roleBg = 'bg-red-50 border-red-200 text-red-800';
-                      icon = <ShieldCheck className="w-3.5 h-3.5 text-red-600" />;
-                    } else if (u.role === 'courier') {
-                      roleLabel = `Entregador (${u.courierStatus === 'aprovado' ? 'Aprovado' : 'Pendente'})`;
-                      roleBg = u.courierStatus === 'aprovado' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-amber-50 border-amber-200 text-amber-800';
-                      icon = <Truck className="w-3.5 h-3.5 text-amber-600" />;
-                    } else if (u.role === 'affiliate') {
-                      roleLabel = 'Afiliado';
-                      roleBg = 'bg-blue-50 border-blue-200 text-blue-800';
-                      icon = <DollarSign className="w-3.5 h-3.5 text-blue-600" />;
-                    }
-
-                    return (
-                      <button
-                        key={u.id}
-                        type="button"
-                        onClick={() => handleQuickLogin(u)}
-                        className={`p-2.5 rounded-2xl border text-left flex items-center justify-between gap-2 hover:scale-[1.02] transition-all cursor-pointer ${roleBg}`}
-                      >
-                        <div className="flex items-center gap-2 overflow-hidden">
-                          {icon}
-                          <div className="truncate">
-                            <span className="block font-bold text-xs truncate">{u.name.split('(')[0]}</span>
-                            <span className="block text-[10px] opacity-75">{roleLabel}</span>
-                          </div>
-                        </div>
-                        <span className="text-[10px] font-bold bg-white px-2 py-0.5 rounded-lg shrink-0 border border-stone-200">
-                          Entrar
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
               </div>
             </form>
           ) : (
@@ -328,12 +300,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               {/* Account Role Selector */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-stone-700">Tipo de Conta Pretendida:</label>
-                  <span className="text-[10px] text-stone-500 font-medium">Clientes compram sem conta</span>
-                </div>
+                <label className="text-xs font-bold text-stone-700">Tipo de Conta:</label>
                 <div className="grid grid-cols-1 gap-2">
                   
+                  {/* Option: Buyer */}
+                  <label 
+                    className={`p-3 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
+                      regRole === 'buyer' ? 'bg-stone-100 border-stone-400 ring-1 ring-stone-400' : 'bg-stone-50 border-stone-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-xl bg-white text-stone-700 shadow-xs">
+                        <ShoppingBag className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="font-bold text-xs text-stone-900 block">Cliente / Comprador</span>
+                        <span className="text-[11px] text-stone-500 block">Compre com pagamento na entrega e rastreie pedidos</span>
+                      </div>
+                    </div>
+                    <input 
+                      type="radio" 
+                      name="role" 
+                      checked={regRole === 'buyer'} 
+                      onChange={() => setRegRole('buyer')}
+                      className="accent-red-600 w-4 h-4"
+                    />
+                  </label>
+
                   {/* Option: Affiliate */}
                   <label 
                     className={`p-3 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
@@ -341,12 +334,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-white text-blue-600 shadow-sm">
+                      <div className="p-2 rounded-xl bg-white text-blue-600 shadow-xs">
                         <DollarSign className="w-4 h-4" />
                       </div>
                       <div>
                         <span className="font-bold text-xs text-stone-900 block">Afiliado (Comissões por Venda)</span>
-                        <span className="text-[11px] text-stone-500 block">Divulgue links dos produtos e ganhe comissão em Kwanzas</span>
+                        <span className="text-[11px] text-stone-500 block">Divulgue links e ganhe comissão direta em Kwanzas</span>
                       </div>
                     </div>
                     <input 
@@ -365,12 +358,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-white text-amber-600 shadow-sm">
+                      <div className="p-2 rounded-xl bg-white text-amber-600 shadow-xs">
                         <Truck className="w-4 h-4" />
                       </div>
                       <div>
-                        <span className="font-bold text-xs text-stone-900 block">Entregador / Estafeta</span>
-                        <span className="text-[11px] text-stone-500 block">Entregas em Luanda (Requer aprovação prévia do ADM)</span>
+                        <span className="font-bold text-xs text-stone-900 block">Estafeta / Entregador</span>
+                        <span className="text-[11px] text-stone-500 block">Entregas em Luanda (Requer aprovação do ADM)</span>
                       </div>
                     </div>
                     <input 
@@ -381,152 +374,131 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       className="accent-red-600 w-4 h-4"
                     />
                   </label>
-
-                  {/* Option: ADMIN MASTER (Hidden if an Admin account already exists!) */}
-                  {!adminExists && (
-                    <label 
-                      className={`p-3 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
-                        regRole === 'admin' ? 'bg-red-50 border-red-600 ring-1 ring-red-600' : 'bg-stone-50 border-stone-200'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-red-600 text-white shadow-sm">
-                          <ShieldCheck className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-xs text-stone-900">Conta de ADM (Dono da Plataforma)</span>
-                            <span className="text-[9px] bg-red-600 text-white px-1.5 py-0.5 rounded-md font-black">ÚNICA</span>
-                          </div>
-                          <span className="text-[11px] text-stone-500 block">
-                            Gere todos os produtos, taxas de entrega e aprova estafetas.
-                          </span>
-                        </div>
-                      </div>
-                      <input 
-                        type="radio" 
-                        name="role" 
-                        checked={regRole === 'admin'} 
-                        onChange={() => setRegRole('admin')}
-                        className="accent-red-600 w-4 h-4"
-                      />
-                    </label>
-                  )}
-
                 </div>
               </div>
 
-              {/* Basic Fields */}
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-stone-700">Nome Completo *</label>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-stone-700">Nome Completo</label>
+                <div className="relative">
                   <input
                     type="text"
                     required
                     value={regName}
                     onChange={(e) => setRegName(e.target.value)}
-                    placeholder="Ex: Paulino Armando"
-                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white"
+                    placeholder="Ex: João da Silva"
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 pl-10 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white"
                   />
+                  <User className="w-4 h-4 text-stone-400 absolute left-3.5 top-3" />
                 </div>
+              </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-stone-700">E-mail *</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-stone-700">E-mail</label>
+                  <div className="relative">
                     <input
                       type="email"
                       required
                       value={regEmail}
                       onChange={(e) => setRegEmail(e.target.value)}
                       placeholder="exemplo@gmail.com"
-                      className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white"
+                      className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 pl-10 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white"
                     />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-stone-700">Telefone / WhatsApp *</label>
-                    <input
-                      type="text"
-                      required
-                      value={regPhone}
-                      onChange={(e) => setRegPhone(e.target.value)}
-                      placeholder="+244 923 000 000"
-                      className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2 text-xs text-stone-900 font-mono focus:outline-none focus:border-red-500 focus:bg-white"
-                    />
+                    <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-3" />
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-stone-700">Senha de Acesso</label>
+                  <label className="text-xs font-bold text-stone-700">Telefone (WhatsApp)</label>
+                  <div className="relative">
+                    <input
+                      type="tel"
+                      required
+                      value={regPhone}
+                      onChange={(e) => setRegPhone(e.target.value)}
+                      placeholder="+244 9..."
+                      className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 pl-10 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white font-mono"
+                    />
+                    <Phone className="w-4 h-4 text-stone-400 absolute left-3.5 top-3" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-stone-700">Definir Senha</label>
+                <div className="relative">
                   <input
-                    type="password"
+                    type={showRegPassword ? 'text' : 'password'}
+                    required
                     value={regPassword}
                     onChange={(e) => setRegPassword(e.target.value)}
-                    placeholder="Defina uma senha segura"
-                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2 text-xs text-stone-900 focus:outline-none focus:border-red-500 focus:bg-white"
+                    placeholder="Mínimo 6 caracteres"
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 pl-10 pr-10 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white"
                   />
+                  <Lock className="w-4 h-4 text-stone-400 absolute left-3.5 top-3" />
+                  <button
+                    type="button"
+                    onClick={() => setShowRegPassword(!showRegPassword)}
+                    className="absolute right-3.5 top-3 text-stone-400 hover:text-stone-700 cursor-pointer"
+                  >
+                    {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
               {/* Courier Specific Fields */}
               {regRole === 'courier' && (
-                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-3">
-                  <div className="flex items-center gap-2 text-amber-800 text-xs font-bold">
+                <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
                     <Truck className="w-4 h-4 text-amber-600" />
-                    <span>Dados do Estafeta & Veículo em Luanda</span>
+                    <span>Dados Operacionais do Entregador</span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-amber-900">Modelo do Veículo</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="text-[11px] font-bold text-stone-700 block mb-1">Veículo</label>
                       <input
                         type="text"
                         value={vehicle}
                         onChange={(e) => setVehicle(e.target.value)}
                         placeholder="Ex: Moto Haojue 150cc"
-                        className="w-full bg-white border border-amber-200 rounded-xl px-3 py-1.5 text-xs text-stone-900"
+                        className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs"
                       />
                     </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-amber-900">Matrícula</label>
+                    <div>
+                      <label className="text-[11px] font-bold text-stone-700 block mb-1">Matrícula</label>
                       <input
                         type="text"
                         value={licensePlate}
                         onChange={(e) => setLicensePlate(e.target.value)}
-                        placeholder="LD-44-89-HT"
-                        className="w-full bg-white border border-amber-200 rounded-xl px-3 py-1.5 text-xs text-stone-900 font-mono"
+                        placeholder="Ex: LD-44-89-HT"
+                        className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs uppercase font-mono"
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-amber-900">Municípios / Bairros de Atuação</label>
+                  <div>
+                    <label className="text-[11px] font-bold text-stone-700 block mb-1">Bairros de Luanda onde opera</label>
                     <input
                       type="text"
                       value={operatingZones}
                       onChange={(e) => setOperatingZones(e.target.value)}
                       placeholder="Ex: Maianga, Talatona, Kilamba, Viana"
-                      className="w-full bg-white border border-amber-200 rounded-xl px-3 py-1.5 text-xs text-stone-900"
+                      className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs"
                     />
                   </div>
-
-                  <p className="text-[11px] text-amber-800 leading-relaxed font-medium">
-                    ⚠️ <strong>Nota:</strong> A sua conta de entregador será submetida em estado <strong>Pendente</strong> e só ficará ativa após a aprovação do Administrador no painel de controlo.
-                  </p>
                 </div>
               )}
 
               <button
                 type="submit"
-                className="w-full py-3.5 px-4 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
+                className="w-full py-3.5 px-4 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm shadow-sm flex items-center justify-center gap-2 transition-all transform active:scale-98 cursor-pointer mt-3"
               >
-                <Sparkles className="w-4 h-4" />
-                <span>Criar Conta no AngolaMarket 01</span>
+                <span>Criar Conta Oficial</span>
+                <ArrowRight className="w-4 h-4" />
               </button>
             </form>
           )}
-          </div>
         </div>
       </div>
     </div>

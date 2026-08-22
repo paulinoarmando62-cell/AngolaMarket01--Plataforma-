@@ -4,7 +4,7 @@ export const INITIAL_USERS: AppUser[] = [
   {
     id: 'user-admin-master',
     name: 'Paulino Armando (Dono / ADM)',
-    email: 'admin@angolamarket01.ao',
+    email: 'paulinoarmando62@gmail.com',
     phone: '+244 923 000 001',
     role: 'admin',
     password: '123',
