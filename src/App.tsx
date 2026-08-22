@@ -97,7 +97,21 @@ export default function App() {
       const saved = localStorage.getItem(LOCAL_STORAGE_USERS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Ensure master admin has latest real credentials
+          const hasMaster = parsed.some((u: AppUser) => u.email === 'paulinoarmando62@gmail.com');
+          if (hasMaster) {
+            return parsed.map((u: AppUser) => u.email === 'paulinoarmando62@gmail.com' ? {
+              ...u,
+              password: 'Armando@123',
+              role: 'admin',
+              phone: '+244 938 243 909',
+              name: 'Paulino Armando (Administrador Geral)'
+            } : u);
+          } else {
+            return [INITIAL_USERS[0], ...parsed];
+          }
+        }
       }
     } catch (e) {
       // fallback
@@ -175,48 +189,18 @@ export default function App() {
     return [];
   });
 
-  // Orders state
+  // Orders state (Pristine clean state for real production orders)
   const [orders, setOrders] = useState<Order[]>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_ORDERS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch (e) {
       // fallback
     }
-    const sampleOrder: Order = {
-      id: 'ord-sample-1',
-      orderNumber: '#AO01-8492',
-      date: 'Hoje, às 14:30',
-      timestamp: Date.now() - 3600000,
-      items: [{ product: INITIAL_PRODUCTS[2], quantity: 1 }],
-      subtotal: INITIAL_PRODUCTS[2].price,
-      deliveryFee: 2000,
-      total: INITIAL_PRODUCTS[2].price + 2000,
-      customer: {
-        fullName: 'Mateus Manuel de Oliveira',
-        phone: '+244 924 555 888',
-        municipalityId: 'talatona-benfica',
-        municipalityName: 'Talatona (Benfica / Patriota)',
-        neighborhood: 'Benfica / Zona Verde',
-        streetAddress: 'Rua Direita do Patriota, Condomínio Girassol',
-        referencePoint: 'Em frente ao restaurante O Cantinho',
-        paymentMethod: 'dinheiro_entrega',
-      },
-      status: 'em_transito',
-      estimatedDeliveryDate: 'Hoje em 45 minutos',
-      deliveryCode: '5824',
-      assignedCourierId: 'user-courier-1',
-      courier: {
-        name: 'António Kapanda',
-        phone: '+244 931 889 004',
-        vehicle: 'Moto Haojue 150cc — Placa: LD-44-89-HT',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
-      }
-    };
-    return [sampleOrder];
+    return [];
   });
 
   // Payout Requests state (Commission & Delivery earnings withdrawals)

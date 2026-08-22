@@ -3,117 +3,15 @@ import { Category, LuandaZone, Product, AppUser, PayoutRequest } from '../types'
 export const INITIAL_USERS: AppUser[] = [
   {
     id: 'user-admin-master',
-    name: 'Paulino Armando (Dono / ADM)',
+    name: 'Paulino Armando (Administrador Geral)',
     email: 'paulinoarmando62@gmail.com',
-    phone: '+244 923 000 001',
+    phone: '+244 938 243 909',
     role: 'admin',
-    password: '123',
+    password: 'Armando@123',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    createdAt: Date.now() - 30 * 86400000,
+    createdAt: Date.now(),
     iban: 'AO06.0040.0000.1234.5678.9012.3',
-    multicaixaExpressPhone: '+244 923 000 001'
-  },
-  {
-    id: 'user-courier-1',
-    name: 'António Kapanda',
-    email: 'estafeta.kapanda@gmail.com',
-    phone: '+244 931 889 004',
-    role: 'courier',
-    password: '123',
-    courierStatus: 'aprovado',
-    vehicle: 'Moto Haojue 150cc',
-    licensePlate: 'LD-44-89-HT',
-    operatingZones: ['Maianga', 'Talatona', 'Kilamba'],
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    createdAt: Date.now() - 10 * 86400000,
-    totalDeliveriesCompleted: 42,
-    todayDeliveriesCount: 3,
-    courierBalanceAOA: 42000, // 42 entregas x 1.000 Kz
-    cashCollectedToDeposit: 340000,
-    iban: 'AO06.0040.0000.9876.5432.1098.7',
-    multicaixaExpressPhone: '+244 931 889 004'
-  },
-  {
-    id: 'user-courier-3',
-    name: 'Domingos Ndala (Flash Luanda)',
-    email: 'domingos.flash@gmail.com',
-    phone: '+244 923 774 210',
-    role: 'courier',
-    password: '123',
-    courierStatus: 'aprovado',
-    vehicle: 'Moto Yamaha YBR 125',
-    licensePlate: 'LD-19-33-GP',
-    operatingZones: ['Ingombota', 'Samba', 'Vila Alice', 'Alvalade'],
-    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80',
-    createdAt: Date.now() - 25 * 86400000,
-    totalDeliveriesCompleted: 68,
-    todayDeliveriesCount: 1,
-    courierBalanceAOA: 68000, // 68 entregas x 1.000 Kz
-    cashCollectedToDeposit: 185000,
-    iban: 'AO06.0040.0000.1122.3344.5566.7',
-    multicaixaExpressPhone: '+244 923 774 210'
-  },
-  {
-    id: 'user-courier-4',
-    name: 'João Baptista Zua',
-    email: 'joao.zua.entregas@gmail.com',
-    phone: '+244 940 339 812',
-    role: 'courier',
-    password: '123',
-    courierStatus: 'aprovado',
-    vehicle: 'Moto TVS Star HLX 150',
-    licensePlate: 'LD-72-61-AZ',
-    operatingZones: ['Kilamba Kiaxi', 'Palanca', 'Golf 2', 'Cazenga'],
-    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80',
-    createdAt: Date.now() - 18 * 86400000,
-    totalDeliveriesCompleted: 53,
-    todayDeliveriesCount: 0,
-    courierBalanceAOA: 53000, // 53 entregas x 1.000 Kz
-    cashCollectedToDeposit: 0,
-    iban: 'AO06.0040.0000.4455.6677.8899.0',
-    multicaixaExpressPhone: '+244 940 339 812'
-  },
-  {
-    id: 'user-courier-2',
-    name: 'Manuel Domingos Kiala',
-    email: 'kiala.entregas@gmail.com',
-    phone: '+244 924 110 992',
-    role: 'courier',
-    password: '123',
-    courierStatus: 'pendente',
-    vehicle: 'Moto Lingken 125cc',
-    licensePlate: 'LD-88-12-MK',
-    operatingZones: ['Viana', 'Cazenga', 'Cacuaco'],
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-    createdAt: Date.now() - 1 * 86400000,
-    totalDeliveriesCompleted: 0,
-    todayDeliveriesCount: 0,
-    courierBalanceAOA: 0,
-    cashCollectedToDeposit: 0
-  },
-  {
-    id: 'user-affiliate-1',
-    name: 'Teresa Gonçalves (Afiliada Luanda)',
-    email: 'teresa.marketing@gmail.com',
-    phone: '+244 945 220 114',
-    role: 'affiliate',
-    password: '123',
-    affiliateCode: 'TERESA-01',
-    commissionRate: 8,
-    totalSalesCount: 14,
-    totalCommissionEarned: 148000,
-    balanceAOA: 62000,
-    withdrawnAOA: 86000,
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-    createdAt: Date.now() - 15 * 86400000,
-    iban: 'AO06.0040.0000.5544.3322.1100.9',
-    multicaixaExpressPhone: '+244 945 220 114',
-    affiliatedProductIds: [
-      'prod-iphone-15-pro',
-      'prod-peruca-humana-front-lace',
-      'prod-vestido-samakaka-moderno',
-      'prod-cesta-basica-familiar'
-    ]
+    multicaixaExpressPhone: '+244 938 243 909'
   }
 ];
 
@@ -362,7 +260,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       rating: 5.0,
       salesCount: 384,
       verified: true,
-      phone: '+244 923 000 001'
+      phone: '+244 938 243 909'
     },
     condition: 'Novo',
     description: 'iPhone 15 Pro 128GB em caixa selada de fábrica. Chip A17 Pro, estrutura em titânio aeroespacial e sistema de câmaras de 48 MP. Receba em sua casa ou condomínio em Luanda e pague por TPA ou Dinheiro apenas após abrir a embalagem e verificar o IMEI.',
@@ -420,7 +318,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       rating: 5.0,
       salesCount: 215,
       verified: true,
-      phone: '+244 923 000 001'
+      phone: '+244 938 243 909'
     },
     condition: 'Novo',
     description: 'Samsung Galaxy S24 Ultra topo de gama com Galaxy AI, câmara de 200MP e bateria de longa duração. Entregas expressas em qualquer município de Luanda com pagamento Multicaixa na entrega.',
@@ -465,7 +363,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       rating: 5.0,
       salesCount: 520,
       verified: true,
-      phone: '+244 923 000 001'
+      phone: '+244 938 243 909'
     },
     condition: 'Novo',
     description: 'Gerador de alta durabilidade e baixo consumo para residências e escritórios em Luanda. Aguenta geleira grande, ar condicionado de 12.000 BTU, televisores e iluminação completa. Teste com o técnico no ato da entrega e pague após o arranque!',
@@ -511,7 +409,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       rating: 5.0,
       salesCount: 520,
       verified: true,
-      phone: '+244 923 000 001'
+      phone: '+244 938 243 909'
     },
     condition: 'Novo',
     description: 'Frigorífico Hisense No Frost que não cria gelo nas paredes. Ideal para a voltagem de Luanda com proteção contra variações elétricas. Entregamos direto na sua cozinha.',
@@ -545,7 +443,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       rating: 5.0,
       salesCount: 490,
       verified: true,
-      phone: '+244 923 000 001'
+      phone: '+244 938 243 909'
     },
     condition: 'Novo',
     description: 'Cabelo humano 100% natural sem misturas sintéticas. Textura sedosa, pode descolorir até tom 613, alisar ou encaracolar. Lace invisível HD que adapta a qualquer tom de pele angolana.',
@@ -590,7 +488,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       rating: 5.0,
       salesCount: 180,
       verified: true,
-      phone: '+244 923 000 001'
+      phone: '+244 938 243 909'
     },
     condition: 'Novo',
     description: 'Vestido confeccionado com autêntico tecido Samakaka angolano de alta gramatura e corte contemporâneo elegante. Ideal para eventos, casamentos tradicionais (alambamentos) e saídas de fim de semana.',
@@ -624,7 +522,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       rating: 5.0,
       salesCount: 1200,
       verified: true,
-      phone: '+244 923 000 001'
+      phone: '+244 938 243 909'
     },
     condition: 'Novo',
     description: 'Kit completo de alimentação para a família angolana. Produtos de primeira qualidade selecionados para o seu lar. Entregamos até ao seu quintal em qualquer ponto de Luanda com pagamento só ao descarregar.',
@@ -670,7 +568,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       rating: 5.0,
       salesCount: 310,
       verified: true,
-      phone: '+244 923 000 001'
+      phone: '+244 938 243 909'
     },
     condition: 'Novo',
     description: 'Ténis clássico Nike Air Force 1 em couro legítimo branco. Amortecimento Nike Air e solado de borracha anti-derrapante. Experimente o número antes de efetuar o pagamento ao estafeta.',
@@ -704,7 +602,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       rating: 5.0,
       salesCount: 520,
       verified: true,
-      phone: '+244 923 000 001'
+      phone: '+244 938 243 909'
     },
     condition: 'Novo',
     description: 'Cozinhe frango, peixe grelhado, batata e mufete sem fumo e com até 90% menos óleo. Capacidade XXL para toda a família angolana.',
@@ -738,7 +636,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       rating: 5.0,
       salesCount: 384,
       verified: true,
-      phone: '+244 923 000 001'
+      phone: '+244 938 243 909'
     },
     condition: 'Novo',
     description: 'A coluna perfeita para os churrascos e festas de fim de semana em Luanda! Graves potentes JBL Original Pro Sound, espetáculo de luzes sincronizadas e bateria para 12 horas.',
@@ -772,7 +670,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       rating: 5.0,
       salesCount: 280,
       verified: true,
-      phone: '+244 923 000 001'
+      phone: '+244 938 243 909'
     },
     condition: 'Novo',
     description: 'Bateria alemã de primeira linha para veículos ligeiros, SUVs e carrinhas (Toyota Fortuner, Hilux, Hyundai, Kia, Nissan). Entregamos onde o seu carro estiver avariado em Luanda com teste de alternador grátis!',
@@ -806,7 +704,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       rating: 5.0,
       salesCount: 640,
       verified: true,
-      phone: '+244 923 000 001'
+      phone: '+244 938 243 909'
     },
     condition: 'Novo',
     description: 'Máxima proteção e suavidade para a pele do seu bebé até 12 horas seco. Pacote gigante super económico para os pais em Luanda.',
@@ -822,73 +720,7 @@ export const INITIAL_PRODUCTS: Product[] = [
 
 export const COURIER_COMMISSION_PER_DELIVERY_AOA = 1000;
 
-export const INITIAL_PAYOUT_REQUESTS: PayoutRequest[] = [
-  {
-    id: 'payout-aff-1',
-    type: 'afiliado',
-    requesterId: 'user-affiliate-1',
-    requesterName: 'Teresa Gonçalves (Afiliada Luanda)',
-    requesterPhone: '+244 945 220 114',
-    requesterRole: 'affiliate',
-    affiliateCode: 'TERESA-01',
-    amount: 35000,
-    iban: 'AO06.0040.0000.5544.3322.1100.9',
-    multicaixaExpressPhone: '+244 945 220 114',
-    bankName: 'Banco BAI',
-    notes: 'Solicitação de saque de comissões acumuladas de vendas de iPhone e Perucas.',
-    status: 'pendente',
-    requestedAt: Date.now() - 4 * 3600000
-  },
-  {
-    id: 'payout-cour-1',
-    type: 'entregador',
-    requesterId: 'user-courier-1',
-    requesterName: 'António Kapanda',
-    requesterPhone: '+244 931 889 004',
-    requesterRole: 'courier',
-    amount: 25000,
-    iban: 'AO06.0040.0000.9876.5432.1098.7',
-    multicaixaExpressPhone: '+244 931 889 004',
-    bankName: 'Banco BFA',
-    notes: 'Saque de 25 entregas concluídas em Luanda (25 x 1.000 Kz).',
-    status: 'pendente',
-    requestedAt: Date.now() - 2 * 3600000
-  },
-  {
-    id: 'payout-cour-2',
-    type: 'entregador',
-    requesterId: 'user-courier-3',
-    requesterName: 'Domingos Ndala (Flash Luanda)',
-    requesterPhone: '+244 923 774 210',
-    requesterRole: 'courier',
-    amount: 30000,
-    iban: 'AO06.0040.0000.1122.3344.5566.7',
-    multicaixaExpressPhone: '+244 923 774 210',
-    bankName: 'Banco Millennium Atlântico',
-    notes: 'Saque de 30 entregas concluídas.',
-    status: 'pendente',
-    requestedAt: Date.now() - 1 * 3600000
-  },
-  {
-    id: 'payout-aff-2',
-    type: 'afiliado',
-    requesterId: 'user-affiliate-1',
-    requesterName: 'Teresa Gonçalves (Afiliada Luanda)',
-    requesterPhone: '+244 945 220 114',
-    requesterRole: 'affiliate',
-    affiliateCode: 'TERESA-01',
-    amount: 51000,
-    iban: 'AO06.0040.0000.5544.3322.1100.9',
-    multicaixaExpressPhone: '+244 945 220 114',
-    bankName: 'Banco BAI',
-    notes: 'Comissões de divulgação do mês anterior.',
-    status: 'pago',
-    requestedAt: Date.now() - 7 * 86400000,
-    paidAt: Date.now() - 6 * 86400000,
-    paymentProofReference: 'TRANSF-BAI-994821',
-    paidByAdminName: 'Paulino Armando (ADM)'
-  }
-];
+export const INITIAL_PAYOUT_REQUESTS: PayoutRequest[] = [];
 
 export function formatKwanzas(value: number): string {
   return new Intl.NumberFormat('pt-AO', {
