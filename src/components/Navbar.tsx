@@ -69,33 +69,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-white text-stone-900 shadow-sm border-b border-stone-200">
-      {/* Top Banner - Cash on Delivery & Luanda Alert */}
-      <div className="bg-red-600 px-4 py-2 text-xs text-white font-medium">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-black/20 text-[11px] font-bold tracking-wide uppercase">
-              🇦🇴 Luanda Oficial
-            </span>
-            <span>
-              <strong>Pagamento no Ato da Entrega (Dinheiro / Multicaixa Express)</strong> nos bairros de Luanda!
-            </span>
-          </div>
-          <div className="flex items-center gap-4 text-[11px]">
-            <button 
-              onClick={onOpenDeliveryInfo} 
-              className="underline hover:text-stone-200 transition-colors flex items-center gap-1 cursor-pointer font-semibold"
-            >
-              <MapPin className="w-3 h-3" /> Ver taxas por bairro
-            </button>
-            <span className="hidden sm:inline text-stone-100 font-mono">
-              📞 Linha Direta: +244 923 000 001
-            </span>
-          </div>
-        </div>
-      </div>
-
       {/* Main Nav */}
-      <div className="max-w-7xl mx-auto px-4 py-3.5">
+      <div className="max-w-7xl mx-auto px-4 py-3 sm:py-3.5">
         <div className="flex items-center justify-between gap-3 md:gap-5">
           {/* Logo */}
           <button 
