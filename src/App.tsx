@@ -766,15 +766,18 @@ export default function App() {
   const handleFocusSearch = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setTimeout(() => {
-      const searchInput = document.getElementById('search-input');
-      if (searchInput) {
-        searchInput.focus();
+      const mobileInput = document.getElementById('mobile-search-input');
+      const desktopInput = document.getElementById('search-input');
+      if (mobileInput && window.innerWidth < 768) {
+        mobileInput.focus();
+      } else if (desktopInput) {
+        desktopInput.focus();
       }
     }, 150);
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-900 flex flex-col font-sans selection:bg-red-500 selection:text-white pb-16 lg:pb-0">
+    <div className="min-h-screen bg-stone-50 text-stone-900 flex flex-col font-sans selection:bg-red-500 selection:text-white pb-20 lg:pb-0">
       
       {/* Toast Notification */}
       {toastMessage && (
