@@ -81,7 +81,9 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
-  Banknote
+  Banknote,
+  Package,
+  Plus
 } from 'lucide-react';
 
 const LOCAL_STORAGE_CART_KEY = 'angolamarket01_cart';
@@ -101,10 +103,17 @@ export default function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Ensure master admin has latest real credentials
-          const hasMaster = parsed.some((u: AppUser) => u.email === 'paulinoarmando62@gmail.com');
+          // Filter out any mock/demo test users
+          const realOnly = parsed.filter((u: AppUser) => 
+            !u.id.includes('demo') && 
+            !u.id.includes('test') && 
+            !(u.email || '').includes('exemplo.com') && 
+            !(u.email || '').includes('teste.ao')
+          );
+          // Ensure master admin has real credentials
+          const hasMaster = realOnly.some((u: AppUser) => u.email === 'paulinoarmando62@gmail.com');
           if (hasMaster) {
-            return parsed.map((u: AppUser) => u.email === 'paulinoarmando62@gmail.com' ? {
+            return realOnly.map((u: AppUser) => u.email === 'paulinoarmando62@gmail.com' ? {
               ...u,
               password: 'Armando@123',
               role: 'admin',
@@ -112,7 +121,7 @@ export default function App() {
               name: 'Paulino Armando (Administrador Geral)'
             } : u);
           } else {
-            return [INITIAL_USERS[0], ...parsed];
+            return [INITIAL_USERS[0], ...realOnly];
           }
         }
       }
@@ -170,7 +179,23 @@ export default function App() {
       const saved = localStorage.getItem(LOCAL_STORAGE_PRODUCTS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          // Purge any old fake mock items
+          const realProducts = parsed.filter((p: Product) => 
+            !p.id.startsWith('prod-iphone-') &&
+            !p.id.startsWith('prod-samsung-') &&
+            !p.id.startsWith('prod-gerador-') &&
+            !p.id.startsWith('prod-cesta-') &&
+            !p.id.startsWith('prod-peruca-') &&
+            !p.id.startsWith('prod-vestido-') &&
+            !p.id.startsWith('prod-tenis-') &&
+            !p.id.startsWith('prod-airfryer-') &&
+            !p.id.startsWith('prod-jbl-') &&
+            !p.id.startsWith('prod-bateria-') &&
+            !p.id.startsWith('prod-fraldas-')
+          );
+          return realProducts;
+        }
       }
     } catch (e) {
       // fallback
@@ -491,12 +516,17 @@ export default function App() {
       status: 'recebido',
       estimatedDeliveryDate: `Hoje (${selectedZone.estimatedHours})`,
       deliveryCode,
-      assignedCourierId: defaultCourier?.id || 'user-courier-1',
-      courier: {
-        name: defaultCourier?.name || 'Estafeta Luanda Express',
-        phone: defaultCourier?.phone || '+244 923 000 101',
-        vehicle: defaultCourier?.vehicle || 'Moto Haojue 150cc',
-        avatar: defaultCourier?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
+      assignedCourierId: defaultCourier?.id || undefined,
+      courier: defaultCourier ? {
+        name: defaultCourier.name,
+        phone: defaultCourier.phone,
+        vehicle: defaultCourier.vehicle || 'Moto Haojue 150cc',
+        avatar: defaultCourier.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
+      } : {
+        name: 'Equipa de Entregas Luanda',
+        phone: '+244 938 243 909',
+        vehicle: 'Estafeta Autorizado',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
       }
     };
 
@@ -725,6 +755,16 @@ export default function App() {
       });
   }, [products, selectedCategory, onlyExpressLuanda, searchTerm, priceSort]);
 
+  // Dynamic Category Counts
+  const categoriesWithCounts = useMemo(() => {
+    return CATEGORIES.map((cat) => ({
+      ...cat,
+      itemCount: cat.id === 'todos' 
+        ? products.length 
+        : products.filter(p => p.category === cat.id).length
+    }));
+  }, [products]);
+
   // Cart stats
   const cartCount = cart.reduce((acc, it) => acc + it.quantity, 0);
   const cartTotal = cart.reduce((acc, it) => acc + it.product.price * it.quantity, 0);
@@ -847,7 +887,7 @@ export default function App() {
           {/* Category Filter Subnav */}
           <div id="catalog-section">
             <CategoryFilter
-              categories={CATEGORIES}
+              categories={categoriesWithCounts}
               selectedCategory={selectedCategory}
               onSelectCategory={setSelectedCategory}
               priceSort={priceSort}
@@ -860,14 +900,35 @@ export default function App() {
 
           {/* Products Grid */}
           <div className="max-w-7xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
-            {filteredProducts.length === 0 ? (
+            {products.length === 0 ? (
+              <div className="p-8 sm:p-14 text-center bg-white border border-stone-200 rounded-3xl space-y-4 max-w-xl mx-auto my-8 shadow-sm">
+                <div className="w-16 h-16 rounded-2xl bg-red-50 text-red-600 border border-red-100 flex items-center justify-center mx-auto shadow-xs">
+                  <Package className="w-8 h-8" />
+                </div>
+                <div className="space-y-1.5">
+                  <h3 className="text-lg font-black text-stone-900 tracking-tight">Catálogo Pronto para Produtos Reais</h3>
+                  <p className="text-xs text-stone-500 max-w-md mx-auto leading-relaxed">
+                    Todos os itens fictícios e de exemplo foram limpos da plataforma. O Administrador Geral pode agora cadastrar os produtos reais com imagens, preços em Kwanzas e stock diretamente no Painel Administrativo.
+                  </p>
+                </div>
+                <div className="pt-2 flex flex-wrap items-center justify-center gap-2.5">
+                  <button
+                    onClick={handleOpenAdminPortal}
+                    className="px-6 py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition-all transform active:scale-95 cursor-pointer flex items-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Aceder ao Painel & Cadastrar Produtos</span>
+                  </button>
+                </div>
+              </div>
+            ) : filteredProducts.length === 0 ? (
               <div className="p-10 sm:p-16 text-center bg-white border border-stone-200 rounded-3xl space-y-4 max-w-lg mx-auto my-8 shadow-sm">
                 <div className="w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center mx-auto text-stone-400">
                   <ShoppingBag className="w-8 h-8" />
                 </div>
                 <h3 className="text-lg font-bold text-stone-900">Nenhum artigo encontrado</h3>
                 <p className="text-xs text-stone-500">
-                  Não encontramos artigos correspondentes à pesquisa "{searchTerm}". Tente pesquisar por iPhone, Samakaka, Gerador ou Cesta Básica.
+                  Não encontramos artigos correspondentes aos filtros de pesquisa selecionados.
                 </p>
                 <button
                   onClick={() => {

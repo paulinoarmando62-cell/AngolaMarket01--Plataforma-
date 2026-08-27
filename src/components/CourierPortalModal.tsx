@@ -59,9 +59,9 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
   const [courierName, setCourierName] = useState(currentUser.name || '');
   const [courierPhone, setCourierPhone] = useState(currentUser.phone || '');
   const [courierAvatar, setCourierAvatar] = useState(currentUser.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80');
-  const [courierVehicle, setCourierVehicle] = useState(currentUser.vehicle || 'Moto Haojue 150cc');
-  const [courierPlate, setCourierPlate] = useState(currentUser.licensePlate || 'LD-00-00-AA');
-  const [courierIban, setCourierIban] = useState(currentUser.iban || 'AO06.0040.0000.9876.5432.1098.7');
+  const [courierVehicle, setCourierVehicle] = useState(currentUser.vehicle || 'Moto');
+  const [courierPlate, setCourierPlate] = useState(currentUser.licensePlate || '');
+  const [courierIban, setCourierIban] = useState(currentUser.iban || '');
   const [courierBank, setCourierBank] = useState(currentUser.bankName || 'BAI');
   const [courierExpress, setCourierExpress] = useState(currentUser.multicaixaExpressPhone || currentUser.phone || '');
   const [profileSaved, setProfileSaved] = useState(false);

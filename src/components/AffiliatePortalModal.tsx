@@ -72,11 +72,11 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
   const [selectedBatchIds, setSelectedBatchIds] = useState<string[]>([]);
   
   // Profile edit states
-  const [affName, setAffName] = useState(currentUser.name || 'Afiliado Oficial');
+  const [affName, setAffName] = useState(currentUser.name || '');
   const [affEmail, setAffEmail] = useState(currentUser.email || '');
   const [affPhone, setAffPhone] = useState(currentUser.phone || '');
   const [affAvatar, setAffAvatar] = useState(currentUser.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80');
-  const [affIban, setAffIban] = useState(currentUser.iban || 'AO06.0040.0000.5544.3322.1100.9');
+  const [affIban, setAffIban] = useState(currentUser.iban || '');
   const [affBank, setAffBank] = useState(currentUser.bankName || 'BAI');
   const [affExpress, setAffExpress] = useState(currentUser.multicaixaExpressPhone || currentUser.phone || '');
   const [profileSaved, setProfileSaved] = useState(false);
