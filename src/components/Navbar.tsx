@@ -178,61 +178,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Quick Actions & Role Badges */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
             
-            {/* Mobile Location Quick Button */}
-            <div className="relative lg:hidden">
-              <button
-                onClick={() => setShowZoneDropdown(!showZoneDropdown)}
-                className="flex items-center gap-1 px-2.5 py-2 rounded-xl sm:rounded-2xl bg-red-50 border border-red-200 text-red-800 text-[11px] font-bold cursor-pointer"
-                title="Alterar Bairro de Entrega em Luanda"
-              >
-                <MapPin className="w-3.5 h-3.5 text-red-600 shrink-0" />
-                <span className="max-w-[70px] truncate">{selectedZone.neighborhood || selectedZone.name.split('(')[0]}</span>
-              </button>
-
-              {showZoneDropdown && (
-                <div 
-                  className="fixed inset-x-3 top-16 bg-white border border-stone-200 rounded-3xl shadow-2xl p-3.5 z-50 animate-in fade-in max-w-sm mx-auto"
-                >
-                  <div className="p-2 border-b border-stone-100 flex items-center justify-between">
-                    <span className="text-xs font-bold text-stone-900">Bairro em Luanda</span>
-                    <button 
-                      onClick={() => setShowZoneDropdown(false)}
-                      className="p-1 rounded-lg hover:bg-stone-100 text-stone-500"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="max-h-64 overflow-y-auto py-1 space-y-1">
-                    {luandaZones.map((zone) => (
-                      <button
-                        key={zone.id}
-                        onClick={() => {
-                          onSelectZone(zone);
-                          setShowZoneDropdown(false);
-                        }}
-                        className={`w-full text-left p-2.5 rounded-2xl text-xs flex items-center justify-between transition-colors cursor-pointer ${
-                          selectedZone.id === zone.id 
-                            ? 'bg-red-50 text-red-700 border border-red-200 font-bold' 
-                            : 'text-stone-700 hover:bg-stone-100'
-                        }`}
-                      >
-                        <div>
-                          <p className="font-semibold">{zone.neighborhood || zone.name}</p>
-                          <p className="text-[10px] text-stone-500 font-normal">{zone.municipality} • {zone.estimatedHours}</p>
-                        </div>
-                        <span className="font-bold text-stone-900 font-mono">
-                          {formatKwanzas(zone.deliveryFee)}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Role-Specific Direct Navigation Buttons */}
+            {/* Role-Specific Direct Navigation Buttons (Desktop / Tablets) */}
             {currentUser?.role === 'admin' && (
               <button
                 id="admin-portal-nav-btn"
@@ -271,24 +219,24 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             )}
 
-            {/* User Auth Button / Dropdown */}
-            <div className="relative">
+            {/* Desktop-Only User Auth Button / Dropdown (Mobile users have dedicated Bottom Bar & Drawer) */}
+            <div className="relative hidden md:block">
               {currentUser ? (
                 <div>
                   <button
                     onClick={() => setShowUserDropdown(!showUserDropdown)}
-                    className="flex items-center gap-1.5 p-1 sm:px-3 sm:py-1.5 rounded-xl sm:rounded-2xl bg-stone-100 hover:bg-stone-200 border border-stone-200 text-xs font-bold transition-all cursor-pointer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-stone-100 hover:bg-stone-200 border border-stone-200 text-xs font-bold transition-all cursor-pointer"
                   >
                     <img 
                       src={currentUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'} 
                       alt="" 
-                      className="w-7 h-7 sm:w-6 sm:h-6 rounded-xl object-cover" 
+                      className="w-6 h-6 rounded-xl object-cover" 
                       referrerPolicy="no-referrer"
                     />
-                    <span className="hidden md:inline max-w-[100px] truncate text-stone-900 font-semibold">
+                    <span className="inline max-w-[100px] truncate text-stone-900 font-semibold">
                       {currentUser.name.split(' ')[0]}
                     </span>
-                    <ChevronDown className="w-3.5 h-3.5 text-stone-500 hidden sm:inline" />
+                    <ChevronDown className="w-3.5 h-3.5 text-stone-500" />
                   </button>
 
                   {showUserDropdown && (
@@ -352,10 +300,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   id="auth-login-btn"
                   onClick={onOpenAuth}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl sm:rounded-2xl bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-800 text-xs font-bold transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-800 text-xs font-bold transition-all cursor-pointer"
                 >
                   <LogIn className="w-3.5 h-3.5 text-red-600" />
-                  <span className="text-[11px] sm:text-xs">Entrar</span>
+                  <span>Entrar</span>
                 </button>
               )}
             </div>
@@ -364,7 +312,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               id="cart-drawer-btn"
               onClick={onOpenCart}
-              className="relative flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl sm:rounded-2xl bg-stone-900 hover:bg-black text-white text-xs md:text-sm font-bold shadow-sm transition-all transform active:scale-95 cursor-pointer shrink-0"
+              className="relative flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-2xl bg-stone-900 hover:bg-black text-white text-xs md:text-sm font-bold shadow-sm transition-all transform active:scale-95 cursor-pointer shrink-0"
             >
               <ShoppingCart className="w-4 h-4 text-white" />
               <span className="hidden sm:inline">Carrinho</span>
@@ -385,14 +333,15 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-xl sm:rounded-2xl bg-stone-100 text-stone-700 hover:bg-stone-200 cursor-pointer shrink-0"
+              className="lg:hidden p-2.5 rounded-2xl bg-stone-100 text-stone-700 hover:bg-stone-200 cursor-pointer shrink-0"
+              aria-label="Abrir Menu"
             >
-              <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
+              <Menu className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Mobile Full-Width Search Input (Always visible & spacious on mobile) */}
+        {/* Mobile Full-Width Search Input (Clean, high contrast, native app look) */}
         <div className="md:hidden mt-2.5">
           <div className="relative w-full">
             <input
@@ -401,15 +350,15 @@ export const Navbar: React.FC<NavbarProps> = ({
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Pesquise iPhones, Samakaka, Cesta Básica..."
-              className="w-full bg-stone-100 text-stone-900 placeholder-stone-400 text-xs pl-9 pr-9 py-2.5 rounded-2xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-red-600 focus:bg-white transition-all shadow-2xs"
+              className="w-full bg-stone-100 text-stone-900 placeholder-stone-400 text-xs pl-10 pr-9 py-2.5 h-10 rounded-2xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-red-600 focus:bg-white transition-all shadow-2xs"
             />
-            <Search className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
+            <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-3 pointer-events-none" />
             {searchTerm && (
               <button
                 onClick={() => onSearchChange('')}
-                className="absolute right-2.5 top-2.5 p-1 text-stone-400 hover:text-stone-800"
+                className="absolute right-2.5 top-2 p-1 text-stone-400 hover:text-stone-800 cursor-pointer"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
               </button>
             )}
           </div>
