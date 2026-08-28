@@ -48,7 +48,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [regPhone, setRegPhone] = useState('+244 9');
   const [regPassword, setRegPassword] = useState('');
   const [showRegPassword, setShowRegPassword] = useState(false);
-  const [regRole, setRegRole] = useState<UserRole>('buyer');
+  const [regRole, setRegRole] = useState<UserRole>('affiliate');
   
   // Courier specific fields
   const [vehicle, setVehicle] = useState('');
@@ -59,6 +59,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [regSuccessMessage, setRegSuccessMessage] = useState('');
 
   if (!isOpen) return null;
+
+  const resetForm = () => {
+    setLoginEmail('');
+    setLoginPassword('');
+    setLoginError('');
+    setRegName('');
+    setRegEmail('');
+    setRegPhone('+244 9');
+    setRegPassword('');
+    setVehicle('');
+    setLicensePlate('');
+    setOperatingZones('');
+    setRegError('');
+    setRegSuccessMessage('');
+  };
+
+  const handleModalClose = () => {
+    resetForm();
+    onClose();
+  };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,7 +107,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
 
     onLogin(foundUser);
-    onClose();
+    handleModalClose();
   };
 
   const handleRegisterSubmit = (e: React.FormEvent) => {
@@ -122,6 +142,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       affiliateCode = regName.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 6) + '-' + randomSuffix;
     }
 
+    const defaultRoleAvatar = regRole === 'courier'
+      ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
+      : 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80';
+
     const newUser: AppUser = {
       id: `user-${Date.now()}`,
       name: regName.trim(),
@@ -129,12 +153,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       phone: regPhone.trim(),
       role: regRole,
       password: regPassword || '123456',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+      avatar: defaultRoleAvatar,
       createdAt: Date.now(),
       courierStatus,
       vehicle: regRole === 'courier' ? vehicle : undefined,
       licensePlate: regRole === 'courier' ? licensePlate : undefined,
-      operatingZones: regRole === 'courier' ? operatingZones.split(',').map(z => z.trim()) : undefined,
+      operatingZones: regRole === 'courier' && operatingZones ? operatingZones.split(',').map(z => z.trim()) : undefined,
       affiliateCode,
       commissionRate: regRole === 'affiliate' ? 7 : undefined,
       totalSalesCount: 0,
@@ -142,21 +166,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       balanceAOA: 0
     };
 
+    // Register user and log in immediately
     onRegister(newUser);
-    
-    if (regRole === 'courier') {
-      setRegSuccessMessage('Candidatura de entregador enviada com sucesso! Aguarda validação do Administrador.');
-      setTimeout(() => {
-        onLogin(newUser);
-        onClose();
-      }, 1500);
-    } else {
-      setRegSuccessMessage('Conta criada com sucesso!');
-      setTimeout(() => {
-        onLogin(newUser);
-        onClose();
-      }, 800);
-    }
+    onLogin(newUser);
+    handleModalClose();
   };
 
   return (
@@ -193,12 +206,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {/* Brand Presentation */}
           <div className="text-center space-y-1">
             <h2 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight">
-              {tab === 'login' ? 'Bem-vindo de Volta!' : 'Junte-se ao AngolaMarket 01'}
+              {tab === 'login' ? 'Bem-vindo de Volta!' : 'Junte-se à Nossa Equipa'}
             </h2>
             <p className="text-xs text-stone-500 max-w-sm mx-auto">
               {tab === 'login' 
-                ? 'Inicie sessão para gerir compras, estafetas ou aceder ao painel.' 
-                : 'Crie a sua conta de cliente, entregador ou afiliado em segundos.'}
+                ? 'Inicie sessão para gerir a sua conta de afiliado, estafeta ou administração.' 
+                : 'Registe-se como afiliado ou estafeta parceiro do AngolaMarket 01.'}
             </p>
           </div>
 
@@ -225,7 +238,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
-                Criar Conta
+                Criar Conta de Parceiro
               </button>
             </div>
           </div>
@@ -284,13 +297,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 type="submit"
                 className="w-full py-4 px-4 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 transition-all transform active:scale-98 cursor-pointer mt-2"
               >
-                <span>Entrar no AngolaMarket 01</span>
+                <span>Entrar na Minha Conta</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 
-              <div className="pt-4 text-center border-t border-stone-100">
+              <div className="pt-4 text-center border-t border-stone-100 space-y-1">
                 <p className="text-xs text-stone-500">
-                  Precisa de assistência? Contacte a nossa equipa: <strong className="text-stone-800 font-mono">938 243 909 / 950 461 466</strong>
+                  É comprador? <span className="font-bold text-stone-800">Não precisa de conta</span> para fazer pedidos.
+                </p>
+                <p className="text-[11px] text-stone-400">
+                  Apoio ao cliente: <strong className="text-stone-700 font-mono">938 243 909 / 950 461 466</strong>
                 </p>
               </div>
             </form>
@@ -311,81 +327,65 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </div>
               )}
 
+              {/* Informative banner about direct guest purchases */}
+              <div className="p-3 bg-stone-50 border border-stone-200 rounded-2xl flex items-center gap-2.5 text-xs text-stone-600">
+                <ShoppingBag className="w-4 h-4 text-red-600 shrink-0" />
+                <span>
+                  <strong>Cliente?</strong> Pode comprar diretamente no catálogo sem registo de conta, com pagamento no ato da entrega.
+                </span>
+              </div>
+
               {/* Account Role Selector */}
               <div className="space-y-2">
-                <label className="text-xs font-bold text-stone-700">Tipo de Conta:</label>
-                <div className="grid grid-cols-1 gap-2">
+                <label className="text-xs font-bold text-stone-700">Selecione a Função de Registo:</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   
-                  {/* Option: Buyer */}
-                  <label 
-                    className={`p-3 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
-                      regRole === 'buyer' ? 'bg-stone-100 border-stone-400 ring-1 ring-stone-400' : 'bg-stone-50 border-stone-200'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-white text-stone-700 shadow-xs">
-                        <ShoppingBag className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <span className="font-bold text-xs text-stone-900 block">Cliente / Comprador</span>
-                        <span className="text-[11px] text-stone-500 block">Compre com pagamento no ato e rastreie entregas</span>
-                      </div>
-                    </div>
-                    <input 
-                      type="radio" 
-                      name="role" 
-                      checked={regRole === 'buyer'} 
-                      onChange={() => setRegRole('buyer')}
-                      className="accent-red-600 w-4 h-4"
-                    />
-                  </label>
-
                   {/* Option: Affiliate */}
                   <label 
-                    className={`p-3 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
-                      regRole === 'affiliate' ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500' : 'bg-stone-50 border-stone-200'
+                    className={`p-3.5 rounded-2xl border flex flex-col justify-between cursor-pointer transition-all ${
+                      regRole === 'affiliate' ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500 shadow-xs' : 'bg-stone-50 border-stone-200 hover:bg-stone-100'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-white text-blue-600 shadow-xs">
+                    <div className="flex items-start justify-between">
+                      <div className="p-2 rounded-xl bg-white text-blue-600 shadow-xs mb-2">
                         <DollarSign className="w-4 h-4" />
                       </div>
-                      <div>
-                        <span className="font-bold text-xs text-stone-900 block">Afiliado (Comissões por Venda)</span>
-                        <span className="text-[11px] text-stone-500 block">Divulgue links e ganhe comissão direta em Kwanzas</span>
-                      </div>
+                      <input 
+                        type="radio" 
+                        name="role" 
+                        checked={regRole === 'affiliate'} 
+                        onChange={() => setRegRole('affiliate')}
+                        className="accent-red-600 w-4 h-4"
+                      />
                     </div>
-                    <input 
-                      type="radio" 
-                      name="role" 
-                      checked={regRole === 'affiliate'} 
-                      onChange={() => setRegRole('affiliate')}
-                      className="accent-red-600 w-4 h-4"
-                    />
+                    <div>
+                      <span className="font-bold text-xs text-stone-900 block">Afiliado / Promotor</span>
+                      <span className="text-[11px] text-stone-500 block mt-0.5 leading-snug">Ganhe comissões diretas de 7% por cada venda</span>
+                    </div>
                   </label>
 
                   {/* Option: Courier */}
                   <label 
-                    className={`p-3 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
-                      regRole === 'courier' ? 'bg-amber-50 border-amber-500 ring-1 ring-amber-500' : 'bg-stone-50 border-stone-200'
+                    className={`p-3.5 rounded-2xl border flex flex-col justify-between cursor-pointer transition-all ${
+                      regRole === 'courier' ? 'bg-amber-50 border-amber-500 ring-1 ring-amber-500 shadow-xs' : 'bg-stone-50 border-stone-200 hover:bg-stone-100'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-white text-amber-600 shadow-xs">
+                    <div className="flex items-start justify-between">
+                      <div className="p-2 rounded-xl bg-white text-amber-600 shadow-xs mb-2">
                         <Truck className="w-4 h-4" />
                       </div>
-                      <div>
-                        <span className="font-bold text-xs text-stone-900 block">Estafeta / Entregador</span>
-                        <span className="text-[11px] text-stone-500 block">Entregas em Luanda (Requer aprovação do ADM)</span>
-                      </div>
+                      <input 
+                        type="radio" 
+                        name="role" 
+                        checked={regRole === 'courier'} 
+                        onChange={() => setRegRole('courier')}
+                        className="accent-red-600 w-4 h-4"
+                      />
                     </div>
-                    <input 
-                      type="radio" 
-                      name="role" 
-                      checked={regRole === 'courier'} 
-                      onChange={() => setRegRole('courier')}
-                      className="accent-red-600 w-4 h-4"
-                    />
+                    <div>
+                      <span className="font-bold text-xs text-stone-900 block">Estafeta / Entregador</span>
+                      <span className="text-[11px] text-stone-500 block mt-0.5 leading-snug">Faça entregas em Luanda e receba por corrida</span>
+                    </div>
                   </label>
                 </div>
               </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   DollarSign, 
@@ -29,7 +29,8 @@ import {
   CheckCircle, 
   Zap,
   Camera,
-  Upload
+  Upload,
+  Package
 } from 'lucide-react';
 import { AppUser, Product, Order, AffiliateTab, PayoutRequest } from '../types';
 import { formatKwanzas } from '../data/mockData';
@@ -80,6 +81,18 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
   const [affBank, setAffBank] = useState(currentUser.bankName || '');
   const [affExpress, setAffExpress] = useState(currentUser.multicaixaExpressPhone || currentUser.phone || '');
   const [profileSaved, setProfileSaved] = useState(false);
+
+  useEffect(() => {
+    if (currentUser) {
+      setAffName(currentUser.name || '');
+      setAffEmail(currentUser.email || '');
+      setAffPhone(currentUser.phone || '');
+      setAffAvatar(currentUser.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80');
+      setAffIban(currentUser.iban || '');
+      setAffBank(currentUser.bankName || '');
+      setAffExpress(currentUser.multicaixaExpressPhone || currentUser.phone || '');
+    }
+  }, [currentUser, isOpen]);
 
   const handleAffiliateAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -239,44 +252,44 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
     >
       <div className="flex flex-col w-full h-full bg-white overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200 bg-white sticky top-0 z-20 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-blue-600 text-white shadow-md">
-              <DollarSign className="w-6 h-6" />
+        <div className="flex items-center justify-between px-4 sm:px-6 py-2.5 sm:py-3 border-b border-stone-200 bg-white sticky top-0 z-20 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-blue-600 text-white shadow-xs">
+              <DollarSign className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="font-black text-lg text-stone-900">Portal do Afiliado AngolaMarket 01</h2>
-                <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-2.5 py-0.5 rounded-lg border border-blue-200 uppercase">
-                  Código: {affiliateCode}
+                <h2 className="font-black text-base sm:text-lg text-stone-900 leading-none">Portal do Afiliado</h2>
+                <span className="text-[9px] sm:text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-md border border-blue-200 uppercase font-mono">
+                  {affiliateCode}
                 </span>
               </div>
-              <p className="text-xs text-stone-500">
-                Divulgue produtos em Luanda e receba comissões de 0% a 100% por venda confirmada.
+              <p className="text-[11px] text-stone-500 mt-0.5">
+                Divulgue produtos em Luanda e receba comissões automáticas por venda entregue
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-stone-100 text-stone-700 hover:bg-red-50 hover:text-red-600 transition-colors font-bold text-xs cursor-pointer border border-stone-200"
+            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-stone-100 text-stone-700 hover:bg-red-50 hover:text-red-600 transition-colors font-bold text-xs cursor-pointer border border-stone-200"
           >
             <span>Voltar à Loja</span>
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* 7 Tabs Bar */}
-        <div className="px-4 sm:px-6 py-2.5 border-b border-stone-200 bg-stone-50 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+        <div className="px-3 sm:px-6 py-2 border-b border-stone-200 bg-stone-50 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
           {tabs.map((t) => {
             const isActive = activeTab === t.tab;
             return (
               <button
                 key={t.tab}
                 onClick={() => setActiveTab(t.tab)}
-                className={`px-3.5 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                   isActive 
-                    ? 'bg-blue-600 text-white shadow-sm' 
+                    ? 'bg-blue-600 text-white shadow-xs' 
                     : 'bg-white text-stone-700 hover:bg-stone-200 border border-stone-200'
                 }`}
               >
@@ -288,51 +301,57 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6 bg-stone-50/50">
+        <div className="flex-1 overflow-y-auto p-3.5 sm:p-5 bg-stone-50/50">
           
           {/* TAB 1: HOME */}
           {activeTab === 'home' && (
-            <div className="space-y-6">
-              {/* Hero Banner */}
-              <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white shadow-md relative overflow-hidden">
-                <div className="relative z-10 space-y-3">
-                  <span className="text-[10px] uppercase font-bold tracking-widest bg-white/20 px-3 py-1 rounded-full text-white inline-block">
-                    Programa Oficial de Afiliados
-                  </span>
-                  <h3 className="text-2xl sm:text-3xl font-black">
-                    Olá, {currentUser.name}! Ganhe dinheiro divulgando.
-                  </h3>
-                  <p className="text-xs sm:text-sm text-blue-50 max-w-xl leading-relaxed">
-                    Escolha produtos do catálogo do AngolaMarket 01, partilhe os seus links no WhatsApp e receba a comissão automaticamente na sua carteira assim que o estafeta entregar o artigo ao cliente em Luanda.
-                  </p>
-                  <div className="pt-2 flex flex-wrap gap-2.5">
-                    <button
-                      onClick={() => setActiveTab('afiliar_se')}
-                      className="px-4 py-2 rounded-2xl bg-white text-blue-600 font-bold text-xs shadow-sm hover:bg-stone-100 cursor-pointer flex items-center gap-1.5"
-                    >
-                      <UserCheck className="w-4 h-4" />
-                      <span>Ver Produtos para Afiliar-se</span>
-                    </button>
-                    <button
-                      onClick={() => handleWhatsAppShare()}
-                      className="px-4 py-2 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-sm cursor-pointer flex items-center gap-1.5"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                      <span>Partilhar Loja no WhatsApp</span>
-                    </button>
+            <div className="space-y-4">
+              {/* Compact Executive Status Card */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-900 text-white shadow-xs relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] uppercase font-black tracking-wider bg-white/20 px-2 py-0.5 rounded text-white inline-block">
+                      Promotor Oficial
+                    </span>
+                    <span className="text-xs font-bold text-blue-100 truncate">
+                      {currentUser.name}
+                    </span>
                   </div>
+                  <h3 className="text-lg sm:text-xl font-black">
+                    Ganhe comissões partilhando links
+                  </h3>
+                  <p className="text-xs text-blue-100 max-w-xl">
+                    Partilhe produtos no WhatsApp. Quando a entrega COD for concluída em Luanda, a sua comissão entra na carteira.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => setActiveTab('afiliar_se')}
+                    className="px-3.5 py-2 rounded-xl bg-white text-blue-700 font-bold text-xs shadow-xs hover:bg-stone-100 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <UserCheck className="w-3.5 h-3.5" />
+                    <span>Catálogo & Links</span>
+                  </button>
+                  <button
+                    onClick={() => handleWhatsAppShare()}
+                    className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-xs cursor-pointer flex items-center gap-1.5"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    <span>WhatsApp</span>
+                  </button>
                 </div>
               </div>
 
               {/* General Referral Link Card */}
-              <div className="p-6 rounded-3xl bg-white border border-stone-200 shadow-sm space-y-3">
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs text-stone-900 flex items-center gap-2">
-                    <Share2 className="w-4 h-4 text-blue-600" />
-                    <span>O Seu Link Geral da Loja (Qualquer compra dá comissão):</span>
+                  <span className="font-bold text-xs text-stone-900 flex items-center gap-1.5">
+                    <Share2 className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Seu Link Geral da Loja:</span>
                   </span>
-                  <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-lg">
-                    {affiliateCode}
+                  <span className="text-[10px] font-mono font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                    Cód: {affiliateCode}
                   </span>
                 </div>
 
@@ -341,21 +360,21 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
                     type="text"
                     readOnly
                     value={generalAffiliateUrl}
-                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-800 font-mono select-all focus:outline-none"
+                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 font-mono select-all focus:outline-none"
                   />
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       onClick={handleCopyGeneralLink}
-                      className="px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm cursor-pointer"
+                      className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs cursor-pointer"
                     >
-                      {copiedGeneral ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      {copiedGeneral ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                       <span>{copiedGeneral ? 'Copiado!' : 'Copiar'}</span>
                     </button>
                     <button
                       onClick={() => handleWhatsAppShare()}
-                      className="px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm cursor-pointer"
+                      className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs cursor-pointer"
                     >
-                      <MessageCircle className="w-4 h-4" />
+                      <MessageCircle className="w-3.5 h-3.5" />
                       <span>WhatsApp</span>
                     </button>
                   </div>
@@ -363,32 +382,47 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
               </div>
 
               {/* Fast Stats */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3.5">
                 <div 
                   onClick={() => setActiveTab('carteira')}
-                  className="p-5 rounded-3xl bg-white border border-stone-200 shadow-sm hover:border-blue-300 transition-all cursor-pointer space-y-1"
+                  className="p-3.5 sm:p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs hover:border-blue-400 transition-all cursor-pointer space-y-1"
                 >
-                  <span className="text-[10px] uppercase font-bold text-stone-400">Saldo Disponível</span>
-                  <span className="text-2xl font-black font-mono text-blue-600 block">{formatKwanzas(balance)}</span>
-                  <span className="text-[11px] text-stone-500">Clique para solicitar levantamento</span>
+                  <div className="flex items-center justify-between text-stone-500">
+                    <span className="text-[10px] font-bold uppercase tracking-wide">Saldo Disponível</span>
+                    <DollarSign className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <span className="text-xl sm:text-2xl font-black font-mono text-emerald-600 block">
+                    {formatKwanzas(currentUser.balanceAOA || 0)}
+                  </span>
+                  <p className="text-[10px] text-stone-500 truncate">Clique para solicitar levantamento</p>
                 </div>
 
                 <div 
-                  onClick={() => setActiveTab('pedidos')}
-                  className="p-5 rounded-3xl bg-white border border-stone-200 shadow-sm hover:border-blue-300 transition-all cursor-pointer space-y-1"
+                  onClick={() => setActiveTab('relatorios')}
+                  className="p-3.5 sm:p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs hover:border-blue-400 transition-all cursor-pointer space-y-1"
                 >
-                  <span className="text-[10px] uppercase font-bold text-stone-400">Vendas Concluídas</span>
-                  <span className="text-2xl font-black font-mono text-stone-900 block">{totalSales}</span>
-                  <span className="text-[11px] text-emerald-600 font-semibold">Entregues com sucesso</span>
+                  <div className="flex items-center justify-between text-stone-500">
+                    <span className="text-[10px] font-bold uppercase tracking-wide">Vendas Concluídas</span>
+                    <CheckCircle className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <span className="text-xl sm:text-2xl font-black font-mono text-stone-900 block">
+                    {currentUser.totalSalesCount || 0}
+                  </span>
+                  <p className="text-[10px] text-stone-500 truncate">Vendas pagas na entrega</p>
                 </div>
 
                 <div 
-                  onClick={() => setActiveTab('minhas_afiliacoes')}
-                  className="p-5 rounded-3xl bg-white border border-stone-200 shadow-sm hover:border-blue-300 transition-all cursor-pointer space-y-1"
+                  onClick={() => setActiveTab('afiliar_se')}
+                  className="p-3.5 sm:p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs hover:border-blue-400 transition-all cursor-pointer space-y-1"
                 >
-                  <span className="text-[10px] uppercase font-bold text-stone-400">Produtos Vinculados</span>
-                  <span className="text-2xl font-black font-mono text-stone-900 block">{affiliatedIds.length}</span>
-                  <span className="text-[11px] text-stone-500">Links ativos para divulgação</span>
+                  <div className="flex items-center justify-between text-stone-500">
+                    <span className="text-[10px] font-bold uppercase tracking-wide">Artigos para Divulgar</span>
+                    <Package className="w-4 h-4 text-purple-600" />
+                  </div>
+                  <span className="text-xl sm:text-2xl font-black font-mono text-stone-900 block">
+                    {products.length}
+                  </span>
+                  <p className="text-[10px] text-stone-500 truncate">Catálogo completo de Luanda</p>
                 </div>
               </div>
             </div>

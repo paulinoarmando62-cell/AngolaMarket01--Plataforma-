@@ -8,7 +8,8 @@ import {
   ShieldCheck, 
   Truck, 
   DollarSign,
-  Package
+  Package,
+  LogOut
 } from 'lucide-react';
 import { AppUser } from '../types';
 
@@ -26,6 +27,7 @@ interface MobileBottomNavProps {
   onOpenCourierPortal: () => void;
   onOpenAffiliatePortal: () => void;
   onOpenOrders: () => void;
+  onLogout?: () => void;
 }
 
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
@@ -41,7 +43,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   onOpenAdminPortal,
   onOpenCourierPortal,
   onOpenAffiliatePortal,
-  onOpenOrders
+  onOpenOrders,
+  onLogout
 }) => {
   const [showUserMenu, setShowUserMenu] = React.useState(false);
 
@@ -169,6 +172,20 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
               >
                 <span>Mudar de Conta / Ver Detalhes</span>
               </button>
+
+              {onLogout && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    onLogout();
+                  }}
+                  className="w-full p-3 rounded-2xl bg-red-50 text-red-700 hover:bg-red-100 font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Terminar Sessão</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

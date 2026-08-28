@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   ShieldCheck, 
@@ -252,6 +252,19 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
   const [adminBankName, setAdminBankName] = useState(currentUser?.bankName || '');
   const [adminPassword, setAdminPassword] = useState(currentUser?.password || 'Armando@123');
   const [profileSaved, setProfileSaved] = useState(false);
+
+  useEffect(() => {
+    if (currentUser) {
+      setAdminName(currentUser.name || 'Paulino Armando (Administrador Geral)');
+      setAdminEmail(currentUser.email || 'paulinoarmando62@gmail.com');
+      setAdminPhone(currentUser.phone || '+244 938 243 909');
+      setAdminAvatar(currentUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80');
+      setAdminIban(currentUser.iban || '');
+      setAdminMulticaixaExpress(currentUser.multicaixaExpressPhone || '+244 938 243 909');
+      setAdminBankName(currentUser.bankName || '');
+      setAdminPassword(currentUser.password || 'Armando@123');
+    }
+  }, [currentUser, isOpen]);
 
   const handleAdminAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -514,35 +527,35 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
     >
       <div className="flex flex-col w-full h-full bg-white overflow-hidden">
         {/* Top Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200 bg-white sticky top-0 z-20 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-red-600 text-white shadow-md">
-              <ShieldCheck className="w-6 h-6" />
+        <div className="flex items-center justify-between px-4 sm:px-6 py-2.5 sm:py-3 border-b border-stone-200 bg-white sticky top-0 z-20 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-red-600 text-white shadow-xs">
+              <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="font-black text-lg text-stone-900">Conta de Administrador (ADM)</h2>
-                <span className="text-[10px] bg-red-100 text-red-700 font-bold px-2.5 py-0.5 rounded-lg border border-red-200 uppercase">
-                  Dono da Plataforma
+                <h2 className="font-black text-base sm:text-lg text-stone-900 leading-none">Painel de Administração</h2>
+                <span className="text-[9px] sm:text-[10px] bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded-md border border-red-200 uppercase">
+                  Dono
                 </span>
               </div>
-              <p className="text-xs text-stone-500">
-                AngolaMarket 01 • Luanda COD & Gestão de Marketplace
+              <p className="text-[11px] text-stone-500 mt-0.5">
+                AngolaMarket 01 • Gestão Central de Catálogo, Estafetas & Vendas COD
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-stone-100 text-stone-700 hover:bg-red-50 hover:text-red-600 transition-colors font-bold text-xs cursor-pointer border border-stone-200"
+            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-stone-100 text-stone-700 hover:bg-red-50 hover:text-red-600 transition-colors font-bold text-xs cursor-pointer border border-stone-200"
           >
             <span>Voltar à Loja</span>
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* 10 Required Tabs Horizontal Bar */}
-        <div className="px-4 sm:px-6 py-2.5 border-b border-stone-200 bg-stone-50 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+        <div className="px-3 sm:px-6 py-2 border-b border-stone-200 bg-stone-50 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
           {navItems.map((item) => {
             const isActive = activeTab === item.tab;
             return (
@@ -554,9 +567,9 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                     setIsProductFormOpen(true);
                   }
                 }}
-                className={`px-3.5 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                   isActive 
-                    ? 'bg-red-600 text-white shadow-sm' 
+                    ? 'bg-red-600 text-white shadow-xs' 
                     : 'bg-white text-stone-700 hover:bg-stone-200 border border-stone-200'
                 }`}
               >
@@ -575,106 +588,105 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
         </div>
 
         {/* Tab Contents */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6 bg-stone-50/50">
+        <div className="flex-1 overflow-y-auto p-3.5 sm:p-5 bg-stone-50/50">
           
           {/* TAB 1: HOME */}
           {activeTab === 'home' && (
-            <div className="space-y-6">
-              {/* Welcome Bento Card */}
-              <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-red-600 to-red-700 text-white shadow-md relative overflow-hidden">
-                <div className="relative z-10 space-y-3">
-                  <span className="text-[10px] uppercase font-bold tracking-widest bg-black/20 px-3 py-1 rounded-full text-white inline-block">
-                    Painel Principal do Proprietário
-                  </span>
-                  <h3 className="text-2xl sm:text-3xl font-black">
-                    Bem-vindo, {currentUser?.name || 'Administrador'}!
-                  </h3>
-                  <p className="text-xs sm:text-sm text-red-50 max-w-xl leading-relaxed">
-                    Você tem o controlo total do <strong>AngolaMarket 01</strong>. Apenas você cadastra os produtos, define a comissão dos afiliados (0% a 100%), edita as taxas de frete por bairro de Luanda e aprova os estafetas.
-                  </p>
-                  <div className="pt-2 flex flex-wrap gap-2.5">
-                    <button
-                      onClick={() => setActiveTab('meus_produtos')}
-                      className="px-4 py-2 rounded-2xl bg-white text-red-600 font-bold text-xs shadow-sm hover:bg-stone-100 cursor-pointer flex items-center gap-1.5"
-                    >
-                      <Package className="w-4 h-4" />
-                      <span>Meus Produtos ({products.length})</span>
-                    </button>
-                    <button
-                      onClick={() => { setActiveTab('cadastrar_produtos'); setIsProductFormOpen(true); }}
-                      className="px-4 py-2 rounded-2xl bg-red-800 hover:bg-red-900 text-white font-bold text-xs shadow-sm cursor-pointer flex items-center gap-1.5"
-                    >
-                      <PlusCircle className="w-4 h-4" />
-                      <span>+ Cadastrar Produto</span>
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('taxa_entrega')}
-                      className="px-4 py-2 rounded-2xl bg-black/20 text-white font-bold text-xs hover:bg-black/30 border border-white/20 cursor-pointer flex items-center gap-1.5"
-                    >
-                      <MapPin className="w-4 h-4" />
-                      <span>Ajustar Taxas por Bairro</span>
-                    </button>
-                    <button
-                      onClick={onClose}
-                      className="px-4 py-2 rounded-2xl bg-black/20 text-white font-bold text-xs hover:bg-black/30 border border-white/20 cursor-pointer flex items-center gap-1.5"
-                    >
-                      <span>Ver Loja como Comprador</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </button>
+            <div className="space-y-4">
+              {/* Compact Executive Status Card */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-red-600 via-red-700 to-stone-900 text-white shadow-xs relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] uppercase font-black tracking-wider bg-black/30 px-2 py-0.5 rounded text-white inline-block">
+                      Administrador Geral
+                    </span>
+                    <span className="text-xs font-bold text-red-100 truncate">
+                      {currentUser?.name || 'Paulino Armando'}
+                    </span>
                   </div>
+                  <h3 className="text-lg sm:text-xl font-black">
+                    Controlo Central do AngolaMarket 01
+                  </h3>
+                  <p className="text-xs text-red-100 max-w-xl">
+                    Gestão de catálogo, stock, comissões de afiliados, taxas por bairro e frota de entregadores em Luanda.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => { setActiveTab('cadastrar_produtos'); setIsProductFormOpen(true); }}
+                    className="px-3.5 py-2 rounded-xl bg-white text-red-600 font-bold text-xs shadow-xs hover:bg-stone-100 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5" />
+                    <span>+ Novo Produto</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('meus_produtos')}
+                    className="px-3.5 py-2 rounded-xl bg-black/30 hover:bg-black/40 text-white font-bold text-xs border border-white/20 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Package className="w-3.5 h-3.5" />
+                    <span>Produtos ({products.length})</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('taxa_entrega')}
+                    className="px-3.5 py-2 rounded-xl bg-black/30 hover:bg-black/40 text-white font-bold text-xs border border-white/20 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <MapPin className="w-3.5 h-3.5" />
+                    <span>Taxas Bairros</span>
+                  </button>
                 </div>
               </div>
 
               {/* Quick Summary Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
                 <div 
                   onClick={() => setActiveTab('meus_produtos')}
-                  className="p-5 rounded-3xl bg-white border border-stone-200 shadow-sm hover:border-red-300 transition-all cursor-pointer space-y-2"
+                  className="p-3.5 sm:p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs hover:border-red-400 transition-all cursor-pointer space-y-1"
                 >
                   <div className="flex items-center justify-between text-stone-500">
-                    <span className="text-[11px] font-bold uppercase">Meus Produtos</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wide">Meus Produtos</span>
                     <Package className="w-4 h-4 text-red-600" />
                   </div>
-                  <span className="text-2xl font-black font-mono text-stone-900">{products.length}</span>
-                  <p className="text-[11px] text-stone-500">Gerenciar catálogo e stock</p>
+                  <span className="text-xl sm:text-2xl font-black font-mono text-stone-900 block">{products.length}</span>
+                  <p className="text-[10px] text-stone-500 truncate">Stock & Catálogo</p>
                 </div>
 
                 <div 
                   onClick={() => setActiveTab('gestao_pedidos')}
-                  className="p-5 rounded-3xl bg-white border border-stone-200 shadow-sm hover:border-red-300 transition-all cursor-pointer space-y-2"
+                  className="p-3.5 sm:p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs hover:border-red-400 transition-all cursor-pointer space-y-1"
                 >
                   <div className="flex items-center justify-between text-stone-500">
-                    <span className="text-[11px] font-bold uppercase">Pedidos Luanda</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wide">Pedidos Luanda</span>
                     <Layers className="w-4 h-4 text-blue-600" />
                   </div>
-                  <span className="text-2xl font-black font-mono text-stone-900">{orders.length}</span>
-                  <p className="text-[11px] text-stone-500">{orders.filter(o => o.status === 'em_transito').length} pedidos em rota hoje</p>
+                  <span className="text-xl sm:text-2xl font-black font-mono text-stone-900 block">{orders.length}</span>
+                  <p className="text-[10px] text-stone-500 truncate">{orders.filter(o => o.status === 'em_transito').length} em rota agora</p>
                 </div>
 
                 <div 
                   onClick={() => setActiveTab('gestao_entregadores')}
-                  className="p-5 rounded-3xl bg-white border border-stone-200 shadow-sm hover:border-red-300 transition-all cursor-pointer space-y-2"
+                  className="p-3.5 sm:p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs hover:border-red-400 transition-all cursor-pointer space-y-1"
                 >
                   <div className="flex items-center justify-between text-stone-500">
-                    <span className="text-[11px] font-bold uppercase">Estafetas Luanda</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wide">Estafetas</span>
                     <Truck className="w-4 h-4 text-amber-600" />
                   </div>
-                  <span className="text-2xl font-black font-mono text-stone-900">{approvedCouriers.length}</span>
-                  <p className="text-[11px] text-amber-700 font-bold">
-                    {pendingCouriers.length > 0 ? `${pendingCouriers.length} aguardando aprovação` : 'Frota 100% verificada'}
+                  <span className="text-xl sm:text-2xl font-black font-mono text-stone-900 block">{approvedCouriers.length}</span>
+                  <p className="text-[10px] text-amber-700 font-bold truncate">
+                    {pendingCouriers.length > 0 ? `${pendingCouriers.length} pendentes` : 'Frota verificada'}
                   </p>
                 </div>
 
                 <div 
                   onClick={() => setActiveTab('taxa_entrega')}
-                  className="p-5 rounded-3xl bg-white border border-stone-200 shadow-sm hover:border-red-300 transition-all cursor-pointer space-y-2"
+                  className="p-3.5 sm:p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs hover:border-red-400 transition-all cursor-pointer space-y-1"
                 >
                   <div className="flex items-center justify-between text-stone-500">
-                    <span className="text-[11px] font-bold uppercase">Bairros Ativos</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wide">Bairros Ativos</span>
                     <MapPin className="w-4 h-4 text-emerald-600" />
                   </div>
-                  <span className="text-2xl font-black font-mono text-stone-900">{luandaZones.length}</span>
-                  <p className="text-[11px] text-stone-500">Taxas configuradas em Kwanzas</p>
+                  <span className="text-xl sm:text-2xl font-black font-mono text-stone-900 block">{luandaZones.length}</span>
+                  <p className="text-[10px] text-stone-500 truncate">Taxas configuradas Kz</p>
                 </div>
               </div>
 

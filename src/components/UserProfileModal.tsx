@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, 
   User, 
@@ -53,7 +53,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [name, setName] = useState(currentUser.name || '');
   const [email, setEmail] = useState(currentUser.email || '');
   const [phone, setPhone] = useState(currentUser.phone || '');
-  const [avatar, setAvatar] = useState(currentUser.avatar || PRESET_AVATARS[0]);
+  const [avatar, setAvatar] = useState(currentUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80');
   const [avatarUrlInput, setAvatarUrlInput] = useState('');
   const [showAvatarUrlForm, setShowAvatarUrlForm] = useState(false);
 
@@ -77,6 +77,25 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
   const [savedSuccess, setSavedSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Always synchronize fields whenever currentUser or modal opens
+  useEffect(() => {
+    if (currentUser) {
+      setName(currentUser.name || '');
+      setEmail(currentUser.email || '');
+      setPhone(currentUser.phone || '');
+      setAvatar(currentUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80');
+      setPreferredPaymentMethod(currentUser.preferredPaymentMethod || 'dinheiro_entrega');
+      setMulticaixaPhone(currentUser.multicaixaExpressPhone || currentUser.phone || '');
+      setIban(currentUser.iban || '');
+      setBankName(currentUser.bankName || 'BAI');
+      setMunicipality(currentUser.defaultMunicipality || 'Luanda');
+      setNeighborhood(currentUser.defaultNeighborhood || '');
+      setStreetAddress(currentUser.defaultStreetAddress || '');
+      setReferencePoint(currentUser.defaultReferencePoint || '');
+      setPassword(currentUser.password || '');
+    }
+  }, [currentUser, isOpen]);
 
   if (!isOpen) return null;
 

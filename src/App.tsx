@@ -1177,6 +1177,7 @@ export default function App() {
         onOpenCourierPortal={handleOpenCourierPortal}
         onOpenAffiliatePortal={handleOpenAffiliatePortal}
         onOpenOrders={() => setCurrentView('orders')}
+        onLogout={handleLogout}
       />
 
     </div>

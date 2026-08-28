@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   Truck, 
@@ -11,6 +11,7 @@ import {
   DollarSign, 
   ShieldCheck, 
   Check, 
+  CheckCircle,
   ExternalLink, 
   Navigation, 
   Home, 
@@ -65,6 +66,19 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
   const [courierBank, setCourierBank] = useState(currentUser.bankName || '');
   const [courierExpress, setCourierExpress] = useState(currentUser.multicaixaExpressPhone || currentUser.phone || '');
   const [profileSaved, setProfileSaved] = useState(false);
+
+  useEffect(() => {
+    if (currentUser) {
+      setCourierName(currentUser.name || '');
+      setCourierPhone(currentUser.phone || '');
+      setCourierAvatar(currentUser.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80');
+      setCourierVehicle(currentUser.vehicle || 'Moto');
+      setCourierPlate(currentUser.licensePlate || '');
+      setCourierIban(currentUser.iban || '');
+      setCourierBank(currentUser.bankName || '');
+      setCourierExpress(currentUser.multicaixaExpressPhone || currentUser.phone || '');
+    }
+  }, [currentUser, isOpen]);
 
   const handleCourierAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -185,23 +199,23 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
     >
       <div className="flex flex-col w-full h-full bg-white overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200 bg-white sticky top-0 z-20 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-amber-500 text-stone-950 shadow-md">
-              <Truck className="w-6 h-6" />
+        <div className="flex items-center justify-between px-4 sm:px-6 py-2.5 sm:py-3 border-b border-stone-200 bg-white sticky top-0 z-20 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-amber-500 text-stone-950 shadow-xs">
+              <Truck className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="font-black text-lg text-stone-900">Portal do Entregador / Estafeta</h2>
-                <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-lg border ${
+                <h2 className="font-black text-base sm:text-lg text-stone-900 leading-none">Portal do Estafeta</h2>
+                <span className={`text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-md border ${
                   isApproved 
                     ? 'bg-emerald-100 text-emerald-800 border-emerald-200' 
                     : 'bg-amber-100 text-amber-800 border-amber-300 animate-pulse'
                 }`}>
-                  {isApproved ? '✓ Entregador Aprovado' : '⏳ Aguardando Aprovação do ADM'}
+                  {isApproved ? '✓ Aprovado' : '⏳ Em Análise'}
                 </span>
               </div>
-              <p className="text-xs text-stone-500">
+              <p className="text-[11px] text-stone-500 mt-0.5">
                 {currentUser.name} • {currentUser.vehicle || 'Moto'} ({currentUser.licensePlate || 'Luanda'})
               </p>
             </div>
@@ -209,24 +223,24 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
 
           <button
             onClick={onClose}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-stone-100 text-stone-700 hover:bg-amber-50 hover:text-amber-800 transition-colors font-bold text-xs cursor-pointer border border-stone-200"
+            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-stone-100 text-stone-700 hover:bg-amber-50 hover:text-amber-800 transition-colors font-bold text-xs cursor-pointer border border-stone-200"
           >
             <span>Voltar à Loja</span>
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* 5 Tabs Bar */}
-        <div className="px-4 sm:px-6 py-2.5 border-b border-stone-200 bg-stone-50 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+        <div className="px-3 sm:px-6 py-2 border-b border-stone-200 bg-stone-50 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
           {navTabs.map((t) => {
             const isActive = activeTab === t.tab;
             return (
               <button
                 key={t.tab}
                 onClick={() => setActiveTab(t.tab)}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                   isActive 
-                    ? 'bg-amber-500 text-stone-950 shadow-sm font-black' 
+                    ? 'bg-amber-500 text-stone-950 shadow-xs font-black' 
                     : 'bg-white text-stone-700 hover:bg-stone-200 border border-stone-200'
                 }`}
               >
@@ -244,92 +258,102 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
 
         {/* Status Notification if Pending */}
         {isPending && (
-          <div className="mx-6 mt-4 p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="mx-4 sm:mx-6 mt-3 p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <div>
               <p className="font-bold">Conta de Entregador em Análise</p>
               <p className="text-amber-800 text-[11px] mt-0.5">
-                A sua conta foi registada e aguarda a aprovação do Administrador. Pode entrar na conta de ADM para aprovar a sua conta se estiver a testar a plataforma.
+                A sua conta foi registada e aguarda a aprovação do Administrador.
               </p>
             </div>
           </div>
         )}
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6 bg-stone-50/50">
+        <div className="flex-1 overflow-y-auto p-3.5 sm:p-5 bg-stone-50/50">
 
           {/* TAB 1: HOME */}
           {activeTab === 'home' && (
-            <div className="space-y-6">
-              {/* Operational Banner */}
-              <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-amber-500 via-amber-600 to-stone-900 text-stone-950 shadow-md relative overflow-hidden">
-                <div className="relative z-10 space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[10px] uppercase font-black tracking-widest bg-stone-950 text-white px-3 py-1 rounded-full inline-block">
-                      Operações Luanda Express
+            <div className="space-y-4">
+              {/* Compact Executive Status Card */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-600 to-stone-900 text-stone-950 shadow-xs relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] uppercase font-black tracking-wider bg-stone-950 text-white px-2 py-0.5 rounded inline-block">
+                      Estafeta Luanda
                     </span>
-                    <span className="text-[10px] uppercase font-black tracking-widest bg-emerald-500 text-stone-950 px-3 py-1 rounded-full inline-block">
-                      Comissão: 1.000 Kz / Entrega
+                    <span className="text-[9px] uppercase font-black tracking-wider bg-emerald-500 text-stone-950 px-2 py-0.5 rounded inline-block">
+                      1.000 Kz / Entrega
                     </span>
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-black text-stone-950">
+                  <h3 className="text-lg sm:text-xl font-black text-stone-950">
                     Pronto para a Rota, {currentUser.name.split(' ')[0]}?
                   </h3>
-                  <p className="text-xs sm:text-sm text-stone-900 max-w-xl leading-relaxed font-medium">
-                    Ganha <strong>1.000 Kz por cada entrega realizada com sucesso</strong> (retirado do lucro da taxa de frete). Cobrança por TPA Multicaixa ou Dinheiro em mãos ao cliente.
+                  <p className="text-xs text-stone-900 max-w-xl font-medium">
+                    Cobrança no ato da entrega (Multicaixa Express ou Dinheiro). Ganho fixo garantido por cada entrega bem-sucedida.
                   </p>
-                  <div className="pt-2 flex flex-wrap gap-2.5">
-                    <button
-                      onClick={() => setActiveTab('pedidos')}
-                      className="px-5 py-2.5 rounded-2xl bg-stone-950 text-white font-bold text-xs shadow-sm hover:bg-stone-900 cursor-pointer flex items-center gap-1.5"
-                    >
-                      <Layers className="w-4 h-4 text-amber-400" />
-                      <span>Ver Entregas Pendentes ({assignedOrders.filter(o => o.status !== 'entregue').length})</span>
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('carteira')}
-                      className="px-4 py-2.5 rounded-2xl bg-white text-stone-900 font-bold text-xs hover:bg-stone-100 cursor-pointer flex items-center gap-1.5"
-                    >
-                      <Wallet className="w-4 h-4 text-emerald-600" />
-                      <span>Ver Meus Ganhos ({formatKwanzas(totalEarnedDeliveryFees)})</span>
-                    </button>
-                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => setActiveTab('pedidos')}
+                    className="px-3.5 py-2 rounded-xl bg-stone-950 text-white font-bold text-xs shadow-xs hover:bg-stone-900 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Layers className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Entregas ({assignedOrders.filter(o => o.status !== 'entregue').length})</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('carteira')}
+                    className="px-3.5 py-2 rounded-xl bg-white text-stone-900 font-bold text-xs hover:bg-stone-100 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Wallet className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Ganhos ({formatKwanzas(totalEarnedDeliveryFees)})</span>
+                  </button>
                 </div>
               </div>
 
               {/* Status Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3.5">
                 <div 
                   onClick={() => setActiveTab('pedidos')}
-                  className="p-5 rounded-3xl bg-white border border-stone-200 shadow-sm hover:border-amber-400 transition-all cursor-pointer space-y-1"
+                  className="p-3.5 sm:p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs hover:border-amber-400 transition-all cursor-pointer space-y-1"
                 >
-                  <span className="text-[10px] uppercase font-bold text-stone-400">Pacotes a Entregar</span>
-                  <span className="text-2xl font-black font-mono text-stone-900 block">
-                    {assignedOrders.filter(o => o.status !== 'entregue').length}
+                  <div className="flex items-center justify-between text-stone-500">
+                    <span className="text-[10px] font-bold uppercase tracking-wide">Pacotes a Entregar</span>
+                    <Layers className="w-4 h-4 text-amber-600" />
+                  </div>
+                  <span className="text-xl sm:text-2xl font-black font-mono text-stone-900 block">
+                    {assignedOrders.filter(o => o.status !== 'entregue' && o.status !== 'cancelado').length}
                   </span>
-                  <span className="text-[11px] text-amber-700 font-semibold">Em trânsito em Luanda</span>
+                  <p className="text-[10px] text-stone-500 truncate">Encomendas ativas em Luanda</p>
                 </div>
 
                 <div 
                   onClick={() => setActiveTab('carteira')}
-                  className="p-5 rounded-3xl bg-white border border-stone-200 shadow-sm hover:border-amber-400 transition-all cursor-pointer space-y-1"
+                  className="p-3.5 sm:p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs hover:border-amber-400 transition-all cursor-pointer space-y-1"
                 >
-                  <span className="text-[10px] uppercase font-bold text-stone-400">Meus Ganhos Acumulados</span>
-                  <span className="text-2xl font-black font-mono text-emerald-600 block">
+                  <div className="flex items-center justify-between text-stone-500">
+                    <span className="text-[10px] font-bold uppercase tracking-wide">Ganhos em Fretes</span>
+                    <Wallet className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <span className="text-xl sm:text-2xl font-black font-mono text-emerald-600 block">
                     {formatKwanzas(totalEarnedDeliveryFees)}
                   </span>
-                  <span className="text-[11px] text-stone-500 font-medium">1.000 Kz × {currentUser.totalDeliveriesCompleted ?? 0} entregas</span>
+                  <p className="text-[10px] text-stone-500 truncate">Acumulado de entregas realizadas</p>
                 </div>
 
                 <div 
-                  onClick={() => setActiveTab('dashboard')}
-                  className="p-5 rounded-3xl bg-white border border-stone-200 shadow-sm hover:border-amber-400 transition-all cursor-pointer space-y-1"
+                  onClick={() => setActiveTab('historico')}
+                  className="p-3.5 sm:p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs hover:border-amber-400 transition-all cursor-pointer space-y-1"
                 >
-                  <span className="text-[10px] uppercase font-bold text-stone-400">Total Concluído</span>
-                  <span className="text-2xl font-black font-mono text-stone-900 block">
-                    {currentUser.totalDeliveriesCompleted ?? 0}
+                  <div className="flex items-center justify-between text-stone-500">
+                    <span className="text-[10px] font-bold uppercase tracking-wide">Total Entregues</span>
+                    <CheckCircle className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <span className="text-xl sm:text-2xl font-black font-mono text-stone-900 block">
+                    {completedDeliveries.length}
                   </span>
-                  <span className="text-[11px] text-emerald-700 font-bold">100% com sucesso</span>
+                  <p className="text-[10px] text-stone-500 truncate">Entregas pagas e verificadas</p>
                 </div>
               </div>
             </div>
