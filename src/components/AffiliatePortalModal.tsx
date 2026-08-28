@@ -77,7 +77,7 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
   const [affPhone, setAffPhone] = useState(currentUser.phone || '');
   const [affAvatar, setAffAvatar] = useState(currentUser.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80');
   const [affIban, setAffIban] = useState(currentUser.iban || '');
-  const [affBank, setAffBank] = useState(currentUser.bankName || 'BAI');
+  const [affBank, setAffBank] = useState(currentUser.bankName || '');
   const [affExpress, setAffExpress] = useState(currentUser.multicaixaExpressPhone || currentUser.phone || '');
   const [profileSaved, setProfileSaved] = useState(false);
 
@@ -100,10 +100,10 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
   const generalAffiliateUrl = `${baseUrl}/?ref=${affiliateCode}`;
 
   const commissionRate = currentUser.commissionRate || 8;
-  const totalSales = currentUser.totalSalesCount || 14;
-  const totalEarned = currentUser.totalCommissionEarned || 148000;
-  const balance = currentUser.balanceAOA || 62000;
-  const withdrawn = currentUser.withdrawnAOA || 86000;
+  const totalSales = currentUser.totalSalesCount || 0;
+  const totalEarned = currentUser.totalCommissionEarned || 0;
+  const balance = currentUser.balanceAOA || 0;
+  const withdrawn = currentUser.withdrawnAOA || 0;
   const affiliatedIds = currentUser.affiliatedProductIds || [];
 
   // Payout requests for this affiliate
@@ -112,7 +112,7 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
   );
 
   // Filter orders made through this affiliate
-  const affiliateOrders = orders.filter(o => o.affiliateCode === affiliateCode || true).slice(0, 10);
+  const affiliateOrders = orders.filter(o => o.affiliateCode && o.affiliateCode === affiliateCode).slice(0, 10);
 
   const handleCopyGeneralLink = () => {
     navigator.clipboard.writeText(generalAffiliateUrl);

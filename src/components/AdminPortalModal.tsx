@@ -167,13 +167,13 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
   const [isZoneFormOpen, setIsZoneFormOpen] = useState(false);
   const [editingZoneId, setEditingZoneId] = useState<string | null>(null);
   const [zoneName, setZoneName] = useState('');
-  const [zoneMunicipality, setZoneMunicipality] = useState('Talatona');
+  const [zoneMunicipality, setZoneMunicipality] = useState('Luanda');
   const [zoneNeighborhood, setZoneNeighborhood] = useState('');
-  const [zoneFee, setZoneFee] = useState('2000');
-  const [zoneFeeDoor, setZoneFeeDoor] = useState('2000');
-  const [zoneFeeBusStop, setZoneFeeBusStop] = useState('1200');
-  const [zoneBusStops, setZoneBusStops] = useState('Paragem Principal, Paragem do Mercado');
-  const [zoneHours, setZoneHours] = useState('1 a 3 horas');
+  const [zoneFee, setZoneFee] = useState('');
+  const [zoneFeeDoor, setZoneFeeDoor] = useState('');
+  const [zoneFeeBusStop, setZoneFeeBusStop] = useState('');
+  const [zoneBusStops, setZoneBusStops] = useState('');
+  const [zoneHours, setZoneHours] = useState('24 a 48 horas');
   const [zoneDeliverySectionTab, setZoneDeliverySectionTab] = useState<'todas' | 'porta' | 'paragem'>('todas');
 
   // Search and inventory filter in "Meus Produtos"
@@ -247,9 +247,9 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
   const [adminEmail, setAdminEmail] = useState(currentUser?.email || 'paulinoarmando62@gmail.com');
   const [adminPhone, setAdminPhone] = useState(currentUser?.phone || '+244 938 243 909');
   const [adminAvatar, setAdminAvatar] = useState(currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80');
-  const [adminIban, setAdminIban] = useState(currentUser?.iban || 'AO06.0040.0000.1234.5678.9012.3');
+  const [adminIban, setAdminIban] = useState(currentUser?.iban || '');
   const [adminMulticaixaExpress, setAdminMulticaixaExpress] = useState(currentUser?.multicaixaExpressPhone || '+244 938 243 909');
-  const [adminBankName, setAdminBankName] = useState(currentUser?.bankName || 'BAI');
+  const [adminBankName, setAdminBankName] = useState(currentUser?.bankName || '');
   const [adminPassword, setAdminPassword] = useState(currentUser?.password || 'Armando@123');
   const [profileSaved, setProfileSaved] = useState(false);
 
@@ -298,7 +298,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
   // Handle Product Save
   const handleSaveProduct = (e: React.FormEvent) => {
     e.preventDefault();
-    const priceNum = Number(prodPrice.toString().replace(/[^0-9]/g, '')) || 10000;
+    const priceNum = Number(prodPrice.toString().replace(/[^0-9]/g, '')) || 0;
     const origNum = prodOrigPrice ? Number(prodOrigPrice.toString().replace(/[^0-9]/g, '')) : undefined;
     const discount = origNum && origNum > priceNum ? Math.round(((origNum - priceNum) / origNum) * 100) : undefined;
     const featuresArr = prodFeatures.split('\n').map(f => f.trim()).filter(Boolean);
@@ -332,7 +332,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
         setTimeout(() => setStockFeedback(null), 3500);
       }
     } else {
-      const stockNum = Math.max(0, Number(prodStock) || 10);
+      const stockNum = Math.max(0, Number(prodStock) || 0);
       const newProd: Product = {
         id: `adm-prod-${Date.now()}`,
         title: prodTitle || 'Novo Artigo AngolaMarket 01',
@@ -341,7 +341,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
         originalPrice: origNum,
         discountPercent: discount,
         rating: 5.0,
-        reviewCount: 1,
+        reviewCount: 0,
         image: mainImg,
         gallery: galleryImgs.length > 0 ? galleryImgs : [mainImg],
         inStock: stockNum > 0,
@@ -352,11 +352,11 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
         seller: {
           id: currentUser?.id || 'admin-master',
           name: 'AngolaMarket 01 (Loja Oficial)',
-          location: 'Talatona & São Paulo, Luanda',
+          location: 'Luanda, Angola',
           rating: 5.0,
-          salesCount: 120,
+          salesCount: 0,
           verified: true,
-          phone: currentUser?.phone || '+244 923 000 001'
+          phone: currentUser?.phone || '+244 938 243 909'
         },
         condition: prodCondition,
         description: prodDesc || `${prodTitle} disponível com pronta entrega em Luanda e pagamento no ato.`,
@@ -406,8 +406,8 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
   // Handle Zone Save (Door vs Bus Stop Configuration)
   const handleSaveZone = (e: React.FormEvent) => {
     e.preventDefault();
-    const feeDoorNum = Number(zoneFeeDoor.toString().replace(/[^0-9]/g, '')) || 2000;
-    const feeStopNum = Number(zoneFeeBusStop.toString().replace(/[^0-9]/g, '')) || 1200;
+    const feeDoorNum = Number(zoneFeeDoor.toString().replace(/[^0-9]/g, '')) || 0;
+    const feeStopNum = Number(zoneFeeBusStop.toString().replace(/[^0-9]/g, '')) || 0;
     const stopsList = zoneBusStops.split(',').map(s => s.trim()).filter(Boolean);
 
     if (editingZoneId) {
@@ -446,9 +446,9 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
     setEditingZoneId(null);
     setZoneName('');
     setZoneNeighborhood('');
-    setZoneFee('2000');
-    setZoneFeeDoor('2000');
-    setZoneFeeBusStop('1200');
+    setZoneFee('');
+    setZoneFeeDoor('');
+    setZoneFeeBusStop('');
     setZoneBusStops('');
   };
 
@@ -703,7 +703,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                   // Base or order count
                   const baseCount = c.todayDeliveriesCount ?? 0;
                   const totalToday = Math.max(ordersToday.length, baseCount);
-                  const feesToday = ordersToday.reduce((sum, o) => sum + (o.deliveryFee || 1500), 0);
+                  const feesToday = ordersToday.reduce((sum, o) => sum + (o.deliveryFee || 0), 0);
 
                   return {
                     courier: c,
@@ -1209,7 +1209,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                     <Wallet className="w-5 h-5 text-red-500" />
                   </div>
                   <span className="text-3xl sm:text-4xl font-black font-mono text-white block">
-                    {formatKwanzas(platformNetProfit + 180000)}
+                    {formatKwanzas(platformNetProfit)}
                   </span>
                   <div className="pt-2 flex items-center gap-2 text-xs text-stone-300">
                     <CreditCard className="w-4 h-4 text-emerald-400" />
@@ -1238,7 +1238,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                 {withdrawalSuccess ? (
                   <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center gap-2">
                     <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                    <span>Transferência de {formatKwanzas(Number(withdrawalAmount) || 50000)} enviada com sucesso para o IBAN {adminIban}!</span>
+                    <span>Transferência de {formatKwanzas(Number(withdrawalAmount) || 0)} enviada com sucesso para o IBAN {adminIban || 'configurado'}!</span>
                   </div>
                 ) : (
                   <form onSubmit={handleWithdrawalSubmit} className="space-y-3">
@@ -2127,30 +2127,38 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
               )}
 
               {/* Neighborhoods Dual-Section List */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {luandaZones.map((z) => {
-                  const doorFee = z.deliveryFeeDoor || z.deliveryFee;
-                  const busStopFee = z.deliveryFeeBusStop || Math.round(z.deliveryFee * 0.6);
+              {luandaZones.length === 0 ? (
+                <div className="p-8 text-center bg-white border border-stone-200 rounded-3xl space-y-3">
+                  <Navigation className="w-8 h-8 text-stone-400 mx-auto" />
+                  <h4 className="font-bold text-sm text-stone-900">Nenhum Bairro ou Taxa Cadastrada</h4>
+                  <p className="text-xs text-stone-500 max-w-md mx-auto">
+                    Configure os municípios de Luanda (Talatona, Maianga, Kilamba, Viana, etc.) com as taxas de entrega reais à porta e na paragem clicando no botão acima.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {luandaZones.map((z) => {
+                    const doorFee = z.deliveryFeeDoor || z.deliveryFee;
+                    const busStopFee = z.deliveryFeeBusStop || Math.round(z.deliveryFee * 0.6);
 
-                  return (
-                    <div 
-                      key={z.id}
-                      className="p-4 rounded-3xl bg-white border border-stone-200 shadow-sm flex flex-col justify-between space-y-3 hover:border-red-300 transition-all"
-                    >
-                      <div>
-                        <div className="flex items-start justify-between gap-2">
-                          <span className="text-[10px] uppercase tracking-wider font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-lg border border-red-100">
-                            {z.municipality || 'Luanda'}
-                          </span>
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => handleEditZoneClick(z)}
-                              className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 transition-colors cursor-pointer"
-                              title="Editar Taxas deste Bairro"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                            </button>
-                            {luandaZones.length > 1 && (
+                    return (
+                      <div 
+                        key={z.id}
+                        className="p-4 rounded-3xl bg-white border border-stone-200 shadow-sm flex flex-col justify-between space-y-3 hover:border-red-300 transition-all"
+                      >
+                        <div>
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="text-[10px] uppercase tracking-wider font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-lg border border-red-100">
+                              {z.municipality || 'Luanda'}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => handleEditZoneClick(z)}
+                                className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 transition-colors cursor-pointer"
+                                title="Editar Taxas deste Bairro"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
                               <button
                                 onClick={() => onDeleteZone(z.id)}
                                 className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors cursor-pointer"
@@ -2158,78 +2166,78 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
-                            )}
+                            </div>
+                          </div>
+
+                          <h4 className="font-bold text-xs text-stone-900 mt-2 line-clamp-2">
+                            {z.neighborhood || z.name}
+                          </h4>
+                          <div className="flex items-center gap-1 text-[11px] text-stone-500 mt-0.5">
+                            <Clock className="w-3.5 h-3.5 text-stone-400" />
+                            <span>{z.estimatedHours}</span>
                           </div>
                         </div>
 
-                        <h4 className="font-bold text-xs text-stone-900 mt-2 line-clamp-2">
-                          {z.neighborhood || z.name}
-                        </h4>
-                        <div className="flex items-center gap-1 text-[11px] text-stone-500 mt-0.5">
-                          <Clock className="w-3.5 h-3.5 text-stone-400" />
-                          <span>{z.estimatedHours}</span>
+                        {/* DUAL CONFIGURATION CARDS PER NEIGHBORHOOD */}
+                        <div className="space-y-2 pt-2 border-t border-stone-100">
+                          {/* Secção 1: À Porta (Shown if filter is 'todas' or 'porta') */}
+                          {(zoneDeliverySectionTab === 'todas' || zoneDeliverySectionTab === 'porta') && (
+                            <div className="p-2.5 rounded-2xl bg-red-50/60 border border-red-100 flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                <Home className="w-3.5 h-3.5 text-red-600" />
+                                <div>
+                                  <span className="text-[11px] font-bold text-stone-900 block leading-none">Taxa à Porta</span>
+                                  <span className="text-[9px] text-stone-500 leading-none">1.000 Kz estafeta</span>
+                                </div>
+                              </div>
+                              <span className="font-mono font-black text-xs text-red-600 bg-white px-2 py-1 rounded-xl border border-red-200">
+                                {formatKwanzas(doorFee)}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Secção 2: Na Paragem (Shown if filter is 'todas' or 'paragem') */}
+                          {(zoneDeliverySectionTab === 'todas' || zoneDeliverySectionTab === 'paragem') && (
+                            <div className="p-2.5 rounded-2xl bg-emerald-50/60 border border-emerald-100 flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                <Navigation className="w-3.5 h-3.5 text-emerald-600" />
+                                <div>
+                                  <span className="text-[11px] font-bold text-stone-900 block leading-none">Taxa na Paragem</span>
+                                  <span className="text-[9px] text-stone-500 leading-none">1.000 Kz estafeta</span>
+                                </div>
+                              </div>
+                              <span className="font-mono font-black text-xs text-emerald-700 bg-white px-2 py-1 rounded-xl border border-emerald-200">
+                                {formatKwanzas(busStopFee)}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Registered Bus Stops Preview */}
+                          {z.popularBusStops && z.popularBusStops.length > 0 && (
+                            <div className="pt-1">
+                              <span className="text-[9px] uppercase font-bold text-stone-400 block mb-1">
+                                Paragens Cadastradas ({z.popularBusStops.length}):
+                              </span>
+                              <div className="flex flex-wrap gap-1">
+                                {z.popularBusStops.slice(0, 3).map((st, i) => (
+                                  <span key={i} className="text-[9px] bg-stone-100 text-stone-600 px-1.5 py-0.5 rounded-md font-medium">
+                                    🚏 {st.replace('Paragem d', 'D').replace('Paragem do ', '')}
+                                  </span>
+                                ))}
+                                {z.popularBusStops.length > 3 && (
+                                  <span className="text-[9px] bg-stone-100 text-stone-400 px-1.5 py-0.5 rounded-md">
+                                    +{z.popularBusStops.length - 3}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
-
-                      {/* DUAL CONFIGURATION CARDS PER NEIGHBORHOOD */}
-                      <div className="space-y-2 pt-2 border-t border-stone-100">
-                        {/* Secção 1: À Porta (Shown if filter is 'todas' or 'porta') */}
-                        {(zoneDeliverySectionTab === 'todas' || zoneDeliverySectionTab === 'porta') && (
-                          <div className="p-2.5 rounded-2xl bg-red-50/60 border border-red-100 flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
-                              <Home className="w-3.5 h-3.5 text-red-600" />
-                              <div>
-                                <span className="text-[11px] font-bold text-stone-900 block leading-none">Taxa à Porta</span>
-                                <span className="text-[9px] text-stone-500 leading-none">1.000 Kz estafeta</span>
-                              </div>
-                            </div>
-                            <span className="font-mono font-black text-xs text-red-600 bg-white px-2 py-1 rounded-xl border border-red-200">
-                              {formatKwanzas(doorFee)}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Secção 2: Na Paragem (Shown if filter is 'todas' or 'paragem') */}
-                        {(zoneDeliverySectionTab === 'todas' || zoneDeliverySectionTab === 'paragem') && (
-                          <div className="p-2.5 rounded-2xl bg-emerald-50/60 border border-emerald-100 flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
-                              <Navigation className="w-3.5 h-3.5 text-emerald-600" />
-                              <div>
-                                <span className="text-[11px] font-bold text-stone-900 block leading-none">Taxa na Paragem</span>
-                                <span className="text-[9px] text-stone-500 leading-none">1.000 Kz estafeta</span>
-                              </div>
-                            </div>
-                            <span className="font-mono font-black text-xs text-emerald-700 bg-white px-2 py-1 rounded-xl border border-emerald-200">
-                              {formatKwanzas(busStopFee)}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Registered Bus Stops Preview */}
-                        {z.popularBusStops && z.popularBusStops.length > 0 && (
-                          <div className="pt-1">
-                            <span className="text-[9px] uppercase font-bold text-stone-400 block mb-1">
-                              Paragens Cadastradas ({z.popularBusStops.length}):
-                            </span>
-                            <div className="flex flex-wrap gap-1">
-                              {z.popularBusStops.slice(0, 3).map((st, i) => (
-                                <span key={i} className="text-[9px] bg-stone-100 text-stone-600 px-1.5 py-0.5 rounded-md font-medium">
-                                  🚏 {st.replace('Paragem d', 'D').replace('Paragem do ', '')}
-                                </span>
-                              ))}
-                              {z.popularBusStops.length > 3 && (
-                                <span className="text-[9px] bg-stone-100 text-stone-500 px-1 py-0.5 rounded-md">
-                                  +{z.popularBusStops.length - 3}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 

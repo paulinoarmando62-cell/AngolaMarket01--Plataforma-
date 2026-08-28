@@ -20,12 +20,13 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { Product, LuandaZone } from '../types';
-import { LUANDA_ZONES, formatKwanzas } from '../data/mockData';
+import { formatKwanzas } from '../data/mockData';
 
 interface ProductDetailModalProps {
   product: Product | null;
   onClose: () => void;
   selectedZone: LuandaZone;
+  luandaZones?: LuandaZone[];
   onSelectZone: (zone: LuandaZone) => void;
   onAddToCart: (product: Product, quantity: number) => void;
   onBuyNow: (product: Product, quantity: number) => void;
@@ -35,6 +36,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   product,
   onClose,
   selectedZone,
+  luandaZones = [],
   onSelectZone,
   onAddToCart,
   onBuyNow,
@@ -235,58 +237,69 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                       <Truck className="w-4 h-4 text-red-600" />
                       Calcular Frete em Luanda:
                     </span>
-                    <span className="text-[11px] text-stone-500 font-medium">Selecione o seu bairro</span>
+                    <span className="text-[11px] text-stone-500 font-medium">
+                      {luandaZones.length > 0 ? 'Selecione o seu bairro' : 'Cobertura em toda Luanda'}
+                    </span>
                   </div>
 
-                  <select
-                    value={selectedZone.id}
-                    onChange={(e) => {
-                      const found = LUANDA_ZONES.find(z => z.id === e.target.value);
-                      if (found) onSelectZone(found);
-                    }}
-                    className="w-full bg-white border border-stone-200 rounded-2xl p-3 text-xs text-stone-900 font-semibold focus:outline-none focus:border-red-500 cursor-pointer shadow-2xs"
-                  >
-                    {LUANDA_ZONES.map(z => (
-                      <option key={z.id} value={z.id}>
-                        {z.name} ({z.estimatedHours})
-                      </option>
-                    ))}
-                  </select>
+                  {luandaZones.length > 0 ? (
+                    <select
+                      value={selectedZone.id}
+                      onChange={(e) => {
+                        const found = luandaZones.find(z => z.id === e.target.value);
+                        if (found) onSelectZone(found);
+                      }}
+                      className="w-full bg-white border border-stone-200 rounded-2xl p-3 text-xs text-stone-900 font-semibold focus:outline-none focus:border-red-500 cursor-pointer shadow-2xs"
+                    >
+                      {luandaZones.map(z => (
+                        <option key={z.id} value={z.id}>
+                          {z.neighborhood || z.name} ({z.municipality}) — {z.estimatedHours}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="p-3 bg-white rounded-xl border border-stone-200 text-xs text-stone-600">
+                      <p className="font-semibold text-stone-800">Entregas em todos os bairros de Luanda</p>
+                      <p className="text-[11px] text-stone-500 mt-0.5">Pagamento seguro na entrega (Dinheiro ou Multicaixa Express).</p>
+                    </div>
+                  )}
 
                   {/* Delivery Option Toggle in Product Detail */}
-                  <div className="grid grid-cols-2 gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setDeliveryMethodTab('porta')}
-                      className={`p-2.5 rounded-xl text-xs font-bold transition-all text-left border cursor-pointer ${
-                        deliveryMethodTab === 'porta'
-                          ? 'bg-red-50 text-red-900 border-red-300 shadow-2xs'
-                          : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-100'
-                      }`}
-                    >
-                      <span className="block text-[10px] uppercase font-bold text-red-600">🏠 À Porta de Casa</span>
-                      <span className="font-mono font-black text-xs text-stone-900">{formatKwanzas(doorFee)}</span>
-                    </button>
+                  {doorFee > 0 || busStopFee > 0 ? (
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setDeliveryMethodTab('porta')}
+                        className={`p-2.5 rounded-xl text-xs font-bold transition-all text-left border cursor-pointer ${
+                          deliveryMethodTab === 'porta'
+                            ? 'bg-red-50 text-red-900 border-red-300 shadow-2xs'
+                            : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-100'
+                        }`}
+                      >
+                        <span className="block text-[10px] uppercase font-bold text-red-600">🏠 À Porta de Casa</span>
+                        <span className="font-mono font-black text-xs text-stone-900">{formatKwanzas(doorFee)}</span>
+                      </button>
 
-                    <button
-                      type="button"
-                      onClick={() => setDeliveryMethodTab('paragem')}
-                      className={`p-2.5 rounded-xl text-xs font-bold transition-all text-left border cursor-pointer ${
-                        deliveryMethodTab === 'paragem'
-                          ? 'bg-emerald-50 text-emerald-900 border-emerald-300 shadow-2xs'
-                          : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-100'
-                      }`}
-                    >
-                      <span className="block text-[10px] uppercase font-bold text-emerald-700">🚏 Na Paragem</span>
-                      <span className="font-mono font-black text-xs text-stone-900">{formatKwanzas(busStopFee)}</span>
-                    </button>
-                  </div>
+                      <button
+                        type="button"
+                        onClick={() => setDeliveryMethodTab('paragem')}
+                        className={`p-2.5 rounded-xl text-xs font-bold transition-all text-left border cursor-pointer ${
+                          deliveryMethodTab === 'paragem'
+                            ? 'bg-emerald-50 text-emerald-900 border-emerald-300 shadow-2xs'
+                            : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-100'
+                        }`}
+                      >
+                        <span className="block text-[10px] uppercase font-bold text-emerald-700">🚏 Na Paragem</span>
+                        <span className="font-mono font-black text-xs text-stone-900">{formatKwanzas(busStopFee)}</span>
+                      </button>
+                    </div>
+                  ) : null}
 
                   <div className="flex items-center justify-between text-xs text-stone-600 pt-1 border-t border-stone-200/60">
                     <span>Prazo Estimado de Chegada:</span>
                     <span className="text-emerald-700 font-bold flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5" />
-                      {selectedZone.estimatedHours}
+                      {selectedZone.estimatedHours || '24 a 48 horas'}
                     </span>
                   </div>
                 </div>

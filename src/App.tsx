@@ -95,6 +95,20 @@ const LOCAL_STORAGE_USERS_KEY = 'angolamarket01_users';
 const LOCAL_STORAGE_CURRENT_USER_KEY = 'angolamarket01_current_user';
 const LOCAL_STORAGE_PAYOUT_REQUESTS_KEY = 'angolamarket01_payout_requests';
 
+const DEFAULT_BLANK_ZONE: LuandaZone = {
+  id: 'luanda_geral',
+  name: 'Luanda (A configurar)',
+  municipality: 'Luanda',
+  neighborhood: 'Luanda',
+  estimatedHours: 'A combinar',
+  deliveryFee: 0,
+  deliveryFeeDoor: 0,
+  deliveryFeeBusStop: 0,
+  popularBusStops: [],
+  popularAreas: [],
+  active: true
+};
+
 export default function App() {
   // Users state (Admin, Couriers, Affiliates, Buyers)
   const [users, setUsers] = useState<AppUser[]>(() => {
@@ -107,6 +121,8 @@ export default function App() {
           const realOnly = parsed.filter((u: AppUser) => 
             !u.id.includes('demo') && 
             !u.id.includes('test') && 
+            !u.id.includes('courier-') &&
+            !u.id.includes('affiliate-') &&
             !(u.email || '').includes('exemplo.com') && 
             !(u.email || '').includes('teste.ao')
           );
@@ -151,12 +167,25 @@ export default function App() {
       const saved = localStorage.getItem(LOCAL_STORAGE_ZONES_LIST_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          // Filter out old mock zones
+          const realZones = parsed.filter((z: LuandaZone) => 
+            z.id && 
+            !z.id.startsWith('luanda_') && 
+            !z.id.startsWith('talatona_') && 
+            !z.id.startsWith('belas_') && 
+            !z.id.startsWith('cazenga_') && 
+            !z.id.startsWith('viana_') && 
+            !z.id.startsWith('cacuaco_') && 
+            !z.id.startsWith('kilamba_')
+          );
+          return realZones;
+        }
       }
     } catch (e) {
       // fallback
     }
-    return LUANDA_ZONES;
+    return [];
   });
 
   // Selected Luanda Delivery Zone for checkout / browsing
@@ -165,12 +194,12 @@ export default function App() {
       const saved = localStorage.getItem(LOCAL_STORAGE_ZONE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.id) return parsed;
+        if (parsed && parsed.id && parsed.id.startsWith('zone-')) return parsed;
       }
     } catch (e) {
       // fallback
     }
-    return LUANDA_ZONES[0];
+    return DEFAULT_BLANK_ZONE;
   });
 
   // Products state (Solely owned & published by the ADM)
@@ -180,19 +209,9 @@ export default function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          // Purge any old fake mock items
+          // Only keep real products added by the Admin
           const realProducts = parsed.filter((p: Product) => 
-            !p.id.startsWith('prod-iphone-') &&
-            !p.id.startsWith('prod-samsung-') &&
-            !p.id.startsWith('prod-gerador-') &&
-            !p.id.startsWith('prod-cesta-') &&
-            !p.id.startsWith('prod-peruca-') &&
-            !p.id.startsWith('prod-vestido-') &&
-            !p.id.startsWith('prod-tenis-') &&
-            !p.id.startsWith('prod-airfryer-') &&
-            !p.id.startsWith('prod-jbl-') &&
-            !p.id.startsWith('prod-bateria-') &&
-            !p.id.startsWith('prod-fraldas-')
+            p.id && (p.id.startsWith('adm-prod-') || p.id.startsWith('real-prod-'))
           );
           return realProducts;
         }
@@ -200,7 +219,7 @@ export default function App() {
     } catch (e) {
       // fallback
     }
-    return INITIAL_PRODUCTS;
+    return [];
   });
 
   // Cart state
@@ -209,7 +228,9 @@ export default function App() {
       const saved = localStorage.getItem(LOCAL_STORAGE_CART_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.filter(it => it.product?.id && (it.product.id.startsWith('adm-prod-') || it.product.id.startsWith('real-prod-')));
+        }
       }
     } catch (e) {
       // fallback
@@ -223,7 +244,16 @@ export default function App() {
       const saved = localStorage.getItem(LOCAL_STORAGE_ORDERS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) {
+          const realOrders = parsed.filter((o: Order) => 
+            o.id && 
+            !o.id.startsWith('ord-1') && 
+            !o.id.startsWith('ord-2') && 
+            !o.id.startsWith('ord-3') && 
+            !o.id.startsWith('ord-demo')
+          );
+          return realOrders;
+        }
       }
     } catch (e) {
       // fallback
@@ -237,12 +267,20 @@ export default function App() {
       const saved = localStorage.getItem(LOCAL_STORAGE_PAYOUT_REQUESTS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          const realPayouts = parsed.filter((p: PayoutRequest) => 
+            p.id && 
+            !p.id.startsWith('payout-1') && 
+            !p.id.startsWith('payout-2') && 
+            !p.id.startsWith('payout-3')
+          );
+          return realPayouts;
+        }
       }
     } catch (e) {
       // fallback
     }
-    return INITIAL_PAYOUT_REQUESTS;
+    return [];
   });
 
   // Navigation & Filtering
@@ -684,7 +722,10 @@ export default function App() {
   // ADM Delivery Neighborhood & Rate Handlers
   const handleAdminAddZone = (newZone: LuandaZone) => {
     setLuandaZones(prev => [newZone, ...prev]);
-    showToast(`Bairro ${newZone.neighborhood || newZone.name} adicionado com taxa de ${formatKwanzas(newZone.deliveryFee)}!`);
+    if (!selectedZone || selectedZone.id === 'luanda_geral') {
+      setSelectedZone(newZone);
+    }
+    showToast(`Bairro ${newZone.neighborhood || newZone.name} adicionado com sucesso!`);
   };
 
   const handleAdminUpdateZone = (updatedZone: LuandaZone) => {
@@ -696,7 +737,13 @@ export default function App() {
   };
 
   const handleAdminDeleteZone = (zoneId: string) => {
-    setLuandaZones(prev => prev.filter(z => z.id !== zoneId));
+    setLuandaZones(prev => {
+      const remaining = prev.filter(z => z.id !== zoneId);
+      if (selectedZone.id === zoneId) {
+        setSelectedZone(remaining[0] || DEFAULT_BLANK_ZONE);
+      }
+      return remaining;
+    });
     showToast('Bairro removido das taxas de entrega.');
   };
 
@@ -966,6 +1013,7 @@ export default function App() {
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
           selectedZone={selectedZone}
+          luandaZones={luandaZones}
           onSelectZone={setSelectedZone}
           onAddToCart={handleAddToCart}
           onBuyNow={handleBuyNow}

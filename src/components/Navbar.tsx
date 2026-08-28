@@ -109,11 +109,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div>
                 <span className="block text-[10px] text-stone-500 leading-none">Bairro de Entrega</span>
                 <span className="font-semibold text-stone-800 truncate max-w-[140px] block">
-                  {selectedZone.neighborhood || selectedZone.name.split('(')[0]}
+                  {selectedZone.neighborhood || selectedZone.name.split('(')[0] || 'Luanda'}
                 </span>
               </div>
               <span className="text-[11px] text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full font-mono font-bold">
-                {formatKwanzas(selectedZone.deliveryFee)}
+                {selectedZone.deliveryFee > 0 ? formatKwanzas(selectedZone.deliveryFee) : 'Luanda'}
               </span>
             </button>
 
@@ -127,28 +127,35 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">Cash on Delivery</span>
                 </div>
                 <div className="max-h-64 overflow-y-auto py-1 space-y-1">
-                  {luandaZones.map((zone) => (
-                    <button
-                      key={zone.id}
-                      onClick={() => {
-                        onSelectZone(zone);
-                        setShowZoneDropdown(false);
-                      }}
-                      className={`w-full text-left p-2.5 rounded-2xl text-xs flex items-center justify-between transition-colors cursor-pointer ${
-                        selectedZone.id === zone.id 
-                          ? 'bg-red-50 text-red-700 border border-red-200 font-bold' 
-                          : 'text-stone-700 hover:bg-stone-100'
-                      }`}
-                    >
-                      <div>
-                        <p className="font-semibold">{zone.neighborhood || zone.name}</p>
-                        <p className="text-[10px] text-stone-500 font-normal">{zone.municipality} • {zone.estimatedHours}</p>
-                      </div>
-                      <span className="font-bold text-stone-900 font-mono">
-                        {formatKwanzas(zone.deliveryFee)}
-                      </span>
-                    </button>
-                  ))}
+                  {luandaZones.length === 0 ? (
+                    <div className="p-3 text-center text-xs text-stone-500">
+                      <p className="font-semibold text-stone-800">Entregas em toda Luanda</p>
+                      <p className="text-[11px] text-stone-400 mt-1">Taxas por bairro personalizáveis pelo Administrador.</p>
+                    </div>
+                  ) : (
+                    luandaZones.map((zone) => (
+                      <button
+                        key={zone.id}
+                        onClick={() => {
+                          onSelectZone(zone);
+                          setShowZoneDropdown(false);
+                        }}
+                        className={`w-full text-left p-2.5 rounded-2xl text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                          selectedZone.id === zone.id 
+                            ? 'bg-red-50 text-red-700 border border-red-200 font-bold' 
+                            : 'text-stone-700 hover:bg-stone-100'
+                        }`}
+                      >
+                        <div>
+                          <p className="font-semibold">{zone.neighborhood || zone.name}</p>
+                          <p className="text-[10px] text-stone-500 font-normal">{zone.municipality} • {zone.estimatedHours}</p>
+                        </div>
+                        <span className="font-bold text-stone-900 font-mono">
+                          {formatKwanzas(zone.deliveryFee)}
+                        </span>
+                      </button>
+                    ))
+                  )}
                 </div>
               </div>
             )}

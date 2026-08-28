@@ -278,41 +278,43 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
               {/* Dynamic Luanda Zone / Neighborhood Select */}
-              <div className="space-y-1 sm:col-span-2">
-                <label className="text-xs text-stone-700 font-bold">Selecione o Bairro / Zona de Luanda *</label>
-                <select
-                  value={selectedZone.id}
-                  onChange={(e) => {
-                    const zone = luandaZones.find(z => z.id === e.target.value);
-                    if (zone) {
-                      onSelectZone(zone);
-                      setNeighborhood(zone.neighborhood || zone.name);
-                    }
-                  }}
-                  className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 font-semibold focus:outline-none focus:border-red-500 cursor-pointer"
-                >
-                  {luandaZones.map((z) => {
-                    const feeToDisplay = deliveryType === 'porta' 
-                      ? (z.deliveryFeeDoor ?? z.deliveryFee)
-                      : (z.deliveryFeeBusStop ?? Math.round(z.deliveryFee * 0.6));
-                    return (
-                      <option key={z.id} value={z.id}>
-                        {z.neighborhood || z.name} ({z.municipality}) — Taxa {deliveryType === 'porta' ? 'à Porta' : 'na Paragem'}: {formatKwanzas(feeToDisplay)} ({z.estimatedHours})
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
+              {luandaZones.length > 0 ? (
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="text-xs text-stone-700 font-bold">Selecione o Bairro / Zona de Luanda *</label>
+                  <select
+                    value={selectedZone.id}
+                    onChange={(e) => {
+                      const zone = luandaZones.find(z => z.id === e.target.value);
+                      if (zone) {
+                        onSelectZone(zone);
+                        setNeighborhood(zone.neighborhood || zone.name);
+                      }
+                    }}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 font-semibold focus:outline-none focus:border-red-500 cursor-pointer"
+                  >
+                    {luandaZones.map((z) => {
+                      const feeToDisplay = deliveryType === 'porta' 
+                        ? (z.deliveryFeeDoor ?? z.deliveryFee)
+                        : (z.deliveryFeeBusStop ?? Math.round(z.deliveryFee * 0.6));
+                      return (
+                        <option key={z.id} value={z.id}>
+                          {z.neighborhood || z.name} ({z.municipality}) — Taxa {deliveryType === 'porta' ? 'à Porta' : 'na Paragem'}: {formatKwanzas(feeToDisplay)} ({z.estimatedHours})
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              ) : null}
 
               {/* Bairro Especifico */}
-              <div className="space-y-1">
-                <label className="text-xs text-stone-700 font-bold">Bairro / Condomínio / Distrito *</label>
+              <div className={`space-y-1 ${luandaZones.length === 0 ? 'sm:col-span-2' : ''}`}>
+                <label className="text-xs text-stone-700 font-bold">Bairro / Município / Condomínio em Luanda *</label>
                 <input
                   type="text"
                   required
                   value={neighborhood}
                   onChange={(e) => setNeighborhood(e.target.value)}
-                  placeholder="Ex: Centralidade do Kilamba, Maianga, Zango 3, Alvalade..."
+                  placeholder="Ex: Centralidade do Kilamba, Maianga, Talatona, Zango 3, Alvalade..."
                   className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white transition-all"
                 />
               </div>
