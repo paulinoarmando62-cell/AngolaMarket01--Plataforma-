@@ -55,7 +55,7 @@ export const Footer: React.FC<FooterProps> = ({
             <div className="space-y-1">
               <h4 className="font-bold text-white text-xs">Entregas Rápidas por Bairro</h4>
               <p className="text-[11px] text-stone-400 leading-relaxed">
-                Cobertura em Maianga, Talatona, Kilamba, Viana, Cazenga, Cacuaco e arredores.
+                Cobertura direta em todos os municípios e bairros da Província de Luanda.
               </p>
             </div>
           </div>
@@ -108,7 +108,7 @@ export const Footer: React.FC<FooterProps> = ({
             <div className="pt-2 text-xs space-y-1.5 text-stone-300">
               <div className="flex items-center gap-2">
                 <MapPin className="w-3.5 h-3.5 text-red-500" />
-                <span>Sede Operacional: Talatona & São Paulo, Luanda, Angola</span>
+                <span>Sede Operacional: Luanda, Angola</span>
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-3.5 h-3.5 text-red-500" />

@@ -1977,20 +1977,14 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-stone-700">Município de Luanda *</label>
-                      <select
+                      <input
+                        type="text"
+                        required
                         value={zoneMunicipality}
                         onChange={(e) => setZoneMunicipality(e.target.value)}
-                        className="w-full bg-white border border-stone-200 rounded-2xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-red-500 cursor-pointer"
-                      >
-                        <option value="Luanda">Luanda (Maianga, Ingombota, Sambizanga, Rangel)</option>
-                        <option value="Talatona">Talatona (Benfica, Morro Bento, Patriota)</option>
-                        <option value="Belas">Belas (Centralidade do Kilamba, KK5000)</option>
-                        <option value="Kilamba Kiaxi">Kilamba Kiaxi (Palanca, Golf 1 e 2)</option>
-                        <option value="Cazenga">Cazenga (Hoji-ya-Henda, Tala Hadi)</option>
-                        <option value="Viana">Viana (Viana Centro, Zango 0 ao 5)</option>
-                        <option value="Cacuaco">Cacuaco (Centralidade do Sequele, Vila)</option>
-                        <option value="Icolo e Bengo">Icolo e Bengo (Catete, Bom Jesus)</option>
-                      </select>
+                        placeholder="Ex: Luanda, Talatona, Viana, Belas..."
+                        className="w-full bg-white border border-stone-200 rounded-2xl px-3.5 py-2 text-xs text-stone-900 focus:outline-none focus:border-red-500"
+                      />
                     </div>
 
                     <div className="space-y-1">
@@ -2000,7 +1994,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                         required
                         value={zoneNeighborhood}
                         onChange={(e) => setZoneNeighborhood(e.target.value)}
-                        placeholder="Ex: Alvalade, Maianga, Morro Bento, Zango 3..."
+                        placeholder="Ex: Alvalade, Morro Bento, Zango 3, Nova Vida..."
                         className="w-full bg-white border border-stone-200 rounded-2xl px-3.5 py-2 text-xs text-stone-900 focus:outline-none focus:border-red-500"
                       />
                     </div>
@@ -2011,7 +2005,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                         type="text"
                         value={zoneHours}
                         onChange={(e) => setZoneHours(e.target.value)}
-                        placeholder="Ex: 1 a 2 horas"
+                        placeholder="Ex: 24 a 48 horas ou 1 a 3 horas"
                         className="w-full bg-white border border-stone-200 rounded-2xl px-3.5 py-2 text-xs text-stone-900 focus:outline-none focus:border-red-500"
                       />
                     </div>
@@ -2132,7 +2126,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                   <Navigation className="w-8 h-8 text-stone-400 mx-auto" />
                   <h4 className="font-bold text-sm text-stone-900">Nenhum Bairro ou Taxa Cadastrada</h4>
                   <p className="text-xs text-stone-500 max-w-md mx-auto">
-                    Configure os municípios de Luanda (Talatona, Maianga, Kilamba, Viana, etc.) com as taxas de entrega reais à porta e na paragem clicando no botão acima.
+                    Cadastre os municípios e bairros de Luanda com as taxas de entrega reais à porta e na paragem clicando no botão acima.
                   </p>
                 </div>
               ) : (

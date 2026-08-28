@@ -51,9 +51,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [regRole, setRegRole] = useState<UserRole>('buyer');
   
   // Courier specific fields
-  const [vehicle, setVehicle] = useState('Moto Haojue 150cc');
-  const [licensePlate, setLicensePlate] = useState('LD-00-00-AA');
-  const [operatingZones, setOperatingZones] = useState('Maianga, Talatona, Kilamba');
+  const [vehicle, setVehicle] = useState('');
+  const [licensePlate, setLicensePlate] = useState('');
+  const [operatingZones, setOperatingZones] = useState('');
   
   const [regError, setRegError] = useState('');
   const [regSuccessMessage, setRegSuccessMessage] = useState('');

@@ -575,19 +575,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-stone-700">Município de Luanda</label>
-                  <select
+                  <input
+                    type="text"
                     value={municipality}
                     onChange={(e) => setMunicipality(e.target.value)}
+                    placeholder="Ex: Luanda, Talatona, Viana, Belas..."
                     className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 text-xs sm:text-sm text-stone-900 focus:outline-none focus:border-red-500 focus:bg-white"
-                  >
-                    <option value="Luanda (Urbano)">Luanda (Ingombota / Maianga / Rangel / Samba / Sambizanga)</option>
-                    <option value="Talatona">Talatona (Benfica / Patriota / Camama / Futungo)</option>
-                    <option value="Belas">Belas (Kilamba / Morro dos Veados / Cabolombo)</option>
-                    <option value="Kilamba Kiaxi">Kilamba Kiaxi (Palanca / Golf 1 e 2 / Nova Vida)</option>
-                    <option value="Viana">Viana (Zango / Estalagem / Grafanil / Vila de Viana)</option>
-                    <option value="Cazenga">Cazenga (Hoji-ya-Henda / Tala Hadi / Kalawenda)</option>
-                    <option value="Cacuaco">Cacuaco (Vila / Kicolo / Sequele / Funda)</option>
-                  </select>
+                  />
                 </div>
 
                 <div className="space-y-1.5">

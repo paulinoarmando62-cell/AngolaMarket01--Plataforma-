@@ -437,7 +437,7 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-stone-600">
                   <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 space-y-1">
                     <span className="font-bold text-stone-900 block">1. Grupos de Bairro</span>
-                    <span>Partilhe produtos de mercearia e eletrodomésticos em grupos de condomínio do Kilamba, Talatona e Viana.</span>
+                    <span>Partilhe artigos em grupos de condomínio e comunidades de bairros em Luanda.</span>
                   </div>
                   <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 space-y-1">
                     <span className="font-bold text-stone-900 block">2. Destaque o Pagamento no Ato</span>

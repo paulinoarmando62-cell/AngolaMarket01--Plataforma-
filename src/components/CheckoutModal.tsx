@@ -314,7 +314,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   required
                   value={neighborhood}
                   onChange={(e) => setNeighborhood(e.target.value)}
-                  placeholder="Ex: Centralidade do Kilamba, Maianga, Talatona, Zango 3, Alvalade..."
+                  placeholder="Digite o seu bairro, condomínio ou município em Luanda..."
                   className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white transition-all"
                 />
               </div>

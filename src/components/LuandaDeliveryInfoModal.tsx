@@ -85,51 +85,61 @@ export const LuandaDeliveryInfoModal: React.FC<LuandaDeliveryInfoModalProps> = (
               <span className="text-xs text-stone-500">Clique para selecionar seu bairro</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {luandaZones.map((zone) => {
-                const isSelected = selectedZone.id === zone.id;
-                return (
-                  <div
-                    key={zone.id}
-                    onClick={() => onSelectZone(zone)}
-                    className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-red-50/70 border-red-500 shadow-sm text-stone-900'
-                        : 'bg-stone-50 border-stone-200 hover:border-stone-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-bold text-stone-900 text-xs">{zone.neighborhood || zone.name}</span>
-                      <span className="font-mono font-bold text-red-600 text-xs">
-                        {formatKwanzas(zone.deliveryFee)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-3 text-xs text-stone-500">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-emerald-600" /> {zone.estimatedHours}
-                      </span>
-                      <span className="text-[10px] text-stone-400">({zone.municipality})</span>
-                      {isSelected && (
-                        <span className="text-red-600 font-bold flex items-center gap-0.5 ml-auto">
-                          <CheckCircle2 className="w-3 h-3" /> Bairro Selecionado
+            {luandaZones.length === 0 ? (
+              <div className="p-6 text-center bg-stone-50 border border-stone-200 rounded-2xl space-y-2">
+                <Truck className="w-8 h-8 text-stone-400 mx-auto" />
+                <h4 className="font-bold text-xs text-stone-900">Taxas e Bairros em Configuração</h4>
+                <p className="text-[11px] text-stone-500 max-w-sm mx-auto">
+                  As taxas de entrega por município e bairro de Luanda estão a ser cadastradas pelo Administrador no Painel de Controlo. Entregas com pagamento no ato garantidas em toda Luanda.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {luandaZones.map((zone) => {
+                  const isSelected = selectedZone.id === zone.id;
+                  return (
+                    <div
+                      key={zone.id}
+                      onClick={() => onSelectZone(zone)}
+                      className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-red-50/70 border-red-500 shadow-sm text-stone-900'
+                          : 'bg-stone-50 border-stone-200 hover:border-stone-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-stone-900 text-xs">{zone.neighborhood || zone.name}</span>
+                        <span className="font-mono font-bold text-red-600 text-xs">
+                          {formatKwanzas(zone.deliveryFee)}
                         </span>
+                      </div>
+
+                      <div className="flex items-center gap-3 text-xs text-stone-500">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-emerald-600" /> {zone.estimatedHours}
+                        </span>
+                        <span className="text-[10px] text-stone-400">({zone.municipality})</span>
+                        {isSelected && (
+                          <span className="text-red-600 font-bold flex items-center gap-0.5 ml-auto">
+                            <CheckCircle2 className="w-3 h-3" /> Bairro Selecionado
+                          </span>
+                        )}
+                      </div>
+
+                      {zone.popularAreas && zone.popularAreas.length > 0 && (
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          {zone.popularAreas.slice(0, 4).map((area, idx) => (
+                            <span key={idx} className="text-[10px] bg-stone-200 text-stone-700 font-medium px-2 py-0.5 rounded-md">
+                              {area}
+                            </span>
+                          ))}
+                        </div>
                       )}
                     </div>
-
-                    {zone.popularAreas && zone.popularAreas.length > 0 && (
-                      <div className="mt-1.5 flex flex-wrap gap-1">
-                        {zone.popularAreas.slice(0, 4).map((area, idx) => (
-                          <span key={idx} className="text-[10px] bg-stone-200 text-stone-700 font-medium px-2 py-0.5 rounded-md">
-                            {area}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Payment Methods Explained */}

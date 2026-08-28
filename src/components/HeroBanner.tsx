@@ -30,12 +30,8 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
           
           {/* Main Large Hero Card (Red Bento) */}
           <div className="col-span-1 md:col-span-2 lg:col-span-7 bg-red-600 rounded-2xl sm:rounded-3xl p-4 sm:p-7 md:p-10 text-white relative overflow-hidden flex flex-col justify-between shadow-sm">
-            {/* Background glowing rings */}
-            <div className="absolute -top-12 -right-12 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-            <div className="absolute -bottom-16 -left-16 w-64 h-64 bg-amber-400/20 rounded-full blur-3xl pointer-events-none" />
-
             <div className="relative z-10 space-y-2 sm:space-y-3 max-w-xl">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 text-white text-[10px] sm:text-xs font-bold backdrop-blur-xs">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 text-white text-[10px] sm:text-xs font-bold">
                 <Sparkles className="w-3 h-3 text-amber-300" />
                 <span>Cash on Delivery em Toda Luanda</span>
               </div>
