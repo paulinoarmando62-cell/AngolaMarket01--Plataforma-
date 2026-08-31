@@ -91,15 +91,6 @@ interface AdminPortalModalProps {
   initialTab?: AdminTab;
 }
 
-const SAMPLE_PRESET_IMAGES = [
-  { label: 'Smartphone / Gadget', url: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&auto=format&fit=crop&q=80' },
-  { label: 'Moda / Samakaka', url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&auto=format&fit=crop&q=80' },
-  { label: 'Eletrodoméstico / Casa', url: 'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=800&auto=format&fit=crop&q=80' },
-  { label: 'Cabelos & Peruca', url: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800&auto=format&fit=crop&q=80' },
-  { label: 'Alimentação & Fardos', url: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&auto=format&fit=crop&q=80' },
-  { label: 'Auto & Equipamento', url: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=800&auto=format&fit=crop&q=80' },
-];
-
 export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
   isOpen,
   onClose,
@@ -141,7 +132,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
   const [prodStock, setProdStock] = useState('10');
   
   // 3 distinct images as requested by the user
-  const [prodImage1, setProdImage1] = useState(SAMPLE_PRESET_IMAGES[0].url);
+  const [prodImage1, setProdImage1] = useState('');
   const [prodImage2, setProdImage2] = useState('');
   const [prodImage3, setProdImage3] = useState('');
 
@@ -246,7 +237,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
   const [adminName, setAdminName] = useState(currentUser?.name || 'Paulino Armando (Administrador Geral)');
   const [adminEmail, setAdminEmail] = useState(currentUser?.email || 'paulinoarmando62@gmail.com');
   const [adminPhone, setAdminPhone] = useState(currentUser?.phone || '+244 938 243 909');
-  const [adminAvatar, setAdminAvatar] = useState(currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80');
+  const [adminAvatar, setAdminAvatar] = useState(currentUser?.avatar || '');
   const [adminIban, setAdminIban] = useState(currentUser?.iban || '');
   const [adminMulticaixaExpress, setAdminMulticaixaExpress] = useState(currentUser?.multicaixaExpressPhone || '+244 938 243 909');
   const [adminBankName, setAdminBankName] = useState(currentUser?.bankName || '');
@@ -258,7 +249,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
       setAdminName(currentUser.name || 'Paulino Armando (Administrador Geral)');
       setAdminEmail(currentUser.email || 'paulinoarmando62@gmail.com');
       setAdminPhone(currentUser.phone || '+244 938 243 909');
-      setAdminAvatar(currentUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80');
+      setAdminAvatar(currentUser.avatar || '');
       setAdminIban(currentUser.iban || '');
       setAdminMulticaixaExpress(currentUser.multicaixaExpressPhone || '+244 938 243 909');
       setAdminBankName(currentUser.bankName || '');
@@ -318,7 +309,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
     const commPercent = Math.min(100, Math.max(0, Number(prodAffiliateCommission) || 0));
 
     const galleryImgs = [prodImage1, prodImage2, prodImage3].filter(Boolean);
-    const mainImg = galleryImgs[0] || SAMPLE_PRESET_IMAGES[0].url;
+    const mainImg = galleryImgs[0] || '';
 
     if (editingProductId) {
       const existing = products.find(p => p.id === editingProductId);
@@ -387,7 +378,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
     setProdPrice('');
     setProdOrigPrice('');
     setProdDesc('');
-    setProdImage1(SAMPLE_PRESET_IMAGES[0].url);
+    setProdImage1('');
     setProdImage2('');
     setProdImage3('');
     setProdAffiliateCommission(10);
@@ -712,9 +703,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                   const ordersToday = orders.filter(o => o.assignedCourierId === c.id && isTodayOrder(o));
                   const inTransit = ordersToday.filter(o => o.status === 'em_transito' || o.status === 'preparando').length;
                   const delivered = ordersToday.filter(o => o.status === 'entregue').length;
-                  // Base or order count
-                  const baseCount = c.todayDeliveriesCount ?? 0;
-                  const totalToday = Math.max(ordersToday.length, baseCount);
+                  const totalToday = ordersToday.length;
                   const feesToday = ordersToday.reduce((sum, o) => sum + (o.deliveryFee || 0), 0);
 
                   return {
@@ -985,12 +974,18 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                               {/* Courier Profile Info */}
                               <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
                                 <div className="relative shrink-0">
-                                  <img 
-                                    src={cm.courier.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'} 
-                                    alt={cm.courier.name}
-                                    className="w-13 h-13 rounded-2xl object-cover border border-stone-200"
-                                    referrerPolicy="no-referrer"
-                                  />
+                                  {cm.courier.avatar ? (
+                                    <img 
+                                      src={cm.courier.avatar} 
+                                      alt={cm.courier.name}
+                                      className="w-13 h-13 rounded-2xl object-cover border border-stone-200"
+                                      referrerPolicy="no-referrer"
+                                    />
+                                  ) : (
+                                    <div className="w-13 h-13 rounded-2xl bg-amber-100 border border-amber-300 text-amber-900 font-bold flex items-center justify-center text-sm">
+                                      {cm.courier.name ? cm.courier.name.substring(0, 2).toUpperCase() : <Truck className="w-5 h-5 text-amber-700" />}
+                                    </div>
+                                  )}
                                   <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full" title="Online / Aprovado" />
                                 </div>
 
@@ -1225,7 +1220,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                   </span>
                   <div className="pt-2 flex items-center gap-2 text-xs text-stone-300">
                     <CreditCard className="w-4 h-4 text-emerald-400" />
-                    <span>Conta de Liquidação: <strong>{adminIban}</strong></span>
+                    <span>Conta de Liquidação: <strong>{adminIban || 'Não configurado (configure no Perfil)'}</strong></span>
                   </div>
                 </div>
 
@@ -1728,12 +1723,18 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                         }`}
                       >
                         <div className="flex items-start gap-3.5">
-                          <img 
-                            src={c.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'} 
-                            alt="" 
-                            className="w-12 h-12 rounded-2xl object-cover shrink-0 border border-stone-200" 
-                            referrerPolicy="no-referrer"
-                          />
+                          {c.avatar ? (
+                            <img 
+                              src={c.avatar} 
+                              alt="" 
+                              className="w-12 h-12 rounded-2xl object-cover shrink-0 border border-stone-200" 
+                              referrerPolicy="no-referrer"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-2xl bg-amber-100 border border-amber-300 text-amber-900 font-bold flex items-center justify-center text-sm shrink-0">
+                              {c.name ? c.name.substring(0, 2).toUpperCase() : <Truck className="w-5 h-5 text-amber-700" />}
+                            </div>
+                          )}
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
                               <span className="font-bold text-sm text-stone-900">{c.name}</span>
@@ -1837,7 +1838,13 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                   affiliates.map((af) => (
                     <div key={af.id} className="p-5 rounded-3xl bg-white border border-stone-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div className="flex items-center gap-3.5">
-                        <img src={af.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80'} alt="" className="w-12 h-12 rounded-2xl object-cover border border-stone-200" referrerPolicy="no-referrer" />
+                        {af.avatar ? (
+                          <img src={af.avatar} alt="" className="w-12 h-12 rounded-2xl object-cover border border-stone-200" referrerPolicy="no-referrer" />
+                        ) : (
+                          <div className="w-12 h-12 rounded-2xl bg-blue-100 border border-blue-300 text-blue-900 font-bold flex items-center justify-center text-sm">
+                            {af.name ? af.name.substring(0, 2).toUpperCase() : <DollarSign className="w-5 h-5 text-blue-700" />}
+                          </div>
+                        )}
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-sm text-stone-900">{af.name}</span>
@@ -2940,29 +2947,6 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                         </div>
                       </div>
                     </div>
-
-                    {/* Quick Presets for Slot 1 */}
-                    <div className="pt-2 border-t border-stone-200">
-                      <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block mb-1.5">
-                        Fotos de referência rápida para o Catálogo:
-                      </span>
-                      <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
-                        {SAMPLE_PRESET_IMAGES.map((preset, idx) => (
-                          <div
-                            key={idx}
-                            onClick={() => setProdImage1(preset.url)}
-                            className={`relative aspect-video rounded-xl overflow-hidden border cursor-pointer transition-all ${
-                              prodImage1 === preset.url ? 'border-red-600 ring-2 ring-red-500 scale-95' : 'border-stone-200 opacity-60 hover:opacity-100'
-                            }`}
-                          >
-                            <img src={preset.url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                            <span className="absolute inset-x-0 bottom-0 bg-stone-900/80 text-[7px] text-white px-1 py-0.5 text-center truncate">
-                              {preset.label}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
                   </div>
 
                   <div className="space-y-1">
@@ -3090,12 +3074,18 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                 {/* Profile Photo Uploader */}
                 <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 flex flex-col sm:flex-row items-center gap-4">
                   <div className="relative">
-                    <img 
-                      src={adminAvatar} 
-                      alt="Foto ADM" 
-                      className="w-20 h-20 rounded-2xl object-cover border-2 border-red-600 shadow-xs"
-                      referrerPolicy="no-referrer"
-                    />
+                    {adminAvatar ? (
+                      <img 
+                        src={adminAvatar} 
+                        alt="Foto ADM" 
+                        className="w-20 h-20 rounded-2xl object-cover border-2 border-red-600 shadow-xs"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 rounded-2xl bg-stone-200 border-2 border-red-600 text-stone-700 font-black flex items-center justify-center text-xl">
+                        {adminName ? adminName.substring(0, 2).toUpperCase() : 'PA'}
+                      </div>
+                    )}
                     <label className="absolute -bottom-1.5 -right-1.5 p-2 rounded-xl bg-red-600 hover:bg-red-700 text-white shadow-md cursor-pointer transition-transform hover:scale-105">
                       <Camera className="w-3.5 h-3.5" />
                       <input 
@@ -3109,16 +3099,27 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                   <div className="space-y-1 text-center sm:text-left flex-1">
                     <span className="font-bold text-xs text-stone-900 block">Fotografia de Perfil do Administrador</span>
                     <p className="text-[11px] text-stone-500">Carregue uma imagem a partir do seu telemóvel ou computador.</p>
-                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-stone-200 hover:bg-stone-100 text-stone-800 text-[11px] font-bold cursor-pointer mt-1">
-                      <Upload className="w-3 h-3 text-red-600" />
-                      <span>Escolher Nova Foto</span>
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={handleAdminAvatarUpload}
-                        className="hidden"
-                      />
-                    </label>
+                    <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
+                      <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-stone-200 hover:bg-stone-100 text-stone-800 text-[11px] font-bold cursor-pointer">
+                        <Upload className="w-3 h-3 text-red-600" />
+                        <span>Escolher Nova Foto</span>
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          onChange={handleAdminAvatarUpload}
+                          className="hidden"
+                        />
+                      </label>
+                      {adminAvatar && (
+                        <button
+                          type="button"
+                          onClick={() => setAdminAvatar('')}
+                          className="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-red-50 text-red-600 text-[11px] font-bold cursor-pointer"
+                        >
+                          Remover
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 

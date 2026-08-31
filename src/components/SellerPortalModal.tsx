@@ -22,15 +22,6 @@ interface SellerPortalModalProps {
   onAddProduct: (product: Product) => void;
 }
 
-const SAMPLE_PRESET_IMAGES = [
-  { label: 'Smartphone / Gadget', url: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&auto=format&fit=crop&q=80' },
-  { label: 'Moda / Samakaka', url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&auto=format&fit=crop&q=80' },
-  { label: 'Eletrodoméstico / Cozinha', url: 'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=800&auto=format&fit=crop&q=80' },
-  { label: 'Cabelos & Peruca', url: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800&auto=format&fit=crop&q=80' },
-  { label: 'Alimentação & Mercearia', url: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&auto=format&fit=crop&q=80' },
-  { label: 'Auto & Equipamento', url: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=800&auto=format&fit=crop&q=80' },
-];
-
 export const SellerPortalModal: React.FC<SellerPortalModalProps> = ({
   isOpen,
   onClose,
@@ -47,9 +38,22 @@ export const SellerPortalModal: React.FC<SellerPortalModalProps> = ({
   const [stockCount, setStockCount] = useState('1');
   const [description, setDescription] = useState('');
   const [featuresText, setFeaturesText] = useState('Garantia de satisfação\nEntrega rápida em Luanda\nPagamento no ato da entrega');
-  const [imageUrl, setImageUrl] = useState(SAMPLE_PRESET_IMAGES[0]?.url || '');
+  const [imageUrl, setImageUrl] = useState('');
   const [cashOnDelivery, setCashOnDelivery] = useState(true);
   const [successNotice, setSuccessNotice] = useState(false);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setImageUrl(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -231,31 +235,36 @@ export const SellerPortalModal: React.FC<SellerPortalModalProps> = ({
               <div className="space-y-2 pt-2 border-t border-stone-200">
                 <label className="text-xs text-stone-700 font-bold flex items-center gap-1.5">
                   <Image className="w-4 h-4 text-red-600" />
-                  <span>Selecione uma imagem de referência ou insira URL da foto:</span>
+                  <span>Foto Real do Artigo:</span>
                 </label>
 
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                  {SAMPLE_PRESET_IMAGES.map((preset, idx) => (
-                    <div
-                      key={idx}
-                      onClick={() => setImageUrl(preset.url)}
-                      className={`relative aspect-square rounded-2xl overflow-hidden border-2 cursor-pointer transition-all ${
-                        imageUrl === preset.url ? 'border-red-600 scale-95 shadow-sm' : 'border-stone-200 opacity-60 hover:opacity-100'
-                      }`}
-                    >
-                      <img src={preset.url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                      <span className="absolute inset-x-0 bottom-0 bg-stone-900/80 text-[8px] text-white p-0.5 text-center truncate">
-                        {preset.label}
-                      </span>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <label className="flex-1 border-2 border-dashed border-stone-200 hover:border-red-500 rounded-2xl p-3 text-center cursor-pointer bg-stone-50 hover:bg-red-50/20 transition-all flex flex-col items-center justify-center gap-1">
+                    <PlusCircle className="w-5 h-5 text-stone-400" />
+                    <span className="text-xs font-bold text-stone-700">Carregar Foto do Dispositivo</span>
+                    <span className="text-[10px] text-stone-400">JPG, PNG ou WebP</span>
+                    <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
+                  </label>
+                  
+                  {imageUrl && (
+                    <div className="w-24 h-24 rounded-2xl border border-stone-200 overflow-hidden shrink-0 relative bg-stone-100">
+                      <img src={imageUrl} alt="Pré-visualização" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      <button
+                        type="button"
+                        onClick={() => setImageUrl('')}
+                        className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-0.5 shadow-sm"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
                     </div>
-                  ))}
+                  )}
                 </div>
 
                 <input
                   type="url"
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="Ou cole a URL da imagem aqui (https://...)"
+                  placeholder="Ou cole a URL direta da imagem (https://...)"
                   className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-red-500 focus:bg-white"
                 />
               </div>

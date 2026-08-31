@@ -76,7 +76,7 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
   const [affName, setAffName] = useState(currentUser.name || '');
   const [affEmail, setAffEmail] = useState(currentUser.email || '');
   const [affPhone, setAffPhone] = useState(currentUser.phone || '');
-  const [affAvatar, setAffAvatar] = useState(currentUser.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80');
+  const [affAvatar, setAffAvatar] = useState(currentUser.avatar || '');
   const [affIban, setAffIban] = useState(currentUser.iban || '');
   const [affBank, setAffBank] = useState(currentUser.bankName || '');
   const [affExpress, setAffExpress] = useState(currentUser.multicaixaExpressPhone || currentUser.phone || '');
@@ -87,7 +87,7 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
       setAffName(currentUser.name || '');
       setAffEmail(currentUser.email || '');
       setAffPhone(currentUser.phone || '');
-      setAffAvatar(currentUser.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80');
+      setAffAvatar(currentUser.avatar || '');
       setAffIban(currentUser.iban || '');
       setAffBank(currentUser.bankName || '');
       setAffExpress(currentUser.multicaixaExpressPhone || currentUser.phone || '');
@@ -990,12 +990,18 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
                 {/* Profile Photo Uploader */}
                 <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-200 flex flex-col sm:flex-row items-center gap-4">
                   <div className="relative">
-                    <img 
-                      src={affAvatar} 
-                      alt="Foto Afiliado" 
-                      className="w-20 h-20 rounded-2xl object-cover border-2 border-blue-600 shadow-xs"
-                      referrerPolicy="no-referrer"
-                    />
+                    {affAvatar ? (
+                      <img 
+                        src={affAvatar} 
+                        alt="Foto Afiliado" 
+                        className="w-20 h-20 rounded-2xl object-cover border-2 border-blue-600 shadow-xs"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 rounded-2xl bg-blue-100 border-2 border-blue-400 text-blue-900 font-bold flex items-center justify-center text-xl">
+                        {affName ? affName.substring(0, 2).toUpperCase() : <DollarSign className="w-8 h-8 text-blue-700" />}
+                      </div>
+                    )}
                     <label className="absolute -bottom-1.5 -right-1.5 p-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md cursor-pointer transition-transform hover:scale-105">
                       <Camera className="w-3.5 h-3.5" />
                       <input 
@@ -1009,16 +1015,27 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
                   <div className="space-y-1 text-center sm:text-left flex-1">
                     <span className="font-bold text-xs text-stone-900 block">Fotografia de Perfil do Afiliado</span>
                     <p className="text-[11px] text-stone-500">Foto personalizada exibida na sua conta e portal de comissões.</p>
-                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-stone-200 hover:bg-stone-100 text-stone-800 text-[11px] font-bold cursor-pointer mt-1">
-                      <Upload className="w-3 h-3 text-blue-600" />
-                      <span>Carregar Foto</span>
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={handleAffiliateAvatarUpload}
-                        className="hidden"
-                      />
-                    </label>
+                    <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
+                      <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-stone-200 hover:bg-stone-100 text-stone-800 text-[11px] font-bold cursor-pointer">
+                        <Upload className="w-3 h-3 text-blue-600" />
+                        <span>Carregar Foto</span>
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          onChange={handleAffiliateAvatarUpload}
+                          className="hidden"
+                        />
+                      </label>
+                      {affAvatar && (
+                        <button
+                          type="button"
+                          onClick={() => setAffAvatar('')}
+                          className="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-red-50 text-red-600 text-[11px] font-bold cursor-pointer"
+                        >
+                          Remover
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 

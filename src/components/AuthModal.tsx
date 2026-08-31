@@ -142,9 +142,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       affiliateCode = regName.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 6) + '-' + randomSuffix;
     }
 
-    const defaultRoleAvatar = regRole === 'courier'
-      ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
-      : 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80';
+    const defaultRoleAvatar = '';
 
     const newUser: AppUser = {
       id: `user-${Date.now()}`,

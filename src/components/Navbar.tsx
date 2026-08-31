@@ -234,12 +234,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                     onClick={() => setShowUserDropdown(!showUserDropdown)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-stone-100 hover:bg-stone-200 border border-stone-200 text-xs font-bold transition-all cursor-pointer"
                   >
-                    <img 
-                      src={currentUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'} 
-                      alt="" 
-                      className="w-6 h-6 rounded-xl object-cover" 
-                      referrerPolicy="no-referrer"
-                    />
+                    {currentUser.avatar ? (
+                      <img 
+                        src={currentUser.avatar} 
+                        alt="" 
+                        className="w-6 h-6 rounded-xl object-cover border border-stone-300" 
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="w-6 h-6 rounded-xl bg-stone-300 text-stone-700 flex items-center justify-center text-[10px] font-bold">
+                        {currentUser.name ? currentUser.name[0].toUpperCase() : <User className="w-3.5 h-3.5" />}
+                      </div>
+                    )}
                     <span className="inline max-w-[100px] truncate text-stone-900 font-semibold">
                       {currentUser.name.split(' ')[0]}
                     </span>

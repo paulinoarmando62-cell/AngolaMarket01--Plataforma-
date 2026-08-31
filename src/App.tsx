@@ -118,10 +118,15 @@ export default function App() {
           const realOnly = parsed.filter((u: AppUser) => 
             !u.id.includes('demo') && 
             !u.id.includes('test') && 
+            !u.id.startsWith('courier-1') &&
+            !u.id.startsWith('courier-2') &&
+            !u.id.startsWith('courier-3') &&
+            !u.id.startsWith('affiliate-1') &&
+            !u.id.startsWith('buyer-1') &&
             !(u.email || '').includes('exemplo.com') && 
             !(u.email || '').includes('teste.ao')
           );
-          // Ensure master admin has real credentials
+          // Ensure master admin has real credentials without any fake stock avatar or fake IBAN
           const hasMaster = realOnly.some((u: AppUser) => u.email === 'paulinoarmando62@gmail.com');
           if (hasMaster) {
             return realOnly.map((u: AppUser) => u.email === 'paulinoarmando62@gmail.com' ? {
@@ -129,8 +134,12 @@ export default function App() {
               password: 'Armando@123',
               role: 'admin',
               phone: '+244 938 243 909',
-              name: 'Paulino Armando (Administrador Geral)'
-            } : u);
+              name: 'Paulino Armando (Administrador Geral)',
+              avatar: (u.avatar && !u.avatar.includes('images.unsplash.com')) ? u.avatar : ''
+            } : {
+              ...u,
+              avatar: (u.avatar && !u.avatar.includes('images.unsplash.com')) ? u.avatar : ''
+            });
           } else {
             return [INITIAL_USERS[0], ...realOnly];
           }
@@ -148,7 +157,12 @@ export default function App() {
       const saved = localStorage.getItem(LOCAL_STORAGE_CURRENT_USER_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.id) return parsed;
+        if (parsed && parsed.id) {
+          return {
+            ...parsed,
+            avatar: (parsed.avatar && !parsed.avatar.includes('images.unsplash.com')) ? parsed.avatar : ''
+          };
+        }
       }
     } catch (e) {
       // fallback
@@ -189,20 +203,21 @@ export default function App() {
     return LUANDA_ZONES[0];
   });
 
-  // Products state (Real authentic products in Luanda)
+  // Products state (Pristine clean state - only real products added by Admin)
   const [products, setProducts] = useState<Product[]>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_PRODUCTS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+        if (Array.isArray(parsed)) {
+          // Strictly keep genuine products added by the Admin in this app
+          return parsed.filter((p: Product) => p && p.id && p.id.startsWith('adm-prod-'));
         }
       }
     } catch (e) {
       // fallback
     }
-    return INITIAL_PRODUCTS;
+    return [];
   });
 
   // Cart state
@@ -212,7 +227,7 @@ export default function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          return parsed.filter(it => it.product?.id && (it.product.id.startsWith('adm-prod-') || it.product.id.startsWith('real-prod-')));
+          return parsed.filter(it => it.product?.id && it.product.id.startsWith('adm-prod-'));
         }
       }
     } catch (e) {
@@ -542,12 +557,12 @@ export default function App() {
         name: defaultCourier.name,
         phone: defaultCourier.phone,
         vehicle: defaultCourier.vehicle || 'Moto Haojue 150cc',
-        avatar: defaultCourier.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
+        avatar: defaultCourier.avatar || ''
       } : {
         name: 'Equipa de Entregas Luanda',
         phone: '+244 938 243 909',
         vehicle: 'Estafeta Autorizado',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
+        avatar: ''
       }
     };
 

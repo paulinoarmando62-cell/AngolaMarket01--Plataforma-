@@ -71,12 +71,18 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             <div className="w-12 h-1.5 bg-stone-300 rounded-full mx-auto" />
             
             <div className="flex items-center gap-3 pb-3 border-b border-stone-100">
-              <img 
-                src={currentUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'} 
-                alt="" 
-                className="w-11 h-11 rounded-2xl object-cover border border-stone-200" 
-                referrerPolicy="no-referrer"
-              />
+              {currentUser.avatar ? (
+                <img 
+                  src={currentUser.avatar} 
+                  alt="" 
+                  className="w-11 h-11 rounded-2xl object-cover border border-stone-200" 
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-11 h-11 rounded-2xl bg-stone-200 text-stone-700 font-bold flex items-center justify-center text-sm border border-stone-300">
+                  {currentUser.name ? currentUser.name[0].toUpperCase() : <User className="w-5 h-5 text-stone-400" />}
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-sm text-stone-900 truncate">{currentUser.name}</p>
                 <p className="text-xs text-stone-500 truncate">{currentUser.email || currentUser.phone}</p>
@@ -256,12 +262,18 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           >
             {currentUser ? (
               <div className="relative">
-                <img 
-                  src={currentUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'} 
-                  alt="" 
-                  className="w-5 h-5 rounded-full object-cover border border-stone-300"
-                  referrerPolicy="no-referrer"
-                />
+                {currentUser.avatar ? (
+                  <img 
+                    src={currentUser.avatar} 
+                    alt="" 
+                    className="w-5 h-5 rounded-full object-cover border border-stone-300"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="w-5 h-5 rounded-full bg-stone-300 text-stone-700 flex items-center justify-center text-[9px] font-bold">
+                    {currentUser.name ? currentUser.name[0].toUpperCase() : <User className="w-3 h-3" />}
+                  </div>
+                )}
                 {currentUser.role === 'admin' && (
                   <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-600 rounded-full border border-white" />
                 )}

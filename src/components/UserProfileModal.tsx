@@ -31,16 +31,6 @@ interface UserProfileModalProps {
   onUpdateUser: (updatedUser: AppUser) => void;
 }
 
-const PRESET_AVATARS = [
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop&q=80'
-];
-
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   isOpen,
   onClose,
@@ -53,7 +43,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [name, setName] = useState(currentUser.name || '');
   const [email, setEmail] = useState(currentUser.email || '');
   const [phone, setPhone] = useState(currentUser.phone || '');
-  const [avatar, setAvatar] = useState(currentUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80');
+  const [avatar, setAvatar] = useState(currentUser.avatar || '');
   const [avatarUrlInput, setAvatarUrlInput] = useState('');
   const [showAvatarUrlForm, setShowAvatarUrlForm] = useState(false);
 
@@ -63,7 +53,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   );
   const [multicaixaPhone, setMulticaixaPhone] = useState(currentUser.multicaixaExpressPhone || currentUser.phone || '');
   const [iban, setIban] = useState(currentUser.iban || '');
-  const [bankName, setBankName] = useState(currentUser.bankName || 'BAI');
+  const [bankName, setBankName] = useState(currentUser.bankName || '');
 
   // Address fields
   const [municipality, setMunicipality] = useState(currentUser.defaultMunicipality || 'Luanda');
@@ -84,11 +74,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       setName(currentUser.name || '');
       setEmail(currentUser.email || '');
       setPhone(currentUser.phone || '');
-      setAvatar(currentUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80');
+      setAvatar(currentUser.avatar || '');
       setPreferredPaymentMethod(currentUser.preferredPaymentMethod || 'dinheiro_entrega');
       setMulticaixaPhone(currentUser.multicaixaExpressPhone || currentUser.phone || '');
       setIban(currentUser.iban || '');
-      setBankName(currentUser.bankName || 'BAI');
+      setBankName(currentUser.bankName || '');
       setMunicipality(currentUser.defaultMunicipality || 'Luanda');
       setNeighborhood(currentUser.defaultNeighborhood || '');
       setStreetAddress(currentUser.defaultStreetAddress || '');
@@ -262,14 +252,20 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               </div>
 
               {/* Profile Photo Uploader */}
-              <div className="flex flex-col sm:flex-row items-center gap-6 p-4 rounded-3xl bg-stone-50 border border-stone-200">
+              <div className="flex flex-col sm:flex-row items-center gap-6 p-5 rounded-3xl bg-stone-50 border border-stone-200">
                 <div className="relative group">
-                  <img
-                    src={avatar || PRESET_AVATARS[0]}
-                    alt="Foto de Perfil"
-                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover border-4 border-white shadow-md"
-                    referrerPolicy="no-referrer"
-                  />
+                  {avatar ? (
+                    <img
+                      src={avatar}
+                      alt="Foto de Perfil"
+                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover border-4 border-white shadow-md bg-stone-100"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl border-4 border-white shadow-md bg-stone-200 flex items-center justify-center text-stone-500 font-bold text-2xl">
+                      {name ? name.substring(0, 2).toUpperCase() : <User className="w-10 h-10 text-stone-400" />}
+                    </div>
+                  )}
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
@@ -281,9 +277,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 </div>
 
                 <div className="flex-1 text-center sm:text-left space-y-2">
-                  <h3 className="font-bold text-sm text-stone-900">Adicionar / Alterar Foto de Perfil</h3>
+                  <h3 className="font-bold text-sm text-stone-900">Fotografia de Perfil</h3>
                   <p className="text-xs text-stone-500 max-w-md">
-                    Carregue uma foto do seu telemóvel/computador ou selecione uma imagem padrão recomendada.
+                    Carregue uma fotografia pessoal do seu dispositivo para identificação na plataforma.
                   </p>
 
                   {/* Hidden File Input */}
@@ -302,7 +298,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       className="px-4 py-2 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
                     >
                       <Upload className="w-3.5 h-3.5" />
-                      <span>Carregar Foto</span>
+                      <span>Carregar do Dispositivo</span>
                     </button>
 
                     <button
@@ -311,18 +307,28 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       className="px-3.5 py-2 rounded-2xl bg-white border border-stone-200 hover:bg-stone-100 text-stone-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
                     >
                       <ImageIcon className="w-3.5 h-3.5" />
-                      <span>Usar Link de Imagem</span>
+                      <span>Inserir URL</span>
                     </button>
+
+                    {avatar && (
+                      <button
+                        type="button"
+                        onClick={() => setAvatar('')}
+                        className="px-3.5 py-2 rounded-2xl bg-stone-100 hover:bg-red-50 text-red-600 border border-stone-200 font-bold text-xs cursor-pointer"
+                      >
+                        Remover Foto
+                      </button>
+                    )}
                   </div>
 
                   {showAvatarUrlForm && (
                     <div className="pt-2 flex gap-2">
                       <input
                         type="url"
-                        placeholder="https://images.unsplash.com/..."
+                        placeholder="https://..."
                         value={avatarUrlInput}
                         onChange={(e) => setAvatarUrlInput(e.target.value)}
-                        className="flex-1 bg-white border border-stone-200 rounded-xl px-3 py-1.5 text-xs"
+                        className="flex-1 bg-white border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-900"
                       />
                       <button
                         type="button"
@@ -339,25 +345,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       </button>
                     </div>
                   )}
-
-                  {/* Quick Avatar Gallery presets */}
-                  <div className="pt-2">
-                    <span className="text-[11px] font-bold text-stone-500 block mb-1.5">Modelos Rápidos:</span>
-                    <div className="flex items-center justify-center sm:justify-start gap-2">
-                      {PRESET_AVATARS.map((preset, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => setAvatar(preset)}
-                          className={`w-8 h-8 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
-                            avatar === preset ? 'border-red-600 scale-110' : 'border-stone-200 opacity-70 hover:opacity-100'
-                          }`}
-                        >
-                          <img src={preset} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
                 </div>
               </div>
 

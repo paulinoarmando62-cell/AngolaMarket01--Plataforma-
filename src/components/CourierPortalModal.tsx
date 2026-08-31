@@ -59,7 +59,7 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
   // Profile states
   const [courierName, setCourierName] = useState(currentUser.name || '');
   const [courierPhone, setCourierPhone] = useState(currentUser.phone || '');
-  const [courierAvatar, setCourierAvatar] = useState(currentUser.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80');
+  const [courierAvatar, setCourierAvatar] = useState(currentUser.avatar || '');
   const [courierVehicle, setCourierVehicle] = useState(currentUser.vehicle || 'Moto');
   const [courierPlate, setCourierPlate] = useState(currentUser.licensePlate || '');
   const [courierIban, setCourierIban] = useState(currentUser.iban || '');
@@ -71,7 +71,7 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
     if (currentUser) {
       setCourierName(currentUser.name || '');
       setCourierPhone(currentUser.phone || '');
-      setCourierAvatar(currentUser.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80');
+      setCourierAvatar(currentUser.avatar || '');
       setCourierVehicle(currentUser.vehicle || 'Moto');
       setCourierPlate(currentUser.licensePlate || '');
       setCourierIban(currentUser.iban || '');
@@ -808,12 +808,18 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
                 {/* Profile Photo Uploader */}
                 <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 flex flex-col sm:flex-row items-center gap-4">
                   <div className="relative">
-                    <img 
-                      src={courierAvatar} 
-                      alt="Foto Estafeta" 
-                      className="w-20 h-20 rounded-2xl object-cover border-2 border-amber-500 shadow-xs"
-                      referrerPolicy="no-referrer"
-                    />
+                    {courierAvatar ? (
+                      <img 
+                        src={courierAvatar} 
+                        alt="Foto Estafeta" 
+                        className="w-20 h-20 rounded-2xl object-cover border-2 border-amber-500 shadow-xs"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 rounded-2xl bg-amber-100 border-2 border-amber-400 text-amber-900 font-bold flex items-center justify-center text-xl">
+                        {courierName ? courierName.substring(0, 2).toUpperCase() : <Truck className="w-8 h-8 text-amber-700" />}
+                      </div>
+                    )}
                     <label className="absolute -bottom-1.5 -right-1.5 p-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 shadow-md cursor-pointer transition-transform hover:scale-105">
                       <Camera className="w-3.5 h-3.5" />
                       <input 
@@ -827,16 +833,27 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
                   <div className="space-y-1 text-center sm:text-left flex-1">
                     <span className="font-bold text-xs text-stone-900 block">Fotografia de Perfil do Entregador</span>
                     <p className="text-[11px] text-stone-500">Adicione uma foto nítida para os clientes e o ADM identificarem a sua entrega.</p>
-                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-stone-200 hover:bg-stone-100 text-stone-800 text-[11px] font-bold cursor-pointer mt-1">
-                      <Upload className="w-3 h-3 text-amber-600" />
-                      <span>Carregar Nova Foto</span>
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={handleCourierAvatarUpload}
-                        className="hidden"
-                      />
-                    </label>
+                    <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
+                      <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-stone-200 hover:bg-stone-100 text-stone-800 text-[11px] font-bold cursor-pointer">
+                        <Upload className="w-3 h-3 text-amber-600" />
+                        <span>Carregar Foto</span>
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          onChange={handleCourierAvatarUpload}
+                          className="hidden"
+                        />
+                      </label>
+                      {courierAvatar && (
+                        <button
+                          type="button"
+                          onClick={() => setCourierAvatar('')}
+                          className="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-red-50 text-red-600 text-[11px] font-bold cursor-pointer"
+                        >
+                          Remover
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 
