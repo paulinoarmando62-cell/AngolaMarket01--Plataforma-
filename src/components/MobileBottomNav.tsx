@@ -194,51 +194,51 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
       {/* Persistent Bottom Bar on Mobile */}
       <nav 
         id="mobile-bottom-nav" 
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200 px-2 py-1.5 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200 px-2 pt-1.5 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
       >
         <div className="flex items-center justify-around max-w-md mx-auto">
           {/* Home */}
           <button
             type="button"
             onClick={onNavigateHome}
-            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-colors ${
+            className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl min-h-[44px] min-w-[54px] transition-colors cursor-pointer ${
               currentView === 'marketplace' ? 'text-red-600 font-bold' : 'text-stone-500 hover:text-stone-800'
             }`}
           >
             <Home className="w-5 h-5" />
-            <span className="text-[10px] mt-0.5">Início</span>
+            <span className="text-[10px] mt-0.5 font-medium">Início</span>
           </button>
 
           {/* Categories */}
           <button
             type="button"
             onClick={onOpenCategories}
-            className="flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-stone-500 hover:text-stone-800 transition-colors"
+            className="flex flex-col items-center justify-center py-1 px-2 rounded-xl min-h-[44px] min-w-[54px] text-stone-500 hover:text-stone-800 transition-colors cursor-pointer"
           >
             <Layers className="w-5 h-5" />
-            <span className="text-[10px] mt-0.5">Categorias</span>
+            <span className="text-[10px] mt-0.5 font-medium">Categorias</span>
           </button>
 
           {/* Search Focus */}
           <button
             type="button"
             onClick={onFocusSearch}
-            className="flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-stone-500 hover:text-stone-800 transition-colors"
+            className="flex flex-col items-center justify-center py-1 px-2 rounded-xl min-h-[44px] min-w-[54px] text-stone-500 hover:text-stone-800 transition-colors cursor-pointer"
           >
             <Search className="w-5 h-5" />
-            <span className="text-[10px] mt-0.5">Pesquisar</span>
+            <span className="text-[10px] mt-0.5 font-medium">Pesquisar</span>
           </button>
 
           {/* Cart with Badge */}
           <button
             type="button"
             onClick={onOpenCart}
-            className="relative flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-stone-700 hover:text-stone-900 transition-colors"
+            className="relative flex flex-col items-center justify-center py-1 px-2 rounded-xl min-h-[44px] min-w-[54px] text-stone-700 hover:text-stone-900 transition-colors cursor-pointer"
           >
             <div className="relative">
               <ShoppingCart className="w-5 h-5" />
               {cartCount > 0 && (
-                <span className="absolute -top-1.5 -right-2.5 bg-red-600 text-white font-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-mono animate-bounce">
+                <span className="absolute -top-1.5 -right-2.5 bg-red-600 text-white font-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-mono">
                   {cartCount > 9 ? '9+' : cartCount}
                 </span>
               )}
@@ -250,7 +250,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           <button
             type="button"
             onClick={handleAccountClick}
-            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-colors ${
+            className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl min-h-[44px] min-w-[54px] transition-colors cursor-pointer ${
               currentUser ? 'text-stone-900 font-bold' : 'text-stone-500 hover:text-stone-800'
             }`}
           >
@@ -269,7 +269,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             ) : (
               <User className="w-5 h-5" />
             )}
-            <span className="text-[10px] mt-0.5">
+            <span className="text-[10px] mt-0.5 font-medium">
               {currentUser ? (currentUser.role === 'admin' ? 'ADM' : 'Conta') : 'Entrar'}
             </span>
           </button>

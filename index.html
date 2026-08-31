@@ -2,9 +2,9 @@
 <html lang="pt">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     
-    <!-- PWA Manifest & Colors -->
+    <!-- PWA Manifest & Web App Settings -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#D90000" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -12,26 +12,53 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="AngolaMarket" />
     <meta name="application-name" content="AngolaMarket" />
+    <meta name="msapplication-TileColor" content="#D90000" />
+    <meta name="msapplication-navbutton-color" content="#D90000" />
+    <meta name="format-detection" content="telephone=no" />
     
     <!-- Icons -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
     <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png" />
 
-    <title>AngolaMarket 01 | Marketplace de Angola com Pagamento na Entrega (Luanda)</title>
+    <title>AngolaMarket | Marketplace Angolano com Entrega ao Domicílio</title>
     <meta name="description" content="Marketplace angolano para compra e venda de produtos com entrega ao domicílio." />
     <meta property="og:title" content="AngolaMarket | Marketplace Luanda COD" />
     <meta property="og:description" content="Compre com segurança em Luanda: pague apenas ao receber por TPA ou Dinheiro." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+    
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   </head>
-  <body class="bg-stone-50 text-stone-900 font-sans antialiased">
-    <div id="root"></div>
+  <body class="bg-stone-50 text-stone-900 font-sans antialiased overflow-x-hidden">
+    <!-- Initial Native Splash Screen (Instant zero-delay load, vanishes smoothly on React mount) -->
+    <div id="root">
+      <div style="position:fixed;inset:0;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;font-family:'Plus Jakarta Sans',system-ui,sans-serif;">
+        <div style="width:76px;height:76px;border-radius:22px;background:linear-gradient(135deg,#E50914,#B80000);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 25px rgba(229,9,20,0.25);margin-bottom:16px;">
+          <span style="color:#FFFFFF;font-weight:900;font-size:24px;letter-spacing:-1px;">AO<span style="color:#FDE047;">01</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+          <span style="font-weight:900;font-size:20px;color:#1C1917;letter-spacing:-0.5px;">AngolaMarket</span>
+          <span style="background:#1C1917;color:#FFFFFF;font-weight:900;font-size:11px;padding:2px 6px;border-radius:6px;">01</span>
+        </div>
+        <p style="font-size:11px;color:#78716C;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:28px;">Marketplace Luanda</p>
+        <div style="width:36px;height:4px;background:#F5F5F4;border-radius:2px;overflow:hidden;position:relative;">
+          <div style="width:100%;height:100%;background:#D90000;border-radius:2px;animation:pwaSplashPulse 1s ease-in-out infinite alternate;"></div>
+        </div>
+      </div>
+      <style>
+        @keyframes pwaSplashPulse {
+          0% { transform: scaleX(0.2); opacity: 0.5; }
+          100% { transform: scaleX(1); opacity: 1; }
+        }
+      </style>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

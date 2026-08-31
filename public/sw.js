@@ -1,5 +1,5 @@
-/* AngolaMarket Service Worker */
-const CACHE_NAME = 'angolamarket-cache-v1.0.0';
+/* AngolaMarket Service Worker v1.0.2 */
+const CACHE_NAME = 'angolamarket-shell-v1.0.2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -8,7 +8,8 @@ const STATIC_ASSETS = [
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/icons/icon-192-maskable.png',
-  '/icons/icon-512-maskable.png'
+  '/icons/icon-512-maskable.png',
+  '/icons/apple-touch-icon.png'
 ];
 
 // URLs or patterns that must NEVER be cached (private data, auth, dynamic APIs)
@@ -72,7 +73,14 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// 3. Fetch Event - Secure and robust caching strategy
+// 3. Message Event - Allow client to skip waiting
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
+// 4. Fetch Event - Secure and robust caching strategy
 self.addEventListener('fetch', (event) => {
   const { request } = event;
 

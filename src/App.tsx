@@ -51,6 +51,15 @@ import {
   Footer 
 } from './components/Footer';
 import { 
+  PWAInstallBanner 
+} from './components/PWAInstallBanner';
+import { 
+  OfflineIndicator 
+} from './components/OfflineIndicator';
+import { 
+  PWAUpdateToast 
+} from './components/PWAUpdateToast';
+import { 
   Product, 
   CategoryId, 
   CartItem, 
@@ -866,6 +875,15 @@ export default function App() {
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900 flex flex-col font-sans selection:bg-red-500 selection:text-white pb-20 lg:pb-0">
       
+      {/* Offline Status Bar */}
+      <OfflineIndicator />
+
+      {/* Discreet PWA Install Banner */}
+      <PWAInstallBanner />
+
+      {/* PWA Update Notification Toast */}
+      <PWAUpdateToast />
+
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-20 lg:bottom-6 right-6 z-50 bg-stone-900 border border-stone-800 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-semibold animate-in fade-in slide-in-from-bottom-5">
