@@ -120,25 +120,31 @@ export const Footer: React.FC<FooterProps> = ({
           {/* Luanda Zones quick list */}
           <div className="space-y-3">
             <h5 className="font-bold text-white text-xs uppercase tracking-wider">
-              Bairros de Luanda ({luandaZones.length})
+              Bairros de Luanda {luandaZones.length > 0 ? `(${luandaZones.length})` : ''}
             </h5>
             <ul className="space-y-2 text-xs">
-              {luandaZones.slice(0, 5).map((z) => (
-                <li key={z.id}>
-                  <button 
-                    onClick={onOpenDeliveryInfo}
-                    className="hover:text-red-400 transition-colors text-left cursor-pointer"
-                  >
-                    {z.neighborhood || z.name.split('(')[0]}
-                  </button>
+              {luandaZones.length === 0 ? (
+                <li className="text-stone-500 text-[11px]">
+                  Entregas em toda a província de Luanda com taxas geridas pelo Administrador.
                 </li>
-              ))}
+              ) : (
+                luandaZones.slice(0, 5).map((z) => (
+                  <li key={z.id}>
+                    <button 
+                      onClick={onOpenDeliveryInfo}
+                      className="hover:text-red-400 transition-colors text-left cursor-pointer"
+                    >
+                      {z.neighborhood || z.name.split('(')[0]}
+                    </button>
+                  </li>
+                ))
+              )}
               <li>
                 <button 
                   onClick={onOpenDeliveryInfo}
                   className="text-red-400 underline font-bold text-xs cursor-pointer"
                 >
-                  Ver todas as taxas por bairro →
+                  Ver cobertura de entregas →
                 </button>
               </li>
             </ul>

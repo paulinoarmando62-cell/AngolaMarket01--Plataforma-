@@ -16,113 +16,22 @@ export const INITIAL_USERS: AppUser[] = [
   }
 ];
 
-// Zonas reais de Luanda configuráveis pelo Administrador
-export const LUANDA_ZONES: LuandaZone[] = [
-  {
-    id: 'zone-ingombota',
-    name: 'Ingombota / Centro (Luanda)',
-    municipality: 'Luanda',
-    neighborhood: 'Ingombota',
-    estimatedHours: '2 a 4 horas',
-    deliveryFee: 2000,
-    deliveryFeeDoor: 2000,
-    deliveryFeeBusStop: 1500,
-    popularBusStops: ['Kinaxixi', 'Mutamba', 'Largo do Baleizão', 'Sagrada Família'],
-    popularAreas: ['Kinaxixi', 'Mutamba', 'Coqueiros', 'Maculusso', 'Ilha de Luanda', 'Cruzeiro'],
-    active: true
-  },
-  {
-    id: 'zone-maianga',
-    name: 'Maianga / Alvalade',
-    municipality: 'Luanda',
-    neighborhood: 'Maianga',
-    estimatedHours: '2 a 4 horas',
-    deliveryFee: 2200,
-    deliveryFeeDoor: 2200,
-    deliveryFeeBusStop: 1600,
-    popularBusStops: ['Paragem do Cassenda', 'Sagrada Família', 'Chicala', 'Gamek'],
-    popularAreas: ['Alvalade', 'Cassenda', 'Prenda', 'Bairro Azul', 'Rocha Pinto', 'Morro da Luz'],
-    active: true
-  },
-  {
-    id: 'zone-talatona',
-    name: 'Talatona / Patriota',
-    municipality: 'Talatona',
-    neighborhood: 'Talatona',
-    estimatedHours: '3 a 5 horas',
-    deliveryFee: 2500,
-    deliveryFeeDoor: 2500,
-    deliveryFeeBusStop: 1800,
-    popularBusStops: ['Kero Talatona', 'Centro de Convenções', 'Paragem do Patriota', 'Maxi Morro Bento'],
-    popularAreas: ['Morro Bento', 'Condomínio Dolce Vita', 'Patriota', 'Futungo de Belas', 'Cidade Financeira'],
-    active: true
-  },
-  {
-    id: 'zone-kilamba',
-    name: 'Kilamba / Camama',
-    municipality: 'Belas',
-    neighborhood: 'Kilamba',
-    estimatedHours: '3 a 6 horas',
-    deliveryFee: 3000,
-    deliveryFeeDoor: 3000,
-    deliveryFeeBusStop: 2200,
-    popularBusStops: ['Centralidade do Kilamba (Bloco A)', 'Desvio do Sapú', 'Rotunda da Cidade Universitária'],
-    popularAreas: ['Centralidade do Kilamba', 'Camama', 'Cidade Universitária', 'Jardim de Rosas', 'Sapú'],
-    active: true
-  },
-  {
-    id: 'zone-viana',
-    name: 'Viana / Zango',
-    municipality: 'Viana',
-    neighborhood: 'Viana',
-    estimatedHours: '4 a 7 horas',
-    deliveryFee: 3500,
-    deliveryFeeDoor: 3500,
-    deliveryFeeBusStop: 2500,
-    popularBusStops: ['Ponte Amarela de Viana', 'Paragem da Moagem', 'Mercado do 30', 'Zango 1 Central'],
-    popularAreas: ['Vila de Viana', 'Estalagem', 'Grafanil', 'Zango 0 a 4', 'Centralidade 8000', 'Capalanga'],
-    active: true
-  },
-  {
-    id: 'zone-belas',
-    name: 'Belas / Benfica',
-    municipality: 'Belas',
-    neighborhood: 'Benfica',
-    estimatedHours: '3 a 6 horas',
-    deliveryFee: 3200,
-    deliveryFeeDoor: 3200,
-    deliveryFeeBusStop: 2400,
-    popularBusStops: ['Mercado do Benfica', 'Kero Benfica', 'Paragem dos Ramiros', 'Corimba'],
-    popularAreas: ['Benfica', 'Ramiros', 'Morro dos Veados', 'Bairro Militar', 'Kilamba Kiaxi'],
-    active: true
-  },
-  {
-    id: 'zone-cazenga',
-    name: 'Cazenga / Hoji-ya-Henda',
-    municipality: 'Cazenga',
-    neighborhood: 'Cazenga',
-    estimatedHours: '3 a 5 horas',
-    deliveryFee: 2500,
-    deliveryFeeDoor: 2500,
-    deliveryFeeBusStop: 1800,
-    popularBusStops: ['Marco Histórico do Cazenga', 'Paragem do Asa Branca', 'Mabor', 'Cuca'],
-    popularAreas: ['Tala Hady', 'Calawenda', 'Quinta da Dona Amélia', '11 de Novembro', 'Hoji-ya-Henda'],
-    active: true
-  },
-  {
-    id: 'zone-cacuaco',
-    name: 'Cacuaco / Sequele',
-    municipality: 'Cacuaco',
-    neighborhood: 'Cacuaco',
-    estimatedHours: '4 a 7 horas',
-    deliveryFee: 3800,
-    deliveryFeeDoor: 3800,
-    deliveryFeeBusStop: 2800,
-    popularBusStops: ['Vila de Cacuaco', 'Entrada do Sequele', 'Desvio da Vidrul', 'Kifangondo'],
-    popularAreas: ['Vila de Cacuaco', 'Centralidade do Sequele', 'Vidrul', 'Belo Monte', 'Kifangondo'],
-    active: true
-  }
-];
+// Zonas e Bairros de Luanda configuráveis pelo Administrador (inicia limpo sem dados de exemplo)
+export const DEFAULT_BLANK_ZONE: LuandaZone = {
+  id: 'zone-default',
+  name: 'Luanda',
+  municipality: '',
+  neighborhood: '',
+  estimatedHours: '24 a 48 horas',
+  deliveryFee: 0,
+  deliveryFeeDoor: 0,
+  deliveryFeeBusStop: 0,
+  popularBusStops: [],
+  popularAreas: [],
+  active: true
+};
+
+export const LUANDA_ZONES: LuandaZone[] = [];
 
 export const CATEGORIES: Category[] = [
   {

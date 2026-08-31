@@ -88,6 +88,7 @@ interface AdminPortalModalProps {
   onRejectPayoutRequest?: (requestId: string, reason?: string) => void;
   currentUser?: AppUser | null;
   onUpdateAdminProfile?: (updatedUser: AppUser) => void;
+  onClearAllTestData?: () => void;
   initialTab?: AdminTab;
 }
 
@@ -113,6 +114,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
   onRejectPayoutRequest,
   currentUser,
   onUpdateAdminProfile,
+  onClearAllTestData,
   initialTab = 'dashboard'
 }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
@@ -158,7 +160,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
   const [isZoneFormOpen, setIsZoneFormOpen] = useState(false);
   const [editingZoneId, setEditingZoneId] = useState<string | null>(null);
   const [zoneName, setZoneName] = useState('');
-  const [zoneMunicipality, setZoneMunicipality] = useState('Luanda');
+  const [zoneMunicipality, setZoneMunicipality] = useState('');
   const [zoneNeighborhood, setZoneNeighborhood] = useState('');
   const [zoneFee, setZoneFee] = useState('');
   const [zoneFeeDoor, setZoneFeeDoor] = useState('');
@@ -1281,6 +1283,27 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                   </form>
                 )}
               </div>
+
+              {/* Reset / Purge Action */}
+              {onClearAllTestData && (
+                <div className="p-5 rounded-3xl bg-red-50 border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h5 className="font-black text-xs text-red-900">Zerar Todos os Valores & Limpar Histórico</h5>
+                    <p className="text-[11px] text-red-700">Apaga todos os pedidos pendentes, zera a carteira para 0 Kz e limpa o histórico de testes.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm('Tem a certeza que deseja apagar todos os pedidos de teste e zerar a carteira para 0 Kz?')) {
+                        onClearAllTestData();
+                      }
+                    }}
+                    className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shrink-0 cursor-pointer shadow-xs"
+                  >
+                    Zerar Carteira e Pedidos
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -1899,11 +1922,13 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                   onClick={() => {
                     setEditingZoneId(null);
                     setZoneName('');
+                    setZoneMunicipality('');
                     setZoneNeighborhood('');
-                    setZoneFee('2000');
-                    setZoneFeeDoor('2000');
-                    setZoneFeeBusStop('1200');
+                    setZoneFee('');
+                    setZoneFeeDoor('');
+                    setZoneFeeBusStop('');
                     setZoneBusStops('');
+                    setZoneHours('24 a 48 horas');
                     setIsZoneFormOpen(!isZoneFormOpen);
                   }}
                   className="px-4 py-2.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm cursor-pointer"

@@ -494,7 +494,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       type="text"
                       value={operatingZones}
                       onChange={(e) => setOperatingZones(e.target.value)}
-                      placeholder="Maianga, Talatona, Kilamba, Viana..."
+                      placeholder="Digite os seus bairros e municípios de atuação..."
                       className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs"
                     />
                   </div>

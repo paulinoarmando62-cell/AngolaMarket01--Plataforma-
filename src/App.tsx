@@ -74,6 +74,7 @@ import {
   INITIAL_PRODUCTS, 
   CATEGORIES, 
   LUANDA_ZONES, 
+  DEFAULT_BLANK_ZONE,
   INITIAL_USERS,
   INITIAL_PAYOUT_REQUESTS,
   formatKwanzas 
@@ -104,7 +105,80 @@ const LOCAL_STORAGE_USERS_KEY = 'angolamarket01_users';
 const LOCAL_STORAGE_CURRENT_USER_KEY = 'angolamarket01_current_user';
 const LOCAL_STORAGE_PAYOUT_REQUESTS_KEY = 'angolamarket01_payout_requests';
 
-const DEFAULT_BLANK_ZONE: LuandaZone = LUANDA_ZONES[0];
+// Clean storage versioning to immediately purge any old test data from user browsers
+const CURRENT_APP_CLEAN_VERSION = 'v7_clean_zero_all_zones_and_data_final';
+
+if (typeof window !== 'undefined') {
+  try {
+    const savedVer = localStorage.getItem('angolamarket_app_clean_ver');
+    if (savedVer !== CURRENT_APP_CLEAN_VERSION) {
+      // Forcefully remove legacy test orders, mock payout requests, test carts and example zones
+      localStorage.removeItem(LOCAL_STORAGE_ORDERS_KEY);
+      localStorage.removeItem(LOCAL_STORAGE_PAYOUT_REQUESTS_KEY);
+      localStorage.removeItem(LOCAL_STORAGE_CART_KEY);
+      localStorage.removeItem(LOCAL_STORAGE_ZONES_LIST_KEY);
+      localStorage.removeItem(LOCAL_STORAGE_ZONE_KEY);
+      
+      // Clean users & remove mock addresses
+      const rawUsers = localStorage.getItem(LOCAL_STORAGE_USERS_KEY);
+      if (rawUsers) {
+        const uList = JSON.parse(rawUsers);
+        if (Array.isArray(uList)) {
+          const cleaned = uList
+            .filter((u: any) => 
+              !u.id.includes('demo') && 
+              !u.id.includes('test') && 
+              !u.id.startsWith('courier-1') &&
+              !u.id.startsWith('courier-2') &&
+              !u.id.startsWith('courier-3') &&
+              !u.id.startsWith('affiliate-1') &&
+              !u.id.startsWith('buyer-1')
+            )
+            .map((u: any) => ({
+              ...u,
+              balanceAOA: 0,
+              courierBalanceAOA: 0,
+              totalDeliveriesCompleted: 0,
+              cashCollectedToDeposit: 0,
+              totalCommissionEarned: 0,
+              defaultMunicipality: '',
+              defaultNeighborhood: '',
+              defaultStreetAddress: '',
+              defaultReferencePoint: '',
+              avatar: (u.avatar && !u.avatar.includes('images.unsplash.com')) ? u.avatar : ''
+            }));
+          localStorage.setItem(LOCAL_STORAGE_USERS_KEY, JSON.stringify(cleaned));
+        }
+      }
+
+      // Clean current user
+      const rawCurrent = localStorage.getItem(LOCAL_STORAGE_CURRENT_USER_KEY);
+      if (rawCurrent) {
+        const u = JSON.parse(rawCurrent);
+        if (u && typeof u === 'object') {
+          const cleanedCurrent = {
+            ...u,
+            balanceAOA: 0,
+            courierBalanceAOA: 0,
+            totalDeliveriesCompleted: 0,
+            cashCollectedToDeposit: 0,
+            totalCommissionEarned: 0,
+            defaultMunicipality: '',
+            defaultNeighborhood: '',
+            defaultStreetAddress: '',
+            defaultReferencePoint: '',
+            avatar: (u.avatar && !u.avatar.includes('images.unsplash.com')) ? u.avatar : ''
+          };
+          localStorage.setItem(LOCAL_STORAGE_CURRENT_USER_KEY, JSON.stringify(cleanedCurrent));
+        }
+      }
+
+      localStorage.setItem('angolamarket_app_clean_ver', CURRENT_APP_CLEAN_VERSION);
+    }
+  } catch (e) {
+    // ignore
+  }
+}
 
 export default function App() {
   // Users state (Admin, Couriers, Affiliates, Buyers)
@@ -125,7 +199,16 @@ export default function App() {
             !u.id.startsWith('buyer-1') &&
             !(u.email || '').includes('exemplo.com') && 
             !(u.email || '').includes('teste.ao')
-          );
+          ).map((u: AppUser) => ({
+            ...u,
+            balanceAOA: 0,
+            courierBalanceAOA: 0,
+            totalDeliveriesCompleted: 0,
+            cashCollectedToDeposit: 0,
+            totalCommissionEarned: 0,
+            avatar: (u.avatar && !u.avatar.includes('images.unsplash.com')) ? u.avatar : ''
+          }));
+          
           // Ensure master admin has real credentials without any fake stock avatar or fake IBAN
           const hasMaster = realOnly.some((u: AppUser) => u.email === 'paulinoarmando62@gmail.com');
           if (hasMaster) {
@@ -136,10 +219,7 @@ export default function App() {
               phone: '+244 938 243 909',
               name: 'Paulino Armando (Administrador Geral)',
               avatar: (u.avatar && !u.avatar.includes('images.unsplash.com')) ? u.avatar : ''
-            } : {
-              ...u,
-              avatar: (u.avatar && !u.avatar.includes('images.unsplash.com')) ? u.avatar : ''
-            });
+            } : u);
           } else {
             return [INITIAL_USERS[0], ...realOnly];
           }
@@ -160,6 +240,11 @@ export default function App() {
         if (parsed && parsed.id) {
           return {
             ...parsed,
+            balanceAOA: 0,
+            courierBalanceAOA: 0,
+            totalDeliveriesCompleted: 0,
+            cashCollectedToDeposit: 0,
+            totalCommissionEarned: 0,
             avatar: (parsed.avatar && !parsed.avatar.includes('images.unsplash.com')) ? parsed.avatar : ''
           };
         }
@@ -170,7 +255,7 @@ export default function App() {
     return null;
   });
 
-  // Dynamic Luanda Zones & Neighborhoods managed by the ADM
+  // Dynamic Luanda Zones & Neighborhoods managed by the ADM (Starts clean at zero)
   const [luandaZones, setLuandaZones] = useState<LuandaZone[]>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_ZONES_LIST_KEY);
@@ -178,7 +263,15 @@ export default function App() {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
           const realZones = parsed.filter((z: LuandaZone) => 
-            z.id && !z.name.includes('(A configurar)')
+            z.id && 
+            !z.id.startsWith('zone-ingombota') && 
+            !z.id.startsWith('zone-maianga') && 
+            !z.id.startsWith('zone-talatona') && 
+            !z.id.startsWith('zone-kilamba') && 
+            !z.id.startsWith('zone-viana') && 
+            !z.id.startsWith('zone-belas') && 
+            !z.id.startsWith('zone-cazenga') && 
+            !z.id.startsWith('zone-cacuaco')
           );
           if (realZones.length > 0) return realZones;
         }
@@ -186,7 +279,7 @@ export default function App() {
     } catch (e) {
       // fallback
     }
-    return LUANDA_ZONES;
+    return [];
   });
 
   // Selected Luanda Delivery Zone for checkout / browsing
@@ -195,12 +288,25 @@ export default function App() {
       const saved = localStorage.getItem(LOCAL_STORAGE_ZONE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.id && !parsed.name.includes('(A configurar)')) return parsed;
+        if (
+          parsed && 
+          parsed.id && 
+          !parsed.id.startsWith('zone-ingombota') && 
+          !parsed.id.startsWith('zone-maianga') && 
+          !parsed.id.startsWith('zone-talatona') && 
+          !parsed.id.startsWith('zone-kilamba') && 
+          !parsed.id.startsWith('zone-viana') && 
+          !parsed.id.startsWith('zone-belas') && 
+          !parsed.id.startsWith('zone-cazenga') && 
+          !parsed.id.startsWith('zone-cacuaco')
+        ) {
+          return parsed;
+        }
       }
     } catch (e) {
       // fallback
     }
-    return LUANDA_ZONES[0];
+    return DEFAULT_BLANK_ZONE;
   });
 
   // Products state (Pristine clean state - only real products added by Admin)
@@ -220,64 +326,18 @@ export default function App() {
     return [];
   });
 
-  // Cart state
+  // Cart state (Clean zero)
   const [cart, setCart] = useState<CartItem[]>(() => {
-    try {
-      const saved = localStorage.getItem(LOCAL_STORAGE_CART_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed.filter(it => it.product?.id && it.product.id.startsWith('adm-prod-'));
-        }
-      }
-    } catch (e) {
-      // fallback
-    }
     return [];
   });
 
-  // Orders state (Pristine clean state for real production orders)
+  // Orders state (Pristine clean state for real production orders - starts at zero)
   const [orders, setOrders] = useState<Order[]>(() => {
-    try {
-      const saved = localStorage.getItem(LOCAL_STORAGE_ORDERS_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          const realOrders = parsed.filter((o: Order) => 
-            o.id && 
-            !o.id.startsWith('ord-1') && 
-            !o.id.startsWith('ord-2') && 
-            !o.id.startsWith('ord-3') && 
-            !o.id.startsWith('ord-demo')
-          );
-          return realOrders;
-        }
-      }
-    } catch (e) {
-      // fallback
-    }
     return [];
   });
 
-  // Payout Requests state (Commission & Delivery earnings withdrawals)
+  // Payout Requests state (Starts at zero)
   const [payoutRequests, setPayoutRequests] = useState<PayoutRequest[]>(() => {
-    try {
-      const saved = localStorage.getItem(LOCAL_STORAGE_PAYOUT_REQUESTS_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          const realPayouts = parsed.filter((p: PayoutRequest) => 
-            p.id && 
-            !p.id.startsWith('payout-1') && 
-            !p.id.startsWith('payout-2') && 
-            !p.id.startsWith('payout-3')
-          );
-          return realPayouts;
-        }
-      }
-    } catch (e) {
-      // fallback
-    }
     return [];
   });
 
@@ -310,6 +370,44 @@ export default function App() {
     setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
     setCurrentUser(updatedUser);
     showToast('Perfil atualizado com sucesso!');
+  };
+
+  const handleClearAllTestData = () => {
+    localStorage.removeItem(LOCAL_STORAGE_ORDERS_KEY);
+    localStorage.removeItem(LOCAL_STORAGE_PAYOUT_REQUESTS_KEY);
+    localStorage.removeItem(LOCAL_STORAGE_CART_KEY);
+    localStorage.removeItem(LOCAL_STORAGE_ZONES_LIST_KEY);
+    localStorage.removeItem(LOCAL_STORAGE_ZONE_KEY);
+    setOrders([]);
+    setPayoutRequests([]);
+    setCart([]);
+    setLuandaZones([]);
+    setSelectedZone(DEFAULT_BLANK_ZONE);
+    setUsers(prev => prev.map(u => ({
+      ...u,
+      balanceAOA: 0,
+      courierBalanceAOA: 0,
+      totalDeliveriesCompleted: 0,
+      cashCollectedToDeposit: 0,
+      totalCommissionEarned: 0,
+      defaultMunicipality: '',
+      defaultNeighborhood: '',
+      defaultStreetAddress: '',
+      defaultReferencePoint: ''
+    })));
+    setCurrentUser(prev => prev ? {
+      ...prev,
+      balanceAOA: 0,
+      courierBalanceAOA: 0,
+      totalDeliveriesCompleted: 0,
+      cashCollectedToDeposit: 0,
+      totalCommissionEarned: 0,
+      defaultMunicipality: '',
+      defaultNeighborhood: '',
+      defaultStreetAddress: '',
+      defaultReferencePoint: ''
+    } : null);
+    showToast('Todos os bairros, endereços, pedidos e saldos fictícios foram completamente apagados e zerados!');
   };
 
   const handleToggleAffiliateProduct = (productId: string) => {
@@ -720,7 +818,7 @@ export default function App() {
   // ADM Delivery Neighborhood & Rate Handlers
   const handleAdminAddZone = (newZone: LuandaZone) => {
     setLuandaZones(prev => [newZone, ...prev]);
-    if (!selectedZone || selectedZone.id === 'luanda_geral') {
+    if (!selectedZone || selectedZone.id === 'zone-default' || selectedZone.id === 'luanda_geral' || !selectedZone.neighborhood) {
       setSelectedZone(newZone);
     }
     showToast(`Bairro ${newZone.neighborhood || newZone.name} adicionado com sucesso!`);
@@ -1109,6 +1207,7 @@ export default function App() {
         onRejectPayoutRequest={handleRejectPayout}
         currentUser={currentUser || undefined}
         onUpdateAdminProfile={handleUpdateUserProfile}
+        onClearAllTestData={handleClearAllTestData}
       />
 
       {/* Courier Portal Modal (Active Deliveries, PIN Verification & Payout / Saque Requests) */}

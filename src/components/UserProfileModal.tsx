@@ -56,7 +56,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [bankName, setBankName] = useState(currentUser.bankName || '');
 
   // Address fields
-  const [municipality, setMunicipality] = useState(currentUser.defaultMunicipality || 'Luanda');
+  const [municipality, setMunicipality] = useState(currentUser.defaultMunicipality || '');
   const [neighborhood, setNeighborhood] = useState(currentUser.defaultNeighborhood || '');
   const [streetAddress, setStreetAddress] = useState(currentUser.defaultStreetAddress || '');
   const [referencePoint, setReferencePoint] = useState(currentUser.defaultReferencePoint || '');
@@ -79,7 +79,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       setMulticaixaPhone(currentUser.multicaixaExpressPhone || currentUser.phone || '');
       setIban(currentUser.iban || '');
       setBankName(currentUser.bankName || '');
-      setMunicipality(currentUser.defaultMunicipality || 'Luanda');
+      setMunicipality(currentUser.defaultMunicipality || '');
       setNeighborhood(currentUser.defaultNeighborhood || '');
       setStreetAddress(currentUser.defaultStreetAddress || '');
       setReferencePoint(currentUser.defaultReferencePoint || '');
@@ -585,7 +585,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     type="text"
                     value={municipality}
                     onChange={(e) => setMunicipality(e.target.value)}
-                    placeholder="Luanda, Talatona, Viana, Belas..."
+                    placeholder="Digite o seu município..."
                     className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 text-xs sm:text-sm text-stone-900 focus:outline-none focus:border-red-500 focus:bg-white"
                   />
                 </div>
@@ -596,7 +596,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     type="text"
                     value={neighborhood}
                     onChange={(e) => setNeighborhood(e.target.value)}
-                    placeholder="Alvalade, Vila Alice, Zango 3, Benfica..."
+                    placeholder="Digite o seu bairro ou condomínio..."
                     className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 text-xs sm:text-sm text-stone-900 focus:outline-none focus:border-red-500 focus:bg-white"
                   />
                 </div>
@@ -607,7 +607,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     type="text"
                     value={streetAddress}
                     onChange={(e) => setStreetAddress(e.target.value)}
-                    placeholder="Rua Comandante Gika, Casa nº 42"
+                    placeholder="Digite a rua, entrada ou número da casa..."
                     className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 text-xs sm:text-sm text-stone-900 focus:outline-none focus:border-red-500 focus:bg-white"
                   />
                 </div>
@@ -618,7 +618,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     type="text"
                     value={referencePoint}
                     onChange={(e) => setReferencePoint(e.target.value)}
-                    placeholder="Junto ao Colégio, Atrás da Padaria..."
+                    placeholder="Ex: Perto do colégio, atrás da padaria..."
                     className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 text-xs sm:text-sm text-stone-900 focus:outline-none focus:border-red-500 focus:bg-white"
                   />
                 </div>
