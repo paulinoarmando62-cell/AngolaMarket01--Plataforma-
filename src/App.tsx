@@ -104,19 +104,7 @@ const LOCAL_STORAGE_USERS_KEY = 'angolamarket01_users';
 const LOCAL_STORAGE_CURRENT_USER_KEY = 'angolamarket01_current_user';
 const LOCAL_STORAGE_PAYOUT_REQUESTS_KEY = 'angolamarket01_payout_requests';
 
-const DEFAULT_BLANK_ZONE: LuandaZone = {
-  id: 'luanda_geral',
-  name: 'Luanda (A configurar)',
-  municipality: 'Luanda',
-  neighborhood: 'Luanda',
-  estimatedHours: 'A combinar',
-  deliveryFee: 0,
-  deliveryFeeDoor: 0,
-  deliveryFeeBusStop: 0,
-  popularBusStops: [],
-  popularAreas: [],
-  active: true
-};
+const DEFAULT_BLANK_ZONE: LuandaZone = LUANDA_ZONES[0];
 
 export default function App() {
   // Users state (Admin, Couriers, Affiliates, Buyers)
@@ -130,8 +118,6 @@ export default function App() {
           const realOnly = parsed.filter((u: AppUser) => 
             !u.id.includes('demo') && 
             !u.id.includes('test') && 
-            !u.id.includes('courier-') &&
-            !u.id.includes('affiliate-') &&
             !(u.email || '').includes('exemplo.com') && 
             !(u.email || '').includes('teste.ao')
           );
@@ -176,25 +162,17 @@ export default function App() {
       const saved = localStorage.getItem(LOCAL_STORAGE_ZONES_LIST_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          // Filter out old mock zones
+        if (Array.isArray(parsed) && parsed.length > 0) {
           const realZones = parsed.filter((z: LuandaZone) => 
-            z.id && 
-            !z.id.startsWith('luanda_') && 
-            !z.id.startsWith('talatona_') && 
-            !z.id.startsWith('belas_') && 
-            !z.id.startsWith('cazenga_') && 
-            !z.id.startsWith('viana_') && 
-            !z.id.startsWith('cacuaco_') && 
-            !z.id.startsWith('kilamba_')
+            z.id && !z.name.includes('(A configurar)')
           );
-          return realZones;
+          if (realZones.length > 0) return realZones;
         }
       }
     } catch (e) {
       // fallback
     }
-    return [];
+    return LUANDA_ZONES;
   });
 
   // Selected Luanda Delivery Zone for checkout / browsing
@@ -203,32 +181,28 @@ export default function App() {
       const saved = localStorage.getItem(LOCAL_STORAGE_ZONE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.id && parsed.id.startsWith('zone-')) return parsed;
+        if (parsed && parsed.id && !parsed.name.includes('(A configurar)')) return parsed;
       }
     } catch (e) {
       // fallback
     }
-    return DEFAULT_BLANK_ZONE;
+    return LUANDA_ZONES[0];
   });
 
-  // Products state (Solely owned & published by the ADM)
+  // Products state (Real authentic products in Luanda)
   const [products, setProducts] = useState<Product[]>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_PRODUCTS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          // Only keep real products added by the Admin
-          const realProducts = parsed.filter((p: Product) => 
-            p.id && (p.id.startsWith('adm-prod-') || p.id.startsWith('real-prod-'))
-          );
-          return realProducts;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
         }
       }
     } catch (e) {
       // fallback
     }
-    return [];
+    return INITIAL_PRODUCTS;
   });
 
   // Cart state
@@ -971,9 +945,9 @@ export default function App() {
                   <Package className="w-8 h-8" />
                 </div>
                 <div className="space-y-1.5">
-                  <h3 className="text-lg font-black text-stone-900 tracking-tight">Catálogo Pronto para Produtos Reais</h3>
+                  <h3 className="text-lg font-black text-stone-900 tracking-tight">Catálogo de Produtos em Atualização</h3>
                   <p className="text-xs text-stone-500 max-w-md mx-auto leading-relaxed">
-                    Todos os itens fictícios e de exemplo foram limpos da plataforma. O Administrador Geral pode agora cadastrar os produtos reais com imagens, preços em Kwanzas e stock diretamente no Painel Administrativo.
+                    Nenhum artigo disponível de momento. Novos artigos com entrega rápida em Luanda serão disponibilizados brevemente.
                   </p>
                 </div>
                 <div className="pt-2 flex flex-wrap items-center justify-center gap-2.5">
@@ -982,7 +956,7 @@ export default function App() {
                     className="px-6 py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition-all transform active:scale-95 cursor-pointer flex items-center gap-2"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>Aceder ao Painel & Cadastrar Produtos</span>
+                    <span>Painel de Gestão & Adicionar Artigos</span>
                   </button>
                 </div>
               </div>

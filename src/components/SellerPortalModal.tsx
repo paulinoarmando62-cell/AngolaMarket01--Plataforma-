@@ -155,7 +155,7 @@ export const SellerPortalModal: React.FC<SellerPortalModalProps> = ({
                     required
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Ex: Smart TV LG 55 Polegadas 4K ThinQ AI com Garantia"
+                    placeholder="Smart TV LG 55 Polegadas 4K ThinQ AI com Garantia"
                     className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white"
                   />
                 </div>
@@ -199,7 +199,7 @@ export const SellerPortalModal: React.FC<SellerPortalModalProps> = ({
                       required
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
-                      placeholder="Ex: 45000"
+                      placeholder="45000"
                       className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3 py-2 text-xs text-red-600 font-mono font-bold focus:outline-none focus:border-red-500 focus:bg-white"
                     />
                   </div>
@@ -210,7 +210,7 @@ export const SellerPortalModal: React.FC<SellerPortalModalProps> = ({
                       type="number"
                       value={originalPrice}
                       onChange={(e) => setOriginalPrice(e.target.value)}
-                      placeholder="Ex: 55000 (opcional)"
+                      placeholder="55000 (opcional)"
                       className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3 py-2 text-xs text-stone-400 font-mono focus:outline-none focus:border-red-500 focus:bg-white"
                     />
                   </div>
@@ -231,7 +231,7 @@ export const SellerPortalModal: React.FC<SellerPortalModalProps> = ({
               <div className="space-y-2 pt-2 border-t border-stone-200">
                 <label className="text-xs text-stone-700 font-bold flex items-center gap-1.5">
                   <Image className="w-4 h-4 text-red-600" />
-                  <span>Escolha uma imagem de amostra ou insira URL da foto:</span>
+                  <span>Selecione uma imagem de referência ou insira URL da foto:</span>
                 </label>
 
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
@@ -269,7 +269,7 @@ export const SellerPortalModal: React.FC<SellerPortalModalProps> = ({
                       type="text"
                       value={sellerName}
                       onChange={(e) => setSellerName(e.target.value)}
-                      placeholder="Ex: Armazém São Paulo"
+                      placeholder="Armazém Central Luanda"
                       className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-red-500 focus:bg-white"
                     />
                   </div>
@@ -280,7 +280,7 @@ export const SellerPortalModal: React.FC<SellerPortalModalProps> = ({
                       type="text"
                       value={sellerLocation}
                       onChange={(e) => setSellerLocation(e.target.value)}
-                      placeholder="Ex: Talatona ou Mercado do Kikolo"
+                      placeholder="Talatona, Luanda"
                       className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-red-500 focus:bg-white"
                     />
                   </div>
@@ -306,7 +306,7 @@ export const SellerPortalModal: React.FC<SellerPortalModalProps> = ({
                     rows={2}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Detalhes, especificações e condições de teste no ato da entrega..."
+                    placeholder="Detalhes, especificações e condições de verificação no ato da entrega..."
                     className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-2.5 text-xs text-stone-900 focus:outline-none focus:border-red-500 focus:bg-white"
                   />
                 </div>

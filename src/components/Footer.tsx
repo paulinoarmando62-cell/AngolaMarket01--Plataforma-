@@ -67,7 +67,7 @@ export const Footer: React.FC<FooterProps> = ({
             <div className="space-y-1">
               <h4 className="font-bold text-white text-xs">Inspecione Antes de Pagar</h4>
               <p className="text-[11px] text-stone-400 leading-relaxed">
-                Abra a encomenda, teste os artigos com o estafeta e só depois valide a entrega.
+                Abra a encomenda, verifique os artigos com o estafeta e só depois valide a entrega.
               </p>
             </div>
           </div>

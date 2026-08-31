@@ -550,7 +550,7 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
                           max={balance > 0 ? balance : 1000000}
                           value={payoutAmount}
                           onChange={(e) => setPayoutAmount(e.target.value)}
-                          placeholder={`Ex: ${balance > 0 ? balance : 25000}`}
+                          placeholder={`${balance > 0 ? balance : 25000}`}
                           className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-blue-500"
                         />
                       </div>

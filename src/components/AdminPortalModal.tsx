@@ -2106,7 +2106,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                       type="text"
                       value={zoneBusStops}
                       onChange={(e) => setZoneBusStops(e.target.value)}
-                      placeholder="Ex: Paragem da Sagrada Família, Paragem do Kinaxixi, Paragem do Cassenda"
+                      placeholder="Paragem da Sagrada Família, Paragem do Kinaxixi, Paragem do Cassenda"
                       className="w-full bg-white border border-stone-200 rounded-2xl px-3.5 py-2 text-xs text-stone-900 focus:outline-none focus:border-red-500"
                     />
                     <span className="text-[10px] text-stone-400 block">
@@ -2682,7 +2682,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                         required
                         value={prodTitle}
                         onChange={(e) => setProdTitle(e.target.value)}
-                        placeholder="Ex: iPhone 15 Pro, Samakaka Chic, Gerador Lutian 6.5kVA..."
+                        placeholder="Nome do produto ou modelo..."
                         className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 focus:outline-none focus:border-red-500 focus:bg-white"
                       />
                     </div>
@@ -2709,7 +2709,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                         required
                         value={prodPrice}
                         onChange={(e) => setProdPrice(e.target.value)}
-                        placeholder="Ex: 85000"
+                        placeholder="85000"
                         className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-red-600 font-mono font-bold focus:outline-none focus:border-red-500 focus:bg-white"
                       />
                     </div>
@@ -2720,7 +2720,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                         type="number"
                         value={prodOrigPrice}
                         onChange={(e) => setProdOrigPrice(e.target.value)}
-                        placeholder="Ex: 95000 (opcional)"
+                        placeholder="95000 (opcional)"
                         className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-400 font-mono focus:outline-none focus:border-red-500 focus:bg-white"
                       />
                     </div>
@@ -2944,7 +2944,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                     {/* Quick Presets for Slot 1 */}
                     <div className="pt-2 border-t border-stone-200">
                       <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block mb-1.5">
-                        Ou clique num exemplo rápido para a Imagem 1:
+                        Fotos de referência rápida para o Catálogo:
                       </span>
                       <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
                         {SAMPLE_PRESET_IMAGES.map((preset, idx) => (

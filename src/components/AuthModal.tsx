@@ -261,7 +261,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     required
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder="exemplo@gmail.com ou +244 9..."
+                    placeholder="seuemail@gmail.com ou +244 9..."
                     className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-3 pl-10 text-xs sm:text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white"
                   />
                   <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-3.5" />
@@ -398,7 +398,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     required
                     value={regName}
                     onChange={(e) => setRegName(e.target.value)}
-                    placeholder="Ex: João Manuel"
+                    placeholder="Nome e Sobrenome"
                     className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 pl-10 text-xs sm:text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white"
                   />
                   <User className="w-4 h-4 text-stone-400 absolute left-3.5 top-3" />
@@ -414,7 +414,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       required
                       value={regEmail}
                       onChange={(e) => setRegEmail(e.target.value)}
-                      placeholder="exemplo@gmail.com"
+                      placeholder="seuemail@gmail.com"
                       className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 pl-10 text-xs sm:text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-500 focus:bg-white"
                     />
                     <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-3" />
@@ -474,7 +474,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         type="text"
                         value={vehicle}
                         onChange={(e) => setVehicle(e.target.value)}
-                        placeholder="Ex: Moto Haojue 150cc"
+                        placeholder="Moto Haojue 150cc, Carrinha ou Carro"
                         className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs"
                       />
                     </div>
@@ -484,7 +484,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         type="text"
                         value={licensePlate}
                         onChange={(e) => setLicensePlate(e.target.value)}
-                        placeholder="Ex: LD-44-89-HT"
+                        placeholder="LD-00-00-AA"
                         className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs uppercase font-mono"
                       />
                     </div>
@@ -496,7 +496,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       type="text"
                       value={operatingZones}
                       onChange={(e) => setOperatingZones(e.target.value)}
-                      placeholder="Ex: Maianga, Talatona, Kilamba, Viana"
+                      placeholder="Maianga, Talatona, Kilamba, Viana..."
                       className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs"
                     />
                   </div>

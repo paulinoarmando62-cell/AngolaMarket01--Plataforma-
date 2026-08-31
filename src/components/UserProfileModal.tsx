@@ -319,7 +319,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <div className="pt-2 flex gap-2">
                       <input
                         type="url"
-                        placeholder="https://exemplo.com/minha-foto.jpg"
+                        placeholder="https://images.unsplash.com/..."
                         value={avatarUrlInput}
                         onChange={(e) => setAvatarUrlInput(e.target.value)}
                         className="flex-1 bg-white border border-stone-200 rounded-xl px-3 py-1.5 text-xs"
@@ -598,7 +598,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     type="text"
                     value={municipality}
                     onChange={(e) => setMunicipality(e.target.value)}
-                    placeholder="Ex: Luanda, Talatona, Viana, Belas..."
+                    placeholder="Luanda, Talatona, Viana, Belas..."
                     className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 text-xs sm:text-sm text-stone-900 focus:outline-none focus:border-red-500 focus:bg-white"
                   />
                 </div>
@@ -609,7 +609,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     type="text"
                     value={neighborhood}
                     onChange={(e) => setNeighborhood(e.target.value)}
-                    placeholder="Ex: Alvalade, Vila Alice, Zango 3, Benfica..."
+                    placeholder="Alvalade, Vila Alice, Zango 3, Benfica..."
                     className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 text-xs sm:text-sm text-stone-900 focus:outline-none focus:border-red-500 focus:bg-white"
                   />
                 </div>
@@ -620,7 +620,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     type="text"
                     value={streetAddress}
                     onChange={(e) => setStreetAddress(e.target.value)}
-                    placeholder="Ex: Rua Comandante Gika, Casa nº 42"
+                    placeholder="Rua Comandante Gika, Casa nº 42"
                     className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 text-xs sm:text-sm text-stone-900 focus:outline-none focus:border-red-500 focus:bg-white"
                   />
                 </div>
@@ -631,7 +631,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     type="text"
                     value={referencePoint}
                     onChange={(e) => setReferencePoint(e.target.value)}
-                    placeholder="Ex: Junto ao Colégio, Atrás da Padaria..."
+                    placeholder="Junto ao Colégio, Atrás da Padaria..."
                     className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 text-xs sm:text-sm text-stone-900 focus:outline-none focus:border-red-500 focus:bg-white"
                   />
                 </div>

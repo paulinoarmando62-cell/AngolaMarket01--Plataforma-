@@ -503,7 +503,7 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
                           max={totalEarnedDeliveryFees > 0 ? totalEarnedDeliveryFees : 500000}
                           value={courierPayoutAmount}
                           onChange={(e) => setCourierPayoutAmount(e.target.value)}
-                          placeholder={`Ex: ${totalEarnedDeliveryFees > 0 ? totalEarnedDeliveryFees : 15000}`}
+                          placeholder={`${totalEarnedDeliveryFees > 0 ? totalEarnedDeliveryFees : 15000}`}
                           className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-emerald-500"
                         />
                       </div>
@@ -882,7 +882,7 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
                       type="text"
                       value={courierVehicle}
                       onChange={(e) => setCourierVehicle(e.target.value)}
-                      placeholder="Ex: Moto Haojue 150cc, Carrinha..."
+                      placeholder="Moto Haojue 150cc, Carrinha ou Carro"
                       className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-amber-500"
                     />
                   </div>
