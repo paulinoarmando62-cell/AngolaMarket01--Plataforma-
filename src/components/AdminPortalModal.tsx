@@ -65,6 +65,7 @@ import {
   PayoutRequest
 } from '../types';
 import { CATEGORIES, formatKwanzas } from '../data/mockData';
+import { compressImageFile } from '../utils/imageOptimizer';
 
 interface AdminPortalModalProps {
   isOpen: boolean;
@@ -144,16 +145,23 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
   // Affiliate commission configured by ADM from 0% to 100%
   const [prodAffiliateCommission, setProdAffiliateCommission] = useState<number>(10);
 
-  const handleImageFileUpload = (slot: 1 | 2 | 3, file: File) => {
+  const handleImageFileUpload = async (slot: 1 | 2 | 3, file: File) => {
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const res = reader.result as string;
+    try {
+      const res = await compressImageFile(file, 1000, 1000, 0.82);
       if (slot === 1) setProdImage1(res);
       else if (slot === 2) setProdImage2(res);
       else if (slot === 3) setProdImage3(res);
-    };
-    reader.readAsDataURL(file);
+    } catch {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const res = reader.result as string;
+        if (slot === 1) setProdImage1(res);
+        else if (slot === 2) setProdImage2(res);
+        else if (slot === 3) setProdImage3(res);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // Neighborhood / Delivery fee form state
@@ -259,16 +267,21 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
     }
   }, [currentUser, isOpen]);
 
-  const handleAdminAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAdminAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setAdminAvatar(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      const res = await compressImageFile(file, 400, 400, 0.85);
+      setAdminAvatar(res);
+    } catch {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setAdminAvatar(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // Wallet Payout Form

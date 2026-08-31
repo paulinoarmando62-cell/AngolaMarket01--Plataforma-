@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { AppUser, Order, OrderStatus, CourierTab, PayoutRequest } from '../types';
 import { formatKwanzas, COURIER_COMMISSION_PER_DELIVERY_AOA } from '../data/mockData';
+import { compressImageFile } from '../utils/imageOptimizer';
 
 interface CourierPortalModalProps {
   isOpen: boolean;
@@ -80,16 +81,21 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
     }
   }, [currentUser, isOpen]);
 
-  const handleCourierAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCourierAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setCourierAvatar(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      const res = await compressImageFile(file, 400, 400, 0.85);
+      setCourierAvatar(res);
+    } catch {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setCourierAvatar(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // Settlement with Admin

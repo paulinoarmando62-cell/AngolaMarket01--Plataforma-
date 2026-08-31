@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { CategoryId, Product } from '../types';
 import { CATEGORIES, formatKwanzas } from '../data/mockData';
+import { compressImageFile } from '../utils/imageOptimizer';
 
 interface SellerPortalModalProps {
   isOpen: boolean;
@@ -42,16 +43,21 @@ export const SellerPortalModal: React.FC<SellerPortalModalProps> = ({
   const [cashOnDelivery, setCashOnDelivery] = useState(true);
   const [successNotice, setSuccessNotice] = useState(false);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          setImageUrl(reader.result);
-        }
-      };
-      reader.readAsDataURL(file);
+      try {
+        const res = await compressImageFile(file, 1000, 1000, 0.82);
+        setImageUrl(res);
+      } catch {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === 'string') {
+            setImageUrl(reader.result);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 

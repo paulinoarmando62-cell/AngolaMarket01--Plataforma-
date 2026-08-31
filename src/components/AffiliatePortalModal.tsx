@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { AppUser, Product, Order, AffiliateTab, PayoutRequest } from '../types';
 import { formatKwanzas } from '../data/mockData';
+import { compressImageFile } from '../utils/imageOptimizer';
 
 interface AffiliatePortalModalProps {
   isOpen: boolean;
@@ -94,16 +95,21 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
     }
   }, [currentUser, isOpen]);
 
-  const handleAffiliateAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAffiliateAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setAffAvatar(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      const res = await compressImageFile(file, 400, 400, 0.85);
+      setAffAvatar(res);
+    } catch {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setAffAvatar(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   if (!isOpen) return null;

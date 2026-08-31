@@ -23,6 +23,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { AppUser, PaymentMethodType } from '../types';
+import { compressImageFile } from '../utils/imageOptimizer';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -89,23 +90,22 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check size limit (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('A imagem é muito pesada. Por favor escolha uma foto com menos de 5MB.');
-      return;
+    try {
+      const res = await compressImageFile(file, 400, 400, 0.85);
+      setAvatar(res);
+    } catch {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setAvatar(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
     }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setAvatar(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleSave = (e: React.FormEvent) => {

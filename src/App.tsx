@@ -79,6 +79,7 @@ import {
   INITIAL_PAYOUT_REQUESTS,
   formatKwanzas 
 } from './data/mockData';
+import { safePersist, idbGet, idbSet } from './utils/storage';
 import { 
   ShoppingBag, 
   Sparkles, 
@@ -309,15 +310,15 @@ export default function App() {
     return DEFAULT_BLANK_ZONE;
   });
 
-  // Products state (Pristine clean state - only real products added by Admin)
+  // Products state (Pristine clean state - only real products added by Admin / Platform)
   const [products, setProducts] = useState<Product[]>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_PRODUCTS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          // Strictly keep genuine products added by the Admin in this app
-          return parsed.filter((p: Product) => p && p.id && p.id.startsWith('adm-prod-'));
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Keep all genuine products added by the user/admin
+          return parsed.filter((p: Product) => p && p.id && p.title && !p.id.includes('demo-fake'));
         }
       }
     } catch (e) {
@@ -325,6 +326,29 @@ export default function App() {
     }
     return [];
   });
+
+  // Dual-layer recovery on startup: checks IndexedDB in background to ensure zero data loss
+  useEffect(() => {
+    idbGet<Product[]>(LOCAL_STORAGE_PRODUCTS_KEY).then((idbProds) => {
+      if (Array.isArray(idbProds) && idbProds.length > 0) {
+        setProducts((currentProds) => {
+          if (currentProds.length === 0) return idbProds;
+          const currentIds = new Set(currentProds.map(p => p.id));
+          const missing = idbProds.filter(p => !currentIds.has(p.id));
+          return missing.length > 0 ? [...currentProds, ...missing] : currentProds;
+        });
+      }
+    }).catch(() => {});
+
+    idbGet<LuandaZone[]>(LOCAL_STORAGE_ZONES_LIST_KEY).then((idbZones) => {
+      if (Array.isArray(idbZones) && idbZones.length > 0) {
+        setLuandaZones((currentZones) => {
+          if (currentZones.length === 0) return idbZones;
+          return currentZones;
+        });
+      }
+    }).catch(() => {});
+  }, []);
 
   // Cart state (Clean zero)
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -448,53 +472,37 @@ export default function App() {
   const adminExists = useMemo(() => users.some(u => u.role === 'admin'), [users]);
   const pendingCouriersCount = useMemo(() => users.filter(u => u.role === 'courier' && u.courierStatus === 'pendente').length, [users]);
 
-  // Synchronize localStorage
+  // Synchronize state to LocalStorage and IndexedDB
   useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_USERS_KEY, JSON.stringify(users));
-    } catch (e) { /* ignore */ }
+    safePersist(LOCAL_STORAGE_USERS_KEY, users);
   }, [users]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_CURRENT_USER_KEY, JSON.stringify(currentUser));
-    } catch (e) { /* ignore */ }
+    safePersist(LOCAL_STORAGE_CURRENT_USER_KEY, currentUser);
   }, [currentUser]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_ZONES_LIST_KEY, JSON.stringify(luandaZones));
-    } catch (e) { /* ignore */ }
+    safePersist(LOCAL_STORAGE_ZONES_LIST_KEY, luandaZones);
   }, [luandaZones]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_CART_KEY, JSON.stringify(cart));
-    } catch (e) { /* ignore */ }
+    safePersist(LOCAL_STORAGE_CART_KEY, cart);
   }, [cart]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_ORDERS_KEY, JSON.stringify(orders));
-    } catch (e) { /* ignore */ }
+    safePersist(LOCAL_STORAGE_ORDERS_KEY, orders);
   }, [orders]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_PRODUCTS_KEY, JSON.stringify(products));
-    } catch (e) { /* ignore */ }
+    safePersist(LOCAL_STORAGE_PRODUCTS_KEY, products);
   }, [products]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_ZONE_KEY, JSON.stringify(selectedZone));
-    } catch (e) { /* ignore */ }
+    safePersist(LOCAL_STORAGE_ZONE_KEY, selectedZone);
   }, [selectedZone]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_PAYOUT_REQUESTS_KEY, JSON.stringify(payoutRequests));
-    } catch (e) { /* ignore */ }
+    safePersist(LOCAL_STORAGE_PAYOUT_REQUESTS_KEY, payoutRequests);
   }, [payoutRequests]);
 
   // Payout Handlers (Afiliados & Entregadores)
@@ -801,17 +809,29 @@ export default function App() {
 
   // ADM Product Handlers (Only ADM can add/edit/delete)
   const handleAdminAddProduct = (newProd: Product) => {
-    setProducts((prev) => [newProd, ...prev]);
+    setProducts((prev) => {
+      const next = [newProd, ...prev];
+      safePersist(LOCAL_STORAGE_PRODUCTS_KEY, next);
+      return next;
+    });
     showToast('Artigo publicado no catálogo do AngolaMarket 01!');
   };
 
   const handleAdminUpdateProduct = (updatedProd: Product) => {
-    setProducts((prev) => prev.map(p => p.id === updatedProd.id ? updatedProd : p));
+    setProducts((prev) => {
+      const next = prev.map(p => p.id === updatedProd.id ? updatedProd : p);
+      safePersist(LOCAL_STORAGE_PRODUCTS_KEY, next);
+      return next;
+    });
     showToast('Artigo atualizado com sucesso!');
   };
 
   const handleAdminDeleteProduct = (productId: string) => {
-    setProducts((prev) => prev.filter(p => p.id !== productId));
+    setProducts((prev) => {
+      const next = prev.filter(p => p.id !== productId);
+      safePersist(LOCAL_STORAGE_PRODUCTS_KEY, next);
+      return next;
+    });
     showToast('Artigo removido do catálogo.');
   };
 
