@@ -75,8 +75,15 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('dinheiro_entrega');
   const [needChangeFor, setNeedChangeFor] = useState<number | undefined>(undefined);
   const [customChangeInput, setCustomChangeInput] = useState('');
-  const [affiliateCode, setAffiliateCode] = useState(affiliateRefCode);
+  const [affiliateCode, setAffiliateCode] = useState(affiliateRefCode || '');
   const [hasError, setHasError] = useState<string | null>(null);
+
+  // Sync if affiliateRefCode changes or when modal is opened
+  useEffect(() => {
+    if (affiliateRefCode && isOpen) {
+      setAffiliateCode(affiliateRefCode.trim().toUpperCase());
+    }
+  }, [affiliateRefCode, isOpen]);
 
   // Sync if currentUser changes
   useEffect(() => {
@@ -607,13 +614,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <label className="text-xs text-stone-700 font-bold flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <Tag className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Código de Afiliado / Divulgador (Opcional)</span>
+                    <span>Código de Afiliado / Divulgador</span>
                   </div>
-                  {matchedAffiliate && (
+                  {matchedAffiliate ? (
                     <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                       ✓ Afiliado Reconhecido
                     </span>
-                  )}
+                  ) : affiliateRefCode && cleanAffiliateInput === affiliateRefCode.trim().toUpperCase() ? (
+                    <span className="text-[10px] text-blue-700 font-bold bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+                      ✓ Vinculado pelo Link
+                    </span>
+                  ) : null}
                 </label>
                 <input
                   type="text"
@@ -621,7 +632,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   onChange={(e) => setAffiliateCode(e.target.value.toUpperCase())}
                   placeholder="Ex: TERESA-01 (se indicado por um divulgador)"
                   className={`w-full bg-stone-50 border rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 uppercase font-mono placeholder-stone-400 focus:outline-none transition-all ${
-                    matchedAffiliate
+                    matchedAffiliate || (affiliateRefCode && cleanAffiliateInput === affiliateRefCode.trim().toUpperCase())
                       ? 'border-emerald-500 bg-emerald-50/30'
                       : cleanAffiliateInput
                       ? 'border-amber-400 bg-amber-50/20'
@@ -633,6 +644,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>
                       Afiliado Validado: <strong>{matchedAffiliate.name}</strong> ({matchedAffiliate.affiliateCode}) — comissão de venda garantida nesta compra!
+                    </span>
+                  </div>
+                ) : affiliateRefCode && cleanAffiliateInput === affiliateRefCode.trim().toUpperCase() ? (
+                  <div className="p-2.5 rounded-2xl bg-blue-50 border border-blue-200 text-blue-900 text-xs flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                    <span>
+                      Código <strong>{cleanAffiliateInput}</strong> preenchido automaticamente através do link de divulgação!
                     </span>
                   </div>
                 ) : cleanAffiliateInput ? (

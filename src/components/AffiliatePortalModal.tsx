@@ -47,6 +47,7 @@ interface AffiliatePortalModalProps {
   onToggleAffiliateProduct?: (productId: string) => void;
   onBatchAffiliateProducts?: (productIds: string[]) => void;
   onUpdateAffiliateProfile?: (updatedUser: AppUser) => void;
+  onOpenProductPage?: (product: Product, affiliateCode: string) => void;
   initialTab?: AffiliateTab;
 }
 
@@ -61,6 +62,7 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
   onToggleAffiliateProduct,
   onBatchAffiliateProducts,
   onUpdateAffiliateProfile,
+  onOpenProductPage,
   initialTab = 'home'
 }) => {
   const [activeTab, setActiveTab] = useState<AffiliateTab>(initialTab);
@@ -115,8 +117,19 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
   if (!isOpen) return null;
 
   const affiliateCode = currentUser.affiliateCode || 'ANGOLA-01';
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://angolamarket01.ao';
-  const generalAffiliateUrl = `${baseUrl}/?ref=${affiliateCode}`;
+  
+  const getCleanBaseUrl = () => {
+    if (typeof window === 'undefined') return 'https://angolamarket01.ao';
+    const origin = window.location.origin;
+    const pathname = window.location.pathname || '/';
+    return `${origin}${pathname}`.replace(/\/+$/, '');
+  };
+
+  const getProductAffiliateUrl = (productId: string) => {
+    return `${getCleanBaseUrl()}/?ref=${encodeURIComponent(affiliateCode)}&prod=${encodeURIComponent(productId)}`;
+  };
+
+  const generalAffiliateUrl = `${getCleanBaseUrl()}/?ref=${encodeURIComponent(affiliateCode)}`;
 
   const commissionRate = currentUser.commissionRate || 8;
   const totalSales = currentUser.totalSalesCount || 0;
@@ -140,10 +153,16 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
   };
 
   const handleCopyProductLink = (productId: string) => {
-    const prodUrl = `${baseUrl}/?ref=${affiliateCode}&prod=${productId}`;
+    const prodUrl = getProductAffiliateUrl(productId);
     navigator.clipboard.writeText(prodUrl);
     setCopiedProdId(productId);
     setTimeout(() => setCopiedProdId(null), 2000);
+  };
+
+  const handleNavigateToProduct = (prod: Product) => {
+    if (onOpenProductPage) {
+      onOpenProductPage(prod, affiliateCode);
+    }
   };
 
   const handleToggleSelectProduct = (productId: string) => {
@@ -187,8 +206,8 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
   const handleWhatsAppShare = (prod?: Product) => {
     let msg = '';
     if (prod) {
-      const prodUrl = `${baseUrl}/?ref=${affiliateCode}&prod=${prod.id}`;
-      msg = `Olá! Veja esta oferta incrível no AngolaMarket 01:\n\n🛍️ *${prod.title}*\n💰 Preço: ${formatKwanzas(prod.price)}\n🚚 Entrega rápida em Luanda (Paga só no ato da entrega por TPA ou Dinheiro!)\n\n👉 Compre aqui: ${prodUrl}`;
+      const prodUrl = getProductAffiliateUrl(prod.id);
+      msg = `Olá! Veja esta oferta incrível no AngolaMarket 01:\n\n🛍️ *${prod.title}*\n💰 Preço: ${formatKwanzas(prod.price)}\n🚚 Entrega rápida em Luanda (Paga só no ato da entrega por Multicaixa Express ou Dinheiro!)\n\n👉 Compre aqui: ${prodUrl}`;
     } else {
       msg = `Olá! Recomendo a melhor loja online de Luanda - *AngolaMarket 01*! Produtos eletrónicos, eletrodomésticos, moda e cesta básica com pagamento no ato da entrega.\n\n👉 Conheça agora: ${generalAffiliateUrl}`;
     }
@@ -762,7 +781,7 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
                   const commKz = Math.round(prod.price * (commPercent / 100));
                   const isAffiliated = affiliatedIds.includes(prod.id);
                   const isSelected = selectedBatchIds.includes(prod.id);
-                  const prodUrl = `${baseUrl}/?ref=${affiliateCode}&prod=${prod.id}`;
+                  const prodUrl = getProductAffiliateUrl(prod.id);
                   const isCopied = copiedProdId === prod.id;
 
                   return (
@@ -832,6 +851,14 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
                               title="Copiar Link"
                             >
                               {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleNavigateToProduct(prod)}
+                              className="p-1.5 rounded-xl bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 transition-colors cursor-pointer shrink-0"
+                              title="Aceder à Página de Venda Oficial"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
                             </button>
                             <button
                               type="button"
@@ -920,7 +947,7 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
                     .map((prod) => {
                       const commPercent = prod.affiliateCommissionPercent ?? 8;
                       const commKz = Math.round(prod.price * (commPercent / 100));
-                      const prodUrl = `${baseUrl}/?ref=${affiliateCode}&prod=${prod.id}`;
+                      const prodUrl = getProductAffiliateUrl(prod.id);
                       const isCopied = copiedProdId === prod.id;
 
                       return (
@@ -942,13 +969,23 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+                          <div className="flex items-center gap-2 w-full md:w-auto justify-end flex-wrap">
                             <button
                               onClick={() => handleCopyProductLink(prod.id)}
                               className="px-3.5 py-2 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+                              title="Copiar Link com o seu código de afiliado"
                             >
                               {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-stone-600" />}
                               <span>{isCopied ? 'Link Copiado!' : 'Copiar Link'}</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleNavigateToProduct(prod)}
+                              className="px-3.5 py-2 rounded-2xl bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold text-xs flex items-center gap-1.5 border border-blue-200 cursor-pointer transition-colors"
+                              title="Ver Página de Venda com Código de Afiliado"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
+                              <span>Ver Página de Venda</span>
                             </button>
 
                             <button

@@ -105,6 +105,7 @@ const LOCAL_STORAGE_ZONES_LIST_KEY = 'angolamarket01_zones_list';
 const LOCAL_STORAGE_USERS_KEY = 'angolamarket01_users';
 const LOCAL_STORAGE_CURRENT_USER_KEY = 'angolamarket01_current_user';
 const LOCAL_STORAGE_PAYOUT_REQUESTS_KEY = 'angolamarket01_payout_requests';
+const LOCAL_STORAGE_AFFILIATE_REF_KEY = 'angolamarket01_affiliate_ref';
 
 // Clean storage versioning to immediately purge any old test data from user browsers
 const CURRENT_APP_CLEAN_VERSION = 'v7_clean_zero_all_zones_and_data_final';
@@ -386,6 +387,86 @@ export default function App() {
   const [isCourierPortalOpen, setIsCourierPortalOpen] = useState(false);
   const [isAffiliatePortalOpen, setIsAffiliatePortalOpen] = useState(false);
 
+  // Active Affiliate Referral Code (from URL parameter ?ref= or localStorage)
+  const [activeAffiliateRefCode, setActiveAffiliateRefCode] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const searchParams = new URLSearchParams(window.location.search);
+        const refParam = searchParams.get('ref') || searchParams.get('affiliate') || searchParams.get('afiliado');
+        if (refParam) {
+          const cleanRef = refParam.trim().toUpperCase();
+          localStorage.setItem(LOCAL_STORAGE_AFFILIATE_REF_KEY, cleanRef);
+          return cleanRef;
+        }
+        return localStorage.getItem(LOCAL_STORAGE_AFFILIATE_REF_KEY) || '';
+      } catch (e) {}
+    }
+    return '';
+  });
+
+  // URL Parameter Detection: ?ref=CODE&prod=PRODUCT_ID
+  // Directs affiliate visitors directly to the product sales page without opening portal modals!
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      let refParam = searchParams.get('ref') || searchParams.get('affiliate') || searchParams.get('afiliado');
+      let prodParam = searchParams.get('prod') || searchParams.get('produto') || searchParams.get('productId');
+
+      // Check hash route fallback if applicable (e.g. #/?ref=...&prod=...)
+      if (!refParam || !prodParam) {
+        const hash = window.location.hash;
+        if (hash && hash.includes('?')) {
+          const hashQuery = hash.substring(hash.indexOf('?') + 1);
+          const hashParams = new URLSearchParams(hashQuery);
+          if (!refParam) refParam = hashParams.get('ref') || hashParams.get('affiliate') || hashParams.get('afiliado');
+          if (!prodParam) prodParam = hashParams.get('prod') || hashParams.get('produto') || hashParams.get('productId');
+        }
+      }
+
+      if (refParam) {
+        const cleanRef = refParam.trim().toUpperCase();
+        setActiveAffiliateRefCode(cleanRef);
+        localStorage.setItem(LOCAL_STORAGE_AFFILIATE_REF_KEY, cleanRef);
+      }
+
+      if (prodParam) {
+        const cleanProdId = prodParam.trim();
+        const found = products.find(p => p.id === cleanProdId || p.id.toLowerCase() === cleanProdId.toLowerCase());
+        if (found) {
+          // CRUCIAL: Close any open portal (affiliate, admin, courier) so user lands directly on product sale page!
+          setIsAffiliatePortalOpen(false);
+          setIsAdminPortalOpen(false);
+          setIsCourierPortalOpen(false);
+          setIsAuthModalOpen(false);
+          setCurrentView('marketplace');
+          setSelectedProduct(found);
+        }
+      }
+    } catch (err) {
+      console.error('Error parsing affiliate URL parameters', err);
+    }
+  }, [products]);
+
+  // Open product sales page directly from the Affiliate Portal with affiliate tracking
+  const handleOpenProductSalePageFromAffiliate = (product: Product, affiliateCode: string) => {
+    setActiveAffiliateRefCode(affiliateCode);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(LOCAL_STORAGE_AFFILIATE_REF_KEY, affiliateCode);
+        const newUrl = `${window.location.pathname}?ref=${encodeURIComponent(affiliateCode)}&prod=${encodeURIComponent(product.id)}`;
+        window.history.pushState({}, '', newUrl);
+      } catch (e) {}
+    }
+    setIsAffiliatePortalOpen(false);
+    setIsAdminPortalOpen(false);
+    setIsCourierPortalOpen(false);
+    setIsAuthModalOpen(false);
+    setCurrentView('marketplace');
+    setSelectedProduct(product);
+  };
+
   // Toast notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -565,13 +646,19 @@ export default function App() {
     setCurrentUser(user);
     showToast(`Sessão iniciada como ${user.name} (${user.role === 'admin' ? 'Administrador Geral' : user.role})`);
     
-    // Auto open corresponding portal for convenience
-    if (user.role === 'admin') {
-      setIsAdminPortalOpen(true);
-    } else if (user.role === 'courier') {
-      setIsCourierPortalOpen(true);
-    } else if (user.role === 'affiliate') {
-      setIsAffiliatePortalOpen(true);
+    // Check if user is accessing a product sales page (?prod=...)
+    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const hasProductInUrl = searchParams && (searchParams.get('prod') || searchParams.get('produto') || searchParams.get('productId'));
+
+    // Auto open corresponding portal for convenience ONLY if not viewing a product sale page
+    if (!hasProductInUrl && !selectedProduct) {
+      if (user.role === 'admin') {
+        setIsAdminPortalOpen(true);
+      } else if (user.role === 'courier') {
+        setIsCourierPortalOpen(true);
+      } else if (user.role === 'affiliate') {
+        setIsAffiliatePortalOpen(true);
+      }
     }
   };
 
@@ -631,7 +718,10 @@ export default function App() {
   };
 
   // Order Submission (Cash on Delivery Luanda)
-  const handleSubmitOrder = (customerInfo: OrderCustomerInfo) => {
+  const handleSubmitOrder = (
+    customerInfo: OrderCustomerInfo,
+    newCustomerAccount?: { name: string; phone: string; password: string; email?: string }
+  ) => {
     const subtotal = cart.reduce((acc, it) => acc + it.product.price * it.quantity, 0);
     const deliveryFee = customerInfo.deliveryType === 'paragem'
       ? (selectedZone.deliveryFeeBusStop ?? Math.round(selectedZone.deliveryFee * 0.6))
@@ -644,6 +734,36 @@ export default function App() {
 
     // Select default active courier
     const defaultCourier = users.find(u => u.role === 'courier' && u.courierStatus === 'aprovado');
+
+    // Affiliate code handling
+    const affiliateCodeClean = customerInfo.affiliateCodeUsed ? customerInfo.affiliateCodeUsed.trim().toUpperCase() : undefined;
+    const affiliateUser = affiliateCodeClean 
+      ? users.find(u => u.affiliateCode && u.affiliateCode.trim().toUpperCase() === affiliateCodeClean) 
+      : null;
+    const commissionAmount = affiliateUser 
+      ? Math.round(subtotal * ((affiliateUser.commissionRate || 8) / 100)) 
+      : 0;
+
+    // Create user account if requested in checkout
+    let newUserId: string | undefined = currentUser?.id;
+    if (newCustomerAccount && !currentUser) {
+      newUserId = `user-customer-${Date.now()}`;
+      const createdAccount: AppUser = {
+        id: newUserId,
+        name: newCustomerAccount.name,
+        phone: newCustomerAccount.phone,
+        email: newCustomerAccount.email || `${newCustomerAccount.phone.replace(/[^0-9]/g, '')}@cliente.ao`,
+        password: newCustomerAccount.password,
+        role: 'buyer',
+        createdAt: Date.now(),
+        defaultNeighborhood: customerInfo.neighborhood,
+        defaultMunicipality: customerInfo.municipalityName,
+        defaultStreetAddress: customerInfo.streetAddress,
+        defaultReferencePoint: customerInfo.referencePoint,
+      };
+      setUsers(prev => [createdAccount, ...prev]);
+      setCurrentUser(createdAccount);
+    }
 
     const newOrder: Order = {
       id: `order-${Date.now()}`,
@@ -658,7 +778,10 @@ export default function App() {
       status: 'recebido',
       estimatedDeliveryDate: `Hoje (${selectedZone.estimatedHours})`,
       deliveryCode,
+      customerId: newUserId,
       assignedCourierId: defaultCourier?.id || undefined,
+      affiliateCode: affiliateCodeClean,
+      affiliateCommissionAmount: commissionAmount > 0 ? commissionAmount : undefined,
       courier: defaultCourier ? {
         name: defaultCourier.name,
         phone: defaultCourier.phone,
@@ -673,23 +796,22 @@ export default function App() {
     };
 
     // If affiliate code was used, credit the affiliate
-    if (customerInfo.affiliateCodeUsed) {
-      const code = customerInfo.affiliateCodeUsed.toUpperCase();
-      const affiliateUser = users.find(u => u.affiliateCode === code);
-      if (affiliateUser) {
-        const commissionAmount = Math.round(subtotal * ((affiliateUser.commissionRate || 7) / 100));
-        setUsers(prev => prev.map(u => {
-          if (u.id === affiliateUser.id) {
-            return {
-              ...u,
-              totalSalesCount: (u.totalSalesCount || 0) + 1,
-              totalCommissionEarned: (u.totalCommissionEarned || 0) + commissionAmount,
-              balanceAOA: (u.balanceAOA || 0) + commissionAmount,
-            };
+    if (affiliateUser && commissionAmount > 0) {
+      setUsers(prev => prev.map(u => {
+        if (u.id === affiliateUser.id) {
+          const updatedAffiliate: AppUser = {
+            ...u,
+            totalSalesCount: (u.totalSalesCount || 0) + 1,
+            totalCommissionEarned: (u.totalCommissionEarned || 0) + commissionAmount,
+            balanceAOA: (u.balanceAOA || 0) + commissionAmount,
+          };
+          if (currentUser && currentUser.id === u.id) {
+            setCurrentUser(updatedAffiliate);
           }
-          return u;
-        }));
-      }
+          return updatedAffiliate;
+        }
+        return u;
+      }));
     }
 
     setOrders((prev) => [newOrder, ...prev]);
@@ -1142,6 +1264,12 @@ export default function App() {
           onSelectZone={setSelectedZone}
           onAddToCart={handleAddToCart}
           onBuyNow={handleBuyNow}
+          affiliateRefCode={activeAffiliateRefCode}
+          affiliateUser={
+            activeAffiliateRefCode
+              ? users.find(u => u.affiliateCode && u.affiliateCode.trim().toUpperCase() === activeAffiliateRefCode.trim().toUpperCase()) || null
+              : null
+          }
         />
       )}
 
@@ -1167,6 +1295,10 @@ export default function App() {
         onSelectZone={setSelectedZone}
         luandaZones={luandaZones}
         onSubmitOrder={handleSubmitOrder}
+        affiliateRefCode={activeAffiliateRefCode}
+        users={users}
+        currentUser={currentUser}
+        onLoginUser={handleLogin}
       />
 
       {/* Order Success Modal */}
@@ -1257,6 +1389,7 @@ export default function App() {
           onToggleAffiliateProduct={handleToggleAffiliateProduct}
           onBatchAffiliateProducts={handleBatchAffiliateProducts}
           onUpdateAffiliateProfile={handleUpdateUserProfile}
+          onOpenProductPage={handleOpenProductSalePageFromAffiliate}
         />
       )}
 

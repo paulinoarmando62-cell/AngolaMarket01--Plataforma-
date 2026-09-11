@@ -19,7 +19,7 @@ import {
   Layers,
   ChevronRight
 } from 'lucide-react';
-import { Product, LuandaZone } from '../types';
+import { Product, LuandaZone, AppUser } from '../types';
 import { formatKwanzas } from '../data/mockData';
 
 interface ProductDetailModalProps {
@@ -30,6 +30,8 @@ interface ProductDetailModalProps {
   onSelectZone: (zone: LuandaZone) => void;
   onAddToCart: (product: Product, quantity: number) => void;
   onBuyNow: (product: Product, quantity: number) => void;
+  affiliateRefCode?: string;
+  affiliateUser?: AppUser | null;
 }
 
 export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
@@ -40,6 +42,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onSelectZone,
   onAddToCart,
   onBuyNow,
+  affiliateRefCode,
+  affiliateUser,
 }) => {
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState<string>('');
@@ -122,7 +126,38 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
       {/* Main Full-Screen Scrollable Body */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-stone-50">
-        <div className="max-w-7xl mx-auto space-y-8">
+        <div className="max-w-7xl mx-auto space-y-6">
+
+          {/* Official Affiliate Link Referral Banner */}
+          {affiliateRefCode && (
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-4 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs font-black text-xs">
+                  AF
+                </div>
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-blue-950">
+                      Página de Venda Oficial via Afiliado
+                    </span>
+                    <span className="bg-blue-600 text-white text-[10px] font-mono font-bold px-2 py-0.5 rounded-full">
+                      {affiliateRefCode}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-blue-700">
+                    {affiliateUser 
+                      ? `Recomendado por ${affiliateUser.name}. O código será aplicado automaticamente na finalização do pedido.`
+                      : `Indicado através de link de divulgador oficial. O código será aplicado automaticamente ao finalizar o pedido.`}
+                  </p>
+                </div>
+              </div>
+
+              <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-2xl shrink-0 flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Comissão Vinculada</span>
+              </span>
+            </div>
+          )}
           
           {/* Main Grid: Left Gallery | Right Details & Actions */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -382,6 +417,13 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                       <span>Pagar na Entrega Já</span>
                     </button>
                   </div>
+
+                  {affiliateRefCode && (
+                    <div className="flex items-center gap-1.5 text-[11px] text-blue-700 font-semibold bg-blue-50/70 p-2.5 rounded-xl border border-blue-200">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                      <span>O código de afiliado <strong>{affiliateRefCode}</strong> virá preenchido automaticamente ao inserir os seus dados.</span>
+                    </div>
+                  )}
                 </div>
 
               </div>
