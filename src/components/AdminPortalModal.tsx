@@ -52,7 +52,8 @@ import {
   Navigation,
   Award,
   Camera,
-  Upload
+  Upload,
+  Send
 } from 'lucide-react';
 import { 
   Product, 
@@ -62,7 +63,9 @@ import {
   CategoryId, 
   OrderStatus, 
   AdminTab,
-  PayoutRequest
+  PayoutRequest,
+  CourierSettlement,
+  AdminWithdrawal
 } from '../types';
 import { CATEGORIES, formatKwanzas } from '../data/mockData';
 import { compressImageFile } from '../utils/imageOptimizer';
@@ -87,6 +90,11 @@ interface AdminPortalModalProps {
   payoutRequests?: PayoutRequest[];
   onApprovePayoutRequest?: (requestId: string, transactionRef?: string) => void;
   onRejectPayoutRequest?: (requestId: string, reason?: string) => void;
+  courierSettlements?: CourierSettlement[];
+  onConfirmSettlement?: (settlementId: string) => void;
+  onRejectSettlement?: (settlementId: string) => void;
+  adminWithdrawals?: AdminWithdrawal[];
+  onAddAdminWithdrawal?: (withdrawal: Omit<AdminWithdrawal, 'id' | 'requestedAt' | 'status'>) => void;
   currentUser?: AppUser | null;
   onUpdateAdminProfile?: (updatedUser: AppUser) => void;
   onClearAllTestData?: () => void;
@@ -113,6 +121,11 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
   payoutRequests = [],
   onApprovePayoutRequest,
   onRejectPayoutRequest,
+  courierSettlements = [],
+  onConfirmSettlement,
+  onRejectSettlement,
+  adminWithdrawals = [],
+  onAddAdminWithdrawal,
   currentUser,
   onUpdateAdminProfile,
   onClearAllTestData,
@@ -286,6 +299,8 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
 
   // Wallet Payout Form
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
+  const [withdrawalType, setWithdrawalType] = useState<'dinheiro_fisico' | 'transferencia_bancaria'>('dinheiro_fisico');
+  const [withdrawalPurpose, setWithdrawalPurpose] = useState('Retirada de Lucros / Caixa');
   const [withdrawalSuccess, setWithdrawalSuccess] = useState(false);
 
   if (!isOpen) return null;
@@ -309,10 +324,39 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
     return acc;
   }, 0);
 
-  const platformNetProfit = Math.max(0, totalDeliveredRevenue - totalDeliveryFeesCollected - totalCommissionsOwed);
-  const cashInTransitWithCouriers = orders
+  // Couriers cash collected and pending to deposit
+  const couriersCashInHand = users
+    .filter(u => u.role === 'courier')
+    .reduce((acc, u) => acc + (u.cashCollectedToDeposit || 0), 0);
+
+  // Total cash collected on COD delivered orders
+  const totalCashDeliveredCOD = orders
+    .filter(o => o.status === 'entregue' && o.customer.paymentMethod === 'dinheiro_entrega')
+    .reduce((acc, o) => acc + o.total, 0);
+
+  // Total courier delivery commissions (1.000 Kz per delivery)
+  const totalCourierCommissionsPaid = orders.filter(o => o.status === 'entregue').length * 1000;
+
+  // Withdrawals
+  const totalWithdrawalsAmount = adminWithdrawals.reduce((acc, w) => acc + (w.amountAOA || w.amount || 0), 0);
+  const totalPhysicalWithdrawals = adminWithdrawals
+    .filter(w => w.withdrawalType === 'dinheiro_fisico')
+    .reduce((acc, w) => acc + (w.amountAOA || w.amount || 0), 0);
+
+  // Physical cash in central safe/vault (Delivered COD minus what's still with couriers minus physical withdrawals)
+  const cashInVault = Math.max(0, totalCashDeliveredCOD - couriersCashInHand - totalPhysicalWithdrawals);
+
+  // Total Physical Cash tracked in the operation:
+  const totalPhysicalCashInOperation = cashInVault + couriersCashInHand;
+
+  // Cash currently in transit on active orders (out for delivery)
+  const cashInTransitActiveOrders = orders
     .filter(o => o.status === 'em_transito' && o.customer.paymentMethod === 'dinheiro_entrega')
     .reduce((acc, o) => acc + o.total, 0);
+
+  const platformNetProfit = Math.max(0, totalDeliveredRevenue - totalCourierCommissionsPaid - totalCommissionsOwed - totalWithdrawalsAmount);
+
+  const pendingSettlements = courierSettlements.filter(s => s.status === 'pendente');
 
   // Handle Product Save
   const handleSaveProduct = (e: React.FormEvent) => {
@@ -505,10 +549,27 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
 
   const handleWithdrawalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const amt = Number(withdrawalAmount);
+    if (amt <= 0) return;
+
+    if (onAddAdminWithdrawal) {
+      onAddAdminWithdrawal({
+        amount: amt,
+        amountAOA: amt,
+        purpose: withdrawalPurpose,
+        withdrawalType,
+        iban: withdrawalType === 'transferencia_bancaria' ? adminIban : undefined,
+        bankName: withdrawalType === 'transferencia_bancaria' ? adminBankName : undefined,
+        accountHolder: withdrawalType === 'transferencia_bancaria' ? adminName : undefined,
+        reference: `LEV-${Date.now().toString().slice(-6)}`,
+        adminName: currentUser?.name || adminName
+      });
+    }
+
     setWithdrawalSuccess(true);
+    setWithdrawalAmount('');
     setTimeout(() => {
       setWithdrawalSuccess(false);
-      setWithdrawalAmount('');
     }, 3500);
   };
 
@@ -517,8 +578,8 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
     { tab: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
     { tab: 'meus_produtos', label: 'Meus Produtos', icon: <Package className="w-4 h-4" />, badge: products.length },
     { tab: 'cadastrar_produtos', label: 'Cadastrar Produtos', icon: <PlusCircle className="w-4 h-4" /> },
-    { tab: 'carteira', label: 'Carteira', icon: <Wallet className="w-4 h-4" /> },
-    { tab: 'gestao_financeira', label: 'Gestão Financeira', icon: <TrendingUp className="w-4 h-4" /> },
+    { tab: 'carteira', label: 'Carteira', icon: <Wallet className="w-4 h-4" />, badge: pendingSettlements.length > 0 ? pendingSettlements.length : undefined },
+    { tab: 'gestao_financeira', label: 'Gestão Financeira', icon: <TrendingUp className="w-4 h-4" />, badge: payoutRequests.filter(p => p.status === 'pendente').length || undefined },
     { tab: 'gestao_pedidos', label: 'Gestão de Pedidos', icon: <Layers className="w-4 h-4" />, badge: orders.filter(o => o.status !== 'entregue' && o.status !== 'cancelado').length },
     { tab: 'gestao_entregadores', label: 'Gestão de Entregadores', icon: <Truck className="w-4 h-4" />, badge: pendingCouriers.length },
     { tab: 'gestao_afiliados', label: 'Gestão de Afiliados', icon: <DollarSign className="w-4 h-4" /> },
@@ -1219,81 +1280,351 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
           {/* TAB 3: CARTEIRA */}
           {activeTab === 'carteira' && (
             <div className="space-y-6">
-              <div>
-                <h3 className="font-black text-base text-stone-900">Carteira da Plataforma</h3>
-                <p className="text-xs text-stone-500">Saldos em Kwanzas, valores cobrados por estafetas e levantamento de receitas</p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-200 pb-3">
+                <div>
+                  <h3 className="font-black text-base text-stone-900 flex items-center gap-2">
+                    <Wallet className="w-5 h-5 text-red-600" />
+                    <span>Carteira Central & Tesouraria</span>
+                  </h3>
+                  <p className="text-xs text-stone-500">
+                    Controlo do dinheiro físico em cofre, valores cobrados pelos estafetas e histórico de levantamentos.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold px-3 py-1 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    Cofre Ativo • Luanda
+                  </span>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="p-6 rounded-3xl bg-stone-900 text-white shadow-md space-y-2 col-span-1 sm:col-span-2">
+              {/* 4 Financial Indicator Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                {/* Saldo Líquido da Carteira */}
+                <div className="p-5 rounded-3xl bg-stone-900 text-white shadow-md space-y-2 relative overflow-hidden">
                   <div className="flex items-center justify-between text-stone-400">
-                    <span className="text-xs font-bold uppercase">Saldo Disponível na Carteira</span>
-                    <Wallet className="w-5 h-5 text-red-500" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Saldo Líquido da Carteira</span>
+                    <Wallet className="w-4 h-4 text-red-500" />
                   </div>
-                  <span className="text-3xl sm:text-4xl font-black font-mono text-white block">
+                  <span className="text-2xl font-black font-mono text-white block">
                     {formatKwanzas(platformNetProfit)}
                   </span>
-                  <div className="pt-2 flex items-center gap-2 text-xs text-stone-300">
-                    <CreditCard className="w-4 h-4 text-emerald-400" />
-                    <span>Conta de Liquidação: <strong>{adminIban || 'Não configurado (configure no Perfil)'}</strong></span>
+                  <div className="pt-1 text-[11px] text-stone-300 flex items-center gap-1.5 truncate">
+                    <CreditCard className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span className="truncate">IBAN: {adminIban || 'Configurar no Perfil'}</span>
                   </div>
                 </div>
 
-                <div className="p-6 rounded-3xl bg-white border border-stone-200 shadow-sm space-y-2">
-                  <span className="text-xs font-bold uppercase text-stone-400">Dinheiro Físico em Trânsito</span>
-                  <span className="text-2xl font-black font-mono text-amber-600 block">
-                    {formatKwanzas(cashInTransitWithCouriers)}
+                {/* Dinheiro Físico no Cofre Central (Escritório) */}
+                <div className="p-5 rounded-3xl bg-white border border-stone-200 shadow-sm space-y-2">
+                  <div className="flex items-center justify-between text-stone-500">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">💵 Dinheiro Físico no Cofre</span>
+                    <Banknote className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <span className="text-2xl font-black font-mono text-emerald-600 block">
+                    {formatKwanzas(cashInVault)}
                   </span>
                   <p className="text-[11px] text-stone-500">
-                    Valor a ser entregue em mãos pelos estafetas ao final do turno.
+                    Disponível no escritório central para saque ou reposição de stock.
+                  </p>
+                </div>
+
+                {/* Dinheiro Físico com Estafetas (A Prestar Contas) */}
+                <div className="p-5 rounded-3xl bg-white border border-stone-200 shadow-sm space-y-2">
+                  <div className="flex items-center justify-between text-stone-500">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800">🛵 Dinheiro com Estafetas</span>
+                    <Truck className="w-4 h-4 text-amber-600" />
+                  </div>
+                  <span className="text-2xl font-black font-mono text-amber-600 block">
+                    {formatKwanzas(couriersCashInHand)}
+                  </span>
+                  <p className="text-[11px] text-stone-500">
+                    Cobrado nas entregas COD aguardando prestação de contas.
+                  </p>
+                </div>
+
+                {/* Total de Levantamentos Efetuados */}
+                <div className="p-5 rounded-3xl bg-white border border-stone-200 shadow-sm space-y-2">
+                  <div className="flex items-center justify-between text-stone-500">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-800">📉 Total Levantado</span>
+                    <TrendingUp className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <span className="text-2xl font-black font-mono text-blue-600 block">
+                    {formatKwanzas(totalWithdrawalsAmount)}
+                  </span>
+                  <p className="text-[11px] text-stone-500">
+                    {adminWithdrawals.length} levantamento(s) registado(s) no histórico.
                   </p>
                 </div>
               </div>
 
-              {/* Request Payout Box */}
+              {/* NOTIFICAÇÕES DE PRESTAÇÃO DE CONTAS DOS ESTAFETAS */}
               <div className="p-6 rounded-3xl bg-white border border-stone-200 shadow-sm space-y-4">
-                <h4 className="font-bold text-sm text-stone-900 flex items-center gap-2">
-                  <Banknote className="w-4 h-4 text-red-600" />
-                  <span>Transferir Saldo para Conta Bancária (BAI / BFA / BIC / Atlântico)</span>
-                </h4>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-100 pb-3">
+                  <div>
+                    <h4 className="font-bold text-sm text-stone-900 flex items-center gap-2">
+                      <Send className="w-4 h-4 text-amber-600" />
+                      <span>Notificações de Prestação de Contas dos Estafetas</span>
+                    </h4>
+                    <p className="text-xs text-stone-500">
+                      Quando um estafeta entrega o dinheiro no escritório ou transfere por IBAN, confirme aqui para dar baixa na carteira dele.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-bold px-3 py-1 rounded-xl border ${
+                      pendingSettlements.length > 0
+                        ? 'bg-amber-100 text-amber-900 border-amber-300 animate-pulse'
+                        : 'bg-stone-100 text-stone-600 border-stone-200'
+                    }`}>
+                      {pendingSettlements.length} Pendentes de Validação
+                    </span>
+                  </div>
+                </div>
+
+                {courierSettlements.length === 0 ? (
+                  <div className="py-8 text-center bg-stone-50 rounded-2xl border border-stone-200 space-y-1.5">
+                    <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
+                    <p className="text-xs font-bold text-stone-700">Nenhuma notificação de prestação de contas pendente.</p>
+                    <p className="text-[11px] text-stone-500">Quando os estafetas clicarem em 'Notificar Prestação de Contas' no painel deles, aparecerá aqui instantaneamente.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {courierSettlements.map((settle) => {
+                      const isPending = settle.status === 'pendente';
+                      const isConfirmed = settle.status === 'confirmado';
+
+                      return (
+                        <div
+                          key={settle.id}
+                          className={`p-4 rounded-2xl border transition-all ${
+                            isPending
+                              ? 'bg-amber-50/50 border-amber-200 shadow-2xs'
+                              : isConfirmed
+                              ? 'bg-emerald-50/30 border-emerald-200'
+                              : 'bg-stone-50 border-stone-200 opacity-80'
+                          }`}
+                        >
+                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-stone-800 text-white uppercase">
+                                  🛵 Estafeta
+                                </span>
+                                <span className="font-bold text-xs text-stone-900">{settle.courierName}</span>
+                                <span className="text-[11px] text-stone-500 font-mono">({settle.courierPhone})</span>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-2 text-[11px] text-stone-600">
+                                <span>Modalidade: <strong>{settle.paymentMethod === 'dinheiro_escritorio' ? '💵 Dinheiro Físico Entregue em Mãos' : '🏦 Transferência Bancária / IBAN'}</strong></span>
+                                {settle.notes && (
+                                  <span className="text-stone-500 bg-white px-2 py-0.5 rounded border border-stone-200">
+                                    Obs: {settle.notes}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-[10px] text-stone-400 block">
+                                Data: {typeof settle.submittedAt === 'number' ? new Date(settle.submittedAt).toLocaleDateString('pt-AO') + ' ' + new Date(settle.submittedAt).toLocaleTimeString('pt-AO', { hour: '2-digit', minute: '2-digit' }) : settle.submittedAt}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-3 shrink-0">
+                              <div className="text-right">
+                                <span className="text-[10px] uppercase font-bold text-stone-400 block">Montante Declarado</span>
+                                <span className="text-base font-mono font-black text-stone-900">
+                                  {formatKwanzas(settle.amountAOA || settle.amount)}
+                                </span>
+                              </div>
+
+                              {isPending ? (
+                                <div className="flex items-center gap-2">
+                                  {onConfirmSettlement && (
+                                    <button
+                                      type="button"
+                                      onClick={() => onConfirmSettlement(settle.id)}
+                                      className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs cursor-pointer flex items-center gap-1.5"
+                                    >
+                                      <CheckCircle2 className="w-3.5 h-3.5" />
+                                      <span>Confirmar Recebimento</span>
+                                    </button>
+                                  )}
+                                  {onRejectSettlement && (
+                                    <button
+                                      type="button"
+                                      onClick={() => onRejectSettlement(settle.id)}
+                                      className="px-3 py-2 rounded-xl bg-stone-100 hover:bg-red-50 text-red-600 font-bold text-xs cursor-pointer border border-stone-200"
+                                    >
+                                      Recusar
+                                    </button>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className={`text-xs font-bold px-3 py-1.5 rounded-xl border flex items-center gap-1.5 ${
+                                  isConfirmed
+                                    ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                                    : 'bg-red-100 text-red-800 border-red-200'
+                                }`}>
+                                  {isConfirmed ? <CheckCircle2 className="w-3.5 h-3.5" /> : null}
+                                  <span>{isConfirmed ? 'Confirmado e Liquidado' : 'Recusado'}</span>
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* FORMULÁRIO DE LEVANTAMENTO / RETIRADA */}
+              <div className="p-6 rounded-3xl bg-white border border-stone-200 shadow-sm space-y-4">
+                <div className="border-b border-stone-100 pb-3">
+                  <h4 className="font-bold text-sm text-stone-900 flex items-center gap-2">
+                    <Banknote className="w-4 h-4 text-red-600" />
+                    <span>Efetuar Novo Levantamento / Retirada da Carteira</span>
+                  </h4>
+                  <p className="text-xs text-stone-500">
+                    Retire fundos em dinheiro físico do cofre ou realize uma transferência para o seu IBAN bancário.
+                  </p>
+                </div>
 
                 {withdrawalSuccess ? (
                   <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center gap-2">
                     <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                    <span>Transferência de {formatKwanzas(Number(withdrawalAmount) || 0)} enviada com sucesso para o IBAN {adminIban || 'configurado'}!</span>
+                    <span>Levantamento efetuado com sucesso e adicionado ao histórico da plataforma!</span>
                   </div>
                 ) : (
-                  <form onSubmit={handleWithdrawalSubmit} className="space-y-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <form onSubmit={handleWithdrawalSubmit} className="space-y-4 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-stone-700">Montante a Transferir (Kz) *</label>
+                        <label className="text-xs font-bold text-stone-700">Montante a Levantar (Kz) *</label>
                         <input
                           type="number"
                           required
                           value={withdrawalAmount}
                           onChange={(e) => setWithdrawalAmount(e.target.value)}
-                          placeholder="Ex: 100000"
-                          className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs font-mono font-bold text-stone-900"
+                          placeholder="Ex: 50000"
+                          className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs font-mono font-bold text-stone-900 focus:bg-white focus:outline-none focus:border-red-500"
                         />
                       </div>
+
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-stone-700">IBAN de Destino</label>
-                        <input
-                          type="text"
-                          readOnly
-                          value={adminIban}
-                          className="w-full bg-stone-100 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs font-mono text-stone-600 cursor-not-allowed"
-                        />
+                        <label className="text-xs font-bold text-stone-700">Forma de Levantamento *</label>
+                        <select
+                          value={withdrawalType}
+                          onChange={(e) => setWithdrawalType(e.target.value as any)}
+                          className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-stone-900 focus:bg-white focus:outline-none focus:border-red-500"
+                        >
+                          <option value="dinheiro_fisico">💵 Dinheiro Físico (Retirar do Cofre Central)</option>
+                          <option value="transferencia_bancaria">🏦 Transferência Bancária (IBAN)</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-stone-700">Finalidade / Motivo *</label>
+                        <select
+                          value={withdrawalPurpose}
+                          onChange={(e) => setWithdrawalPurpose(e.target.value)}
+                          className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-red-500"
+                        >
+                          <option value="Retirada de Lucros / Caixa">Retirada de Lucros / Dono da Loja</option>
+                          <option value="Reposição de Stock de Produtos">Reposição de Stock de Produtos</option>
+                          <option value="Combustível e Manutenção de Motos">Combustível & Manutenção das Motos</option>
+                          <option value="Despesas Operacionais e Embalagens">Despesas de Embalagem & Escritório</option>
+                          <option value="Marketing e Publicidade">Marketing e Divulgação</option>
+                        </select>
                       </div>
                     </div>
 
+                    {withdrawalType === 'transferencia_bancaria' && (
+                      <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 text-xs flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <span className="text-[10px] uppercase font-bold text-stone-400 block">IBAN de Destino Cadastrado</span>
+                          <span className="font-mono font-bold text-stone-900">{adminIban || 'Não configurado (configure na aba Perfil)'}</span>
+                        </div>
+                        <span className="text-[11px] text-stone-500">{adminBankName || 'BAI / BFA'}</span>
+                      </div>
+                    )}
+
                     <button
                       type="submit"
-                      className="px-5 py-2.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm cursor-pointer"
+                      className="px-6 py-2.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm cursor-pointer transition-all flex items-center gap-2"
                     >
-                      Efetuar Levantamento para Banco
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Efetuar e Registar Levantamento</span>
                     </button>
                   </form>
+                )}
+              </div>
+
+              {/* HISTÓRICO DE LEVANTAMENTO */}
+              <div className="p-6 rounded-3xl bg-white border border-stone-200 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                  <div>
+                    <h4 className="font-bold text-sm text-stone-900 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-stone-600" />
+                      <span>Histórico de Levantamentos da Plataforma</span>
+                    </h4>
+                    <p className="text-xs text-stone-500">
+                      Registo permanente de todas as retiradas de lucro, compras de stock e saques bancários.
+                    </p>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-stone-700 bg-stone-100 px-3 py-1 rounded-xl">
+                    {adminWithdrawals.length} Registados
+                  </span>
+                </div>
+
+                {adminWithdrawals.length === 0 ? (
+                  <div className="py-8 text-center bg-stone-50 rounded-2xl border border-stone-200 space-y-1">
+                    <Banknote className="w-8 h-8 text-stone-400 mx-auto" />
+                    <p className="text-xs font-bold text-stone-700">Nenhum levantamento registado ainda.</p>
+                    <p className="text-[11px] text-stone-500">Quando efetuar um levantamento de dinheiro físico ou bancário, o registo aparecerá aqui.</p>
+                  </div>
+                ) : (
+                  <div className="border border-stone-200 rounded-2xl overflow-hidden shadow-2xs">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-stone-50 text-stone-500 text-[10px] uppercase font-bold border-b border-stone-200">
+                        <tr>
+                          <th className="py-3 px-4">Ref.</th>
+                          <th className="py-3 px-4">Data</th>
+                          <th className="py-3 px-4">Montante</th>
+                          <th className="py-3 px-4">Modalidade</th>
+                          <th className="py-3 px-4">Finalidade</th>
+                          <th className="py-3 px-4">Responsável</th>
+                          <th className="py-3 px-4">Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stone-100">
+                        {adminWithdrawals.map((item) => (
+                          <tr key={item.id} className="hover:bg-stone-50/50">
+                            <td className="py-2.5 px-4 font-mono font-bold text-stone-700">
+                              {item.reference || item.id}
+                            </td>
+                            <td className="py-2.5 px-4 text-stone-600">
+                              {typeof item.requestedAt === 'number'
+                                ? new Date(item.requestedAt).toLocaleDateString('pt-AO') + ' ' + new Date(item.requestedAt).toLocaleTimeString('pt-AO', { hour: '2-digit', minute: '2-digit' })
+                                : item.requestedAt || item.date}
+                            </td>
+                            <td className="py-2.5 px-4 font-mono font-black text-red-600">
+                              -{formatKwanzas(item.amountAOA || item.amount)}
+                            </td>
+                            <td className="py-2.5 px-4 text-stone-700">
+                              {item.withdrawalType === 'dinheiro_fisico' ? '💵 Dinheiro Físico (Cofre)' : '🏦 Transferência IBAN'}
+                            </td>
+                            <td className="py-2.5 px-4 text-stone-800 font-medium">
+                              {item.purpose || 'Retirada de Caixa'}
+                            </td>
+                            <td className="py-2.5 px-4 text-stone-600">
+                              {item.adminName || 'Administrador Geral'}
+                            </td>
+                            <td className="py-2.5 px-4">
+                              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                Concluído
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </div>
 

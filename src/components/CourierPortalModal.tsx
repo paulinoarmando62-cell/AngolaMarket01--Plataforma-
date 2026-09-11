@@ -27,7 +27,7 @@ import {
   Building2,
   Smartphone
 } from 'lucide-react';
-import { AppUser, Order, OrderStatus, CourierTab, PayoutRequest } from '../types';
+import { AppUser, Order, OrderStatus, CourierTab, PayoutRequest, CourierSettlement } from '../types';
 import { formatKwanzas, COURIER_COMMISSION_PER_DELIVERY_AOA } from '../data/mockData';
 import { compressImageFile } from '../utils/imageOptimizer';
 
@@ -40,6 +40,8 @@ interface CourierPortalModalProps {
   onRequestPayout?: (request: Omit<PayoutRequest, 'id' | 'requestedAt' | 'status'>) => void;
   onCompleteDelivery: (orderId: string, enteredPin?: string) => boolean;
   onUpdateCourierProfile?: (updatedUser: AppUser) => void;
+  courierSettlements?: CourierSettlement[];
+  onNotifySettlement?: (settlement: Omit<CourierSettlement, 'id' | 'submittedAt' | 'status'>) => void;
   initialTab?: CourierTab;
 }
 
@@ -52,6 +54,8 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
   onRequestPayout,
   onCompleteDelivery,
   onUpdateCourierProfile,
+  courierSettlements = [],
+  onNotifySettlement,
   initialTab = 'pedidos'
 }) => {
   const [activeTab, setActiveTab] = useState<CourierTab>(initialTab);
@@ -100,6 +104,9 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
 
   // Settlement with Admin
   const [depositSettled, setDepositSettled] = useState(false);
+  const [settleAmount, setSettleAmount] = useState('');
+  const [settleMethod, setSettleMethod] = useState<'dinheiro_escritorio' | 'transferencia_iban'>('dinheiro_escritorio');
+  const [settleNotes, setSettleNotes] = useState('');
   
   // Payout request states
   const [courierPayoutAmount, setCourierPayoutAmount] = useState('');
@@ -153,9 +160,26 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
     setTimeout(() => setProfileSaved(false), 3000);
   };
 
-  const handleSettleDeposit = () => {
+  const handleSettleDeposit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const amt = Number(settleAmount) || cashCollectedFromCustomers;
+    if (amt <= 0) return;
+
+    if (onNotifySettlement) {
+      onNotifySettlement({
+        courierId: currentUser.id,
+        courierName: currentUser.name || 'Estafeta Oficial',
+        courierPhone: currentUser.phone || '',
+        amountAOA: amt,
+        paymentMethod: settleMethod,
+        notes: settleNotes || undefined
+      });
+    }
+
     setDepositSettled(true);
-    setTimeout(() => setDepositSettled(false), 3500);
+    setSettleAmount('');
+    setSettleNotes('');
+    setTimeout(() => setDepositSettled(false), 4000);
   };
 
   const handleCourierRequestPayout = (e: React.FormEvent) => {
@@ -607,28 +631,123 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
 
               {/* Settle cash form */}
               <div className="p-6 rounded-3xl bg-white border border-stone-200 shadow-sm space-y-4">
-                <h4 className="font-bold text-sm text-stone-900 flex items-center gap-2">
-                  <Send className="w-4 h-4 text-amber-600" />
-                  <span>Notificar Depósito / Prestação de Contas ao ADM</span>
-                </h4>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-100 pb-3">
+                  <div>
+                    <h4 className="font-bold text-sm text-stone-900 flex items-center gap-2">
+                      <Send className="w-4 h-4 text-amber-600" />
+                      <span>Notificar Prestação de Contas ao ADM</span>
+                    </h4>
+                    <p className="text-xs text-stone-500">
+                      Envie o registo do dinheiro físico recolhido entregue no escritório ou transferido por IBAN.
+                    </p>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-xl border border-amber-200">
+                    A prestar: {formatKwanzas(cashCollectedFromCustomers)}
+                  </span>
+                </div>
 
                 {depositSettled ? (
                   <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center gap-2">
                     <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                    <span>Notificação de prestação de contas enviada ao Administrador!</span>
+                    <span>Notificação de prestação de contas enviada com sucesso! O ADM foi notificado no painel central.</span>
                   </div>
                 ) : (
-                  <div className="space-y-3 text-xs">
-                    <p className="text-stone-600">
-                      Após depositar o montante recolhido no IBAN do AngolaMarket 01 ou entregar em mãos no escritório central em Luanda, confirme abaixo:
-                    </p>
+                  <form onSubmit={handleSettleDeposit} className="space-y-4 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-stone-700">Montante a Prestar Contas (Kz) *</label>
+                        <input
+                          type="number"
+                          required
+                          value={settleAmount}
+                          onChange={(e) => setSettleAmount(e.target.value)}
+                          placeholder={`Padrão: ${cashCollectedFromCustomers}`}
+                          className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs font-mono font-bold text-stone-900 focus:bg-white focus:outline-none focus:border-amber-500"
+                        />
+                        <span className="text-[10px] text-stone-500">Deixe em branco para usar o total a prestar ({formatKwanzas(cashCollectedFromCustomers)})</span>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-stone-700">Forma de Prestação *</label>
+                        <select
+                          value={settleMethod}
+                          onChange={(e) => setSettleMethod(e.target.value as any)}
+                          className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-stone-900 focus:bg-white focus:outline-none focus:border-amber-500"
+                        >
+                          <option value="dinheiro_escritorio">💵 Dinheiro Físico em Mãos (Escritório Central)</option>
+                          <option value="transferencia_iban">🏦 Transferência Bancária / Depósito (IBAN Loja)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-stone-700">Observação / Comprovativo (Opcional)</label>
+                      <input
+                        type="text"
+                        value={settleNotes}
+                        onChange={(e) => setSettleNotes(e.target.value)}
+                        placeholder="Ex: Entregue ao ADM Paulino às 17h, ou Ref. bancária..."
+                        className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+
                     <button
-                      type="button"
-                      onClick={handleSettleDeposit}
-                      className="px-5 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold text-xs shadow-sm cursor-pointer"
+                      type="submit"
+                      disabled={cashCollectedFromCustomers === 0 && (!settleAmount || Number(settleAmount) <= 0)}
+                      className="px-6 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-stone-950 font-black text-xs shadow-sm cursor-pointer transition-all flex items-center gap-2"
                     >
-                      Notificar ADM sobre Depósito ({formatKwanzas(cashCollectedFromCustomers)})
+                      <Send className="w-4 h-4" />
+                      <span>Notificar Prestação de Contas ao ADM</span>
                     </button>
+                  </form>
+                )}
+
+                {/* Settlements list for this courier */}
+                {courierSettlements.filter(s => s.courierId === currentUser.id).length > 0 && (
+                  <div className="pt-3 border-t border-stone-100 space-y-2">
+                    <span className="text-xs font-bold text-stone-700 block">Histórico de Prestações Notificadas</span>
+                    <div className="border border-stone-200 rounded-2xl overflow-hidden">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-stone-50 text-stone-500 text-[10px] uppercase font-bold border-b border-stone-200">
+                          <tr>
+                            <th className="py-2.5 px-3">Data</th>
+                            <th className="py-2.5 px-3">Montante</th>
+                            <th className="py-2.5 px-3">Método</th>
+                            <th className="py-2.5 px-3">Estado</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-stone-100">
+                          {courierSettlements
+                            .filter(s => s.courierId === currentUser.id)
+                            .map((settle) => (
+                              <tr key={settle.id} className="hover:bg-stone-50/50">
+                                <td className="py-2 px-3 text-[11px] text-stone-600">
+                                  {typeof settle.submittedAt === 'number'
+                                    ? new Date(settle.submittedAt).toLocaleDateString('pt-AO')
+                                    : settle.submittedAt}
+                                </td>
+                                <td className="py-2 px-3 font-mono font-bold text-stone-900">
+                                  {formatKwanzas(settle.amountAOA)}
+                                </td>
+                                <td className="py-2 px-3 text-[11px] text-stone-600">
+                                  {settle.paymentMethod === 'dinheiro_escritorio' ? '💵 Dinheiro Físico' : '🏦 IBAN'}
+                                </td>
+                                <td className="py-2 px-3">
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                                    settle.status === 'confirmado'
+                                      ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                                      : settle.status === 'rejeitado'
+                                      ? 'bg-red-100 text-red-800 border-red-200'
+                                      : 'bg-amber-100 text-amber-800 border-amber-200'
+                                  }`}>
+                                    {settle.status === 'confirmado' ? 'Confirmado ADM' : settle.status === 'rejeitado' ? 'Rejeitado' : 'Pendente ADM'}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
               </div>

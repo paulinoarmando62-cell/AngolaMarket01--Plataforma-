@@ -156,6 +156,8 @@ export interface Order {
   status: OrderStatus;
   estimatedDeliveryDate: string;
   deliveryCode: string; // Código de 4 dígitos para dar ao estafeta
+  customerId?: string;
+  customerEmail?: string;
   assignedCourierId?: string;
   affiliateCode?: string;
   affiliateCommissionAmount?: number;
@@ -165,6 +167,40 @@ export interface Order {
     vehicle: string;
     avatar: string;
   };
+}
+
+export interface CourierSettlement {
+  id: string;
+  courierId: string;
+  courierName: string;
+  courierPhone: string;
+  courierVehicle?: string;
+  amount: number; // Montante em Kwanzas (Kz)
+  amountAOA: number;
+  paymentMethod?: 'dinheiro_escritorio' | 'transferencia_iban' | string;
+  date?: string;
+  submittedAt: number | string;
+  status: 'pendente' | 'confirmado' | 'rejeitado';
+  notes?: string;
+  proofUrl?: string;
+  confirmedAt?: string;
+  confirmedByAdminName?: string;
+}
+
+export interface AdminWithdrawal {
+  id: string;
+  amount: number; // in AOA (Kwanzas)
+  amountAOA: number;
+  purpose?: string;
+  withdrawalType: 'dinheiro_fisico' | 'transferencia_bancaria';
+  iban?: string;
+  bankName?: string;
+  accountHolder?: string;
+  date?: string;
+  requestedAt: number | string;
+  status: 'concluido';
+  reference: string;
+  adminName?: string;
 }
 
 export type PayoutRequestType = 'afiliado' | 'entregador';

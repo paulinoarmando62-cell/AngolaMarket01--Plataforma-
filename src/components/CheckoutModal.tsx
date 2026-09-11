@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   MapPin, 
@@ -10,13 +10,16 @@ import {
   ShieldCheck, 
   Truck, 
   AlertCircle, 
-  Info,
-  CheckCircle2,
-  Tag,
-  Home,
-  Navigation
+  Info, 
+  CheckCircle2, 
+  Tag, 
+  Home, 
+  Navigation,
+  Lock,
+  LogIn,
+  UserPlus
 } from 'lucide-react';
-import { CartItem, LuandaZone, OrderCustomerInfo, PaymentMethodType, DeliveryType } from '../types';
+import { CartItem, LuandaZone, OrderCustomerInfo, PaymentMethodType, DeliveryType, AppUser } from '../types';
 import { formatKwanzas } from '../data/mockData';
 
 interface CheckoutModalProps {
@@ -26,8 +29,14 @@ interface CheckoutModalProps {
   selectedZone: LuandaZone;
   onSelectZone: (zone: LuandaZone) => void;
   luandaZones: LuandaZone[];
-  onSubmitOrder: (customerInfo: OrderCustomerInfo) => void;
+  onSubmitOrder: (
+    customerInfo: OrderCustomerInfo,
+    newCustomerAccount?: { name: string; phone: string; password?: string; email?: string }
+  ) => void;
   affiliateRefCode?: string;
+  currentUser?: AppUser | null;
+  users?: AppUser[];
+  onLoginUser?: (user: AppUser) => void;
 }
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
@@ -39,18 +48,29 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   luandaZones,
   onSubmitOrder,
   affiliateRefCode = '',
+  currentUser,
+  users = [],
+  onLoginUser,
 }) => {
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [fullName, setFullName] = useState(currentUser?.name || '');
+  const [phone, setPhone] = useState(currentUser?.phone || '');
   const [alternatePhone, setAlternatePhone] = useState('');
   
+  // Client account creation state for new users
+  const [accountMode, setAccountMode] = useState<'create' | 'login'>('create');
+  const [clientPassword, setClientPassword] = useState('123456');
+  const [clientEmail, setClientEmail] = useState(currentUser?.email || '');
+  const [loginPhoneOrEmail, setLoginPhoneOrEmail] = useState('');
+  const [loginPasswordInput, setLoginPasswordInput] = useState('');
+  const [loginFeedback, setLoginFeedback] = useState<string | null>(null);
+
   // Delivery Type: 'porta' (à porta de casa) ou 'paragem' (na paragem do endereço)
   const [deliveryType, setDeliveryType] = useState<DeliveryType>('porta');
   const [busStopName, setBusStopName] = useState('');
 
-  const [neighborhood, setNeighborhood] = useState(selectedZone.neighborhood || '');
-  const [streetAddress, setStreetAddress] = useState('');
-  const [referencePoint, setReferencePoint] = useState('');
+  const [neighborhood, setNeighborhood] = useState(currentUser?.defaultNeighborhood || selectedZone.neighborhood || '');
+  const [streetAddress, setStreetAddress] = useState(currentUser?.defaultStreetAddress || '');
+  const [referencePoint, setReferencePoint] = useState(currentUser?.defaultReferencePoint || '');
   const [deliveryNotes, setDeliveryNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('dinheiro_entrega');
   const [needChangeFor, setNeedChangeFor] = useState<number | undefined>(undefined);
@@ -58,7 +78,61 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [affiliateCode, setAffiliateCode] = useState(affiliateRefCode);
   const [hasError, setHasError] = useState<string | null>(null);
 
+  // Sync if currentUser changes
+  useEffect(() => {
+    if (currentUser) {
+      if (!fullName) setFullName(currentUser.name);
+      if (!phone) setPhone(currentUser.phone);
+      if (!neighborhood && currentUser.defaultNeighborhood) setNeighborhood(currentUser.defaultNeighborhood);
+      if (!streetAddress && currentUser.defaultStreetAddress) setStreetAddress(currentUser.defaultStreetAddress);
+      if (!referencePoint && currentUser.defaultReferencePoint) setReferencePoint(currentUser.defaultReferencePoint);
+    }
+  }, [currentUser]);
+
   if (!isOpen) return null;
+
+  // Validate affiliate in real-time
+  const cleanAffiliateInput = affiliateCode.trim().toUpperCase();
+  const matchedAffiliate = cleanAffiliateInput 
+    ? users.find(u => u.role === 'affiliate' && u.affiliateCode && u.affiliateCode.trim().toUpperCase() === cleanAffiliateInput)
+    : null;
+
+  // Handle in-checkout customer login
+  const handleQuickLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginFeedback(null);
+    const target = loginPhoneOrEmail.trim().toLowerCase();
+    const cleanTargetPhone = target.replace(/[^0-9]/g, '');
+
+    const found = users.find(u => {
+      const uEmail = (u.email || '').toLowerCase();
+      const uPhone = (u.phone || '').replace(/[^0-9]/g, '');
+      return (
+        (uEmail && uEmail === target) ||
+        (cleanTargetPhone.length >= 6 && uPhone.includes(cleanTargetPhone))
+      );
+    });
+
+    if (!found) {
+      setLoginFeedback('Conta não encontrada com este telefone/e-mail.');
+      return;
+    }
+
+    if (found.password && loginPasswordInput && found.password !== loginPasswordInput) {
+      setLoginFeedback('Palavra-passe incorreta. Tente novamente.');
+      return;
+    }
+
+    if (onLoginUser) {
+      onLoginUser(found);
+    }
+    setFullName(found.name);
+    setPhone(found.phone);
+    if (found.defaultNeighborhood) setNeighborhood(found.defaultNeighborhood);
+    if (found.defaultStreetAddress) setStreetAddress(found.defaultStreetAddress);
+    if (found.defaultReferencePoint) setReferencePoint(found.defaultReferencePoint);
+    setLoginFeedback('Sessão iniciada com sucesso!');
+  };
 
   // Calculate dynamic delivery fee based on selected type
   const effectiveDeliveryFee = deliveryType === 'porta'
@@ -116,7 +190,14 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       affiliateCodeUsed: affiliateCode.trim() || undefined,
     };
 
-    onSubmitOrder(customerInfo);
+    const newCustomerAccount = (!currentUser && accountMode === 'create') ? {
+      name: fullName.trim(),
+      phone: phone.trim(),
+      password: clientPassword || '123456',
+      email: clientEmail.trim() || undefined,
+    } : undefined;
+
+    onSubmitOrder(customerInfo, newCustomerAccount);
   };
 
   return (
@@ -162,12 +243,135 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </div>
           )}
 
-          {/* Section 1: Customer Contact */}
+          {/* Section 1: Customer Contact & Client Account */}
           <div className="space-y-3">
-            <div className="flex items-center gap-2 pb-1 border-b border-stone-100 text-sm font-bold text-stone-900">
-              <User className="w-4 h-4 text-red-600" />
-              <span>1. Seus Dados de Contacto (Luanda)</span>
+            <div className="flex items-center justify-between pb-1 border-b border-stone-100">
+              <div className="flex items-center gap-2 text-sm font-bold text-stone-900">
+                <User className="w-4 h-4 text-red-600" />
+                <span>1. Dados de Contacto & Conta de Cliente</span>
+              </div>
+              <span className="text-[11px] font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-100">
+                Obrigatório p/ Acompanhamento
+              </span>
             </div>
+
+            {/* Account Status / Creation Box */}
+            {currentUser ? (
+              <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <div>
+                    <span className="text-xs text-emerald-950 font-bold block">
+                      Sessão Iniciada como Cliente: {currentUser.name} ({currentUser.phone})
+                    </span>
+                    <span className="text-[11px] text-emerald-700">
+                      O seu pedido será automaticamente associado à sua conta para acompanhar o percurso da entrega.
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full shrink-0">
+                  Conta Ativa
+                </span>
+              </div>
+            ) : (
+              <div className="p-4 bg-amber-50/80 border border-amber-200 rounded-3xl space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h4 className="text-xs font-black text-stone-900 flex items-center gap-1.5">
+                      <UserPlus className="w-4 h-4 text-amber-700" />
+                      <span>Conta de Cliente Obrigatória para Acompanhar o Pedido</span>
+                    </h4>
+                    <p className="text-[11px] text-stone-600 mt-0.5">
+                      Para acompanhar o estado do seu pedido e o percurso do estafeta em tempo real na plataforma, crie a sua conta gratuita ou inicie sessão.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 p-1 bg-amber-100/70 rounded-2xl">
+                  <button
+                    type="button"
+                    onClick={() => { setAccountMode('create'); setLoginFeedback(null); }}
+                    className={`py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                      accountMode === 'create' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-600 hover:text-stone-900'
+                    }`}
+                  >
+                    Criar Nova Conta
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setAccountMode('login'); setLoginFeedback(null); }}
+                    className={`py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                      accountMode === 'login' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-600 hover:text-stone-900'
+                    }`}
+                  >
+                    Já Tenho Conta (Entrar)
+                  </button>
+                </div>
+
+                {accountMode === 'create' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-stone-700 font-bold flex items-center gap-1">
+                        <Lock className="w-3 h-3 text-stone-500" />
+                        <span>Definir Palavra-passe (Senha) *</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={clientPassword}
+                        onChange={(e) => setClientPassword(e.target.value)}
+                        placeholder="Ex: 123456"
+                        className="w-full bg-white border border-stone-200 rounded-2xl px-3.5 py-2 text-xs text-stone-900 font-mono focus:outline-none focus:border-red-500"
+                      />
+                      <span className="text-[10px] text-stone-500">Usará o seu telefone e esta senha para entrar na conta</span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-stone-700 font-bold">E-mail do Cliente (Opcional)</label>
+                      <input
+                        type="email"
+                        value={clientEmail}
+                        onChange={(e) => setClientEmail(e.target.value)}
+                        placeholder="seu@email.com"
+                        className="w-full bg-white border border-stone-200 rounded-2xl px-3.5 py-2 text-xs text-stone-900 focus:outline-none focus:border-red-500"
+                      />
+                      <span className="text-[10px] text-stone-500">Para envio do comprovativo da compra</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2 pt-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <input
+                        type="text"
+                        value={loginPhoneOrEmail}
+                        onChange={(e) => setLoginPhoneOrEmail(e.target.value)}
+                        placeholder="Telefone (ex: 923...) ou e-mail"
+                        className="bg-white border border-stone-200 rounded-2xl px-3.5 py-2 text-xs text-stone-900 focus:outline-none focus:border-red-500"
+                      />
+                      <input
+                        type="password"
+                        value={loginPasswordInput}
+                        onChange={(e) => setLoginPasswordInput(e.target.value)}
+                        placeholder="Palavra-passe da conta"
+                        className="bg-white border border-stone-200 rounded-2xl px-3.5 py-2 text-xs text-stone-900 font-mono focus:outline-none focus:border-red-500"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={handleQuickLogin}
+                        className="px-4 py-2 bg-stone-900 hover:bg-black text-white text-xs font-bold rounded-2xl flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <LogIn className="w-3.5 h-3.5" />
+                        <span>Entrar e Preencher Dados</span>
+                      </button>
+                      {loginFeedback && (
+                        <span className="text-xs font-bold text-amber-800">{loginFeedback}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
@@ -399,18 +603,44 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </div>
 
               {/* Affiliate Referral Code */}
-              <div className="space-y-1 sm:col-span-2">
-                <label className="text-xs text-stone-600 font-bold flex items-center gap-1">
-                  <Tag className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Código de Afiliado / Divulgador (Opcional)</span>
+              <div className="space-y-1.5 sm:col-span-2">
+                <label className="text-xs text-stone-700 font-bold flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Tag className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Código de Afiliado / Divulgador (Opcional)</span>
+                  </div>
+                  {matchedAffiliate && (
+                    <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      ✓ Afiliado Reconhecido
+                    </span>
+                  )}
                 </label>
                 <input
                   type="text"
                   value={affiliateCode}
                   onChange={(e) => setAffiliateCode(e.target.value.toUpperCase())}
                   placeholder="Ex: TERESA-01 (se indicado por um divulgador)"
-                  className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2 text-xs text-stone-900 uppercase font-mono placeholder-stone-400 focus:outline-none focus:border-blue-500"
+                  className={`w-full bg-stone-50 border rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 uppercase font-mono placeholder-stone-400 focus:outline-none transition-all ${
+                    matchedAffiliate
+                      ? 'border-emerald-500 bg-emerald-50/30'
+                      : cleanAffiliateInput
+                      ? 'border-amber-400 bg-amber-50/20'
+                      : 'border-stone-200 focus:border-blue-500'
+                  }`}
                 />
+                {matchedAffiliate ? (
+                  <div className="p-2.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>
+                      Afiliado Validado: <strong>{matchedAffiliate.name}</strong> ({matchedAffiliate.affiliateCode}) — comissão de venda garantida nesta compra!
+                    </span>
+                  </div>
+                ) : cleanAffiliateInput ? (
+                  <div className="p-2.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>Código "{cleanAffiliateInput}" não encontrado. Se não foi indicado, pode deixar este campo em branco.</span>
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>

@@ -172,30 +172,51 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                           </span>
                           <span className="text-stone-400">/ unidade</span>
                         </div>
-                        <p className="text-[11px] text-stone-500 flex items-center gap-1">
-                          <span>📍 Stock: {item.product.seller.location}</span>
+                        <p className="text-[11px] text-stone-500 flex flex-wrap items-center gap-2">
+                          <span>📍 {item.product.seller.location}</span>
+                          <span className="font-semibold text-stone-700">
+                            • Stock disponível: <strong>{item.product.stockCount} un.</strong>
+                          </span>
                         </p>
                       </div>
                     </div>
 
                     {/* Quantity Selector & Item Total */}
-                    <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-100">
-                      <div className="flex items-center rounded-2xl bg-stone-100 border border-stone-200 overflow-hidden">
-                        <button
-                          onClick={() => onUpdateQuantity(item.product.id, item.quantity - 1)}
-                          className="px-3 py-2 text-stone-600 hover:text-stone-900 hover:bg-stone-200 text-xs font-bold cursor-pointer"
-                        >
-                          <Minus className="w-3.5 h-3.5" />
-                        </button>
-                        <span className="px-3.5 py-1 text-xs font-mono font-bold text-stone-900">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => onUpdateQuantity(item.product.id, item.quantity + 1)}
-                          className="px-3 py-2 text-stone-600 hover:text-stone-900 hover:bg-stone-200 text-xs font-bold cursor-pointer"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
+                    <div className="flex flex-col sm:flex-row items-end sm:items-center justify-between sm:justify-end w-full sm:w-auto gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-100">
+                      <div className="flex flex-col items-end sm:items-center gap-1">
+                        <div className="flex items-center rounded-2xl bg-stone-100 border border-stone-200 overflow-hidden">
+                          <button
+                            onClick={() => onUpdateQuantity(item.product.id, item.quantity - 1)}
+                            className="px-3 py-2 text-stone-600 hover:text-stone-900 hover:bg-stone-200 text-xs font-bold cursor-pointer"
+                            title="Diminuir quantidade"
+                          >
+                            <Minus className="w-3.5 h-3.5" />
+                          </button>
+                          <span className="px-3.5 py-1 text-xs font-mono font-bold text-stone-900">
+                            {item.quantity}
+                          </span>
+                          <button
+                            disabled={item.quantity >= item.product.stockCount}
+                            onClick={() => onUpdateQuantity(item.product.id, item.quantity + 1)}
+                            className={`px-3 py-2 text-xs font-bold transition-all ${
+                              item.quantity >= item.product.stockCount
+                                ? 'text-stone-300 bg-stone-100 cursor-not-allowed'
+                                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200 cursor-pointer'
+                            }`}
+                            title={
+                              item.quantity >= item.product.stockCount
+                                ? `Limite de stock atingido (${item.product.stockCount} disponíveis)`
+                                : 'Aumentar quantidade'
+                            }
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        {item.quantity >= item.product.stockCount && (
+                          <span className="text-[10px] text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                            Máx. de stock ({item.product.stockCount})
+                          </span>
+                        )}
                       </div>
 
                       <div className="text-right">

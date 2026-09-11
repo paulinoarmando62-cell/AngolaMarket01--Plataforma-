@@ -204,12 +204,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {/* Brand Presentation */}
           <div className="text-center space-y-1">
             <h2 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight">
-              {tab === 'login' ? 'Bem-vindo de Volta!' : 'Junte-se à Nossa Equipa'}
+              {tab === 'login' ? 'Bem-vindo de Volta!' : 'Criar Conta no AngolaMarket 01'}
             </h2>
             <p className="text-xs text-stone-500 max-w-sm mx-auto">
               {tab === 'login' 
-                ? 'Inicie sessão para gerir a sua conta de afiliado, estafeta ou administração.' 
-                : 'Registe-se como afiliado ou estafeta parceiro do AngolaMarket 01.'}
+                ? 'Inicie sessão para acompanhar as suas compras, gerir a sua carteira ou aceder à gestão.' 
+                : 'Crie a sua conta de Cliente para acompanhar pedidos, ou registe-se como Parceiro.'}
             </p>
           </div>
 
@@ -236,7 +236,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
-                Criar Conta de Parceiro
+                Criar Nova Conta
               </button>
             </div>
           </div>
@@ -300,8 +300,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </button>
 
               <div className="pt-4 text-center border-t border-stone-100 space-y-1">
-                <p className="text-xs text-stone-500">
-                  É comprador? <span className="font-bold text-stone-800">Não precisa de conta</span> para fazer pedidos.
+                <p className="text-xs text-stone-600">
+                  É Cliente? Inicie sessão com o seu telefone para <strong className="text-stone-900">acompanhar os seus pedidos</strong>.
                 </p>
                 <p className="text-[11px] text-stone-400">
                   Apoio ao cliente: <strong className="text-stone-700 font-mono">938 243 909 / 950 461 466</strong>
@@ -325,22 +325,46 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </div>
               )}
 
-              {/* Informative banner about direct guest purchases */}
-              <div className="p-3 bg-stone-50 border border-stone-200 rounded-2xl flex items-center gap-2.5 text-xs text-stone-600">
+              {/* Informative banner about client accounts */}
+              <div className="p-3 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-2.5 text-xs text-stone-700">
                 <ShoppingBag className="w-4 h-4 text-red-600 shrink-0" />
                 <span>
-                  <strong>Cliente?</strong> Pode comprar diretamente no catálogo sem registo de conta, com pagamento no ato da entrega.
+                  <strong>Acompanhamento de Encomendas:</strong> Crie a sua conta de cliente para acompanhar o percurso e estado da sua entrega pelo estafeta em tempo real.
                 </span>
               </div>
 
               {/* Account Role Selector */}
               <div className="space-y-2">
-                <label className="text-xs font-bold text-stone-700">Selecione a Função de Registo:</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <label className="text-xs font-bold text-stone-700">Selecione o Tipo de Conta a Criar:</label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+
+                  {/* Option: Buyer */}
+                  <label 
+                    className={`p-3 rounded-2xl border flex flex-col justify-between cursor-pointer transition-all ${
+                      regRole === 'buyer' ? 'bg-red-50 border-red-500 ring-1 ring-red-500 shadow-xs' : 'bg-stone-50 border-stone-200 hover:bg-stone-100'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="p-2 rounded-xl bg-white text-red-600 shadow-xs mb-2">
+                        <ShoppingBag className="w-4 h-4" />
+                      </div>
+                      <input 
+                        type="radio" 
+                        name="role" 
+                        checked={regRole === 'buyer'} 
+                        onChange={() => setRegRole('buyer')}
+                        className="accent-red-600 w-4 h-4"
+                      />
+                    </div>
+                    <div>
+                      <span className="font-bold text-xs text-stone-900 block">Cliente</span>
+                      <span className="text-[10px] text-stone-500 block mt-0.5 leading-tight">Acompanhe encomendas e compras</span>
+                    </div>
+                  </label>
                   
                   {/* Option: Affiliate */}
                   <label 
-                    className={`p-3.5 rounded-2xl border flex flex-col justify-between cursor-pointer transition-all ${
+                    className={`p-3 rounded-2xl border flex flex-col justify-between cursor-pointer transition-all ${
                       regRole === 'affiliate' ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500 shadow-xs' : 'bg-stone-50 border-stone-200 hover:bg-stone-100'
                     }`}
                   >
@@ -357,14 +381,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       />
                     </div>
                     <div>
-                      <span className="font-bold text-xs text-stone-900 block">Afiliado / Promotor</span>
-                      <span className="text-[11px] text-stone-500 block mt-0.5 leading-snug">Ganhe comissões diretas de 7% por cada venda</span>
+                      <span className="font-bold text-xs text-stone-900 block">Afiliado</span>
+                      <span className="text-[10px] text-stone-500 block mt-0.5 leading-tight">Ganhe comissões diretas de 8%</span>
                     </div>
                   </label>
 
                   {/* Option: Courier */}
                   <label 
-                    className={`p-3.5 rounded-2xl border flex flex-col justify-between cursor-pointer transition-all ${
+                    className={`p-3 rounded-2xl border flex flex-col justify-between cursor-pointer transition-all ${
                       regRole === 'courier' ? 'bg-amber-50 border-amber-500 ring-1 ring-amber-500 shadow-xs' : 'bg-stone-50 border-stone-200 hover:bg-stone-100'
                     }`}
                   >
@@ -381,8 +405,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       />
                     </div>
                     <div>
-                      <span className="font-bold text-xs text-stone-900 block">Estafeta / Entregador</span>
-                      <span className="text-[11px] text-stone-500 block mt-0.5 leading-snug">Faça entregas em Luanda e receba por corrida</span>
+                      <span className="font-bold text-xs text-stone-900 block">Estafeta</span>
+                      <span className="text-[10px] text-stone-500 block mt-0.5 leading-tight">Faça entregas e receba 1.000 Kz</span>
                     </div>
                   </label>
                 </div>
