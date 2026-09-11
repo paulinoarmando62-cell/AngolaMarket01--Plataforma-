@@ -132,9 +132,23 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
   const generalAffiliateUrl = `${getCleanBaseUrl()}/?ref=${encodeURIComponent(affiliateCode)}`;
 
   const commissionRate = currentUser.commissionRate || 8;
-  const totalSales = currentUser.totalSalesCount || 0;
-  const totalEarned = currentUser.totalCommissionEarned || 0;
-  const balance = currentUser.balanceAOA || 0;
+  // Clean affiliate code
+  const cleanMyCode = (affiliateCode || currentUser.affiliateCode || '').trim().toUpperCase();
+
+  // Filter orders made through this affiliate (case-insensitive & trimmed)
+  const affiliateOrders = orders.filter(o => {
+    if (!cleanMyCode) return false;
+    const c1 = (o.affiliateCode || '').trim().toUpperCase();
+    const c2 = (o.customer?.affiliateCodeUsed || '').trim().toUpperCase();
+    return c1 === cleanMyCode || c2 === cleanMyCode;
+  });
+
+  const totalSales = Math.max(currentUser.totalSalesCount || 0, affiliateOrders.length);
+  const ordersCommissionSum = affiliateOrders.reduce((sum, o) => {
+    return sum + (o.affiliateCommissionAmount || Math.round(o.subtotal * (commissionRate / 100)));
+  }, 0);
+  const totalEarned = Math.max(currentUser.totalCommissionEarned || 0, ordersCommissionSum);
+  const balance = currentUser.balanceAOA !== undefined && currentUser.balanceAOA > 0 ? currentUser.balanceAOA : Math.max(0, totalEarned - (currentUser.withdrawnAOA || 0));
   const withdrawn = currentUser.withdrawnAOA || 0;
   const affiliatedIds = currentUser.affiliatedProductIds || [];
 
@@ -142,9 +156,6 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
   const myPayoutRequests = payoutRequests.filter(
     req => req.requesterId === currentUser.id || req.type === 'afiliado' || req.requesterRole === 'affiliate'
   );
-
-  // Filter orders made through this affiliate
-  const affiliateOrders = orders.filter(o => o.affiliateCode && o.affiliateCode === affiliateCode).slice(0, 10);
 
   const handleCopyGeneralLink = () => {
     navigator.clipboard.writeText(generalAffiliateUrl);

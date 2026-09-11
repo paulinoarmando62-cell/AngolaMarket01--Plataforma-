@@ -113,13 +113,9 @@ const CURRENT_APP_CLEAN_VERSION = 'v7_clean_zero_all_zones_and_data_final';
 if (typeof window !== 'undefined') {
   try {
     const savedVer = localStorage.getItem('angolamarket_app_clean_ver');
-    if (savedVer !== CURRENT_APP_CLEAN_VERSION) {
-      // Forcefully remove legacy test orders, mock payout requests, test carts and example zones
-      localStorage.removeItem(LOCAL_STORAGE_ORDERS_KEY);
-      localStorage.removeItem(LOCAL_STORAGE_PAYOUT_REQUESTS_KEY);
-      localStorage.removeItem(LOCAL_STORAGE_CART_KEY);
-      localStorage.removeItem(LOCAL_STORAGE_ZONES_LIST_KEY);
-      localStorage.removeItem(LOCAL_STORAGE_ZONE_KEY);
+    if (!savedVer) {
+      localStorage.setItem('angolamarket_app_clean_ver', CURRENT_APP_CLEAN_VERSION);
+    }
       
       // Clean users & remove mock addresses
       const rawUsers = localStorage.getItem(LOCAL_STORAGE_USERS_KEY);
@@ -349,6 +345,17 @@ export default function App() {
         });
       }
     }).catch(() => {});
+
+    idbGet<Order[]>(LOCAL_STORAGE_ORDERS_KEY).then((idbOrders) => {
+      if (Array.isArray(idbOrders) && idbOrders.length > 0) {
+        setOrders((currentOrders) => {
+          if (currentOrders.length === 0) return idbOrders;
+          const currentIds = new Set(currentOrders.map(o => o.id));
+          const missing = idbOrders.filter(o => !currentIds.has(o.id));
+          return missing.length > 0 ? [...currentOrders, ...missing] : currentOrders;
+        });
+      }
+    }).catch(() => {});
   }, []);
 
   // Cart state (Clean zero)
@@ -356,15 +363,44 @@ export default function App() {
     return [];
   });
 
-  // Orders state (Pristine clean state for real production orders - starts at zero)
+  // Orders state - persistent real production orders
   const [orders, setOrders] = useState<Order[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(LOCAL_STORAGE_ORDERS_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            return parsed.filter((o: Order) => o && o.id && o.orderNumber);
+          }
+        }
+      } catch (e) {}
+    }
     return [];
   });
 
-  // Payout Requests state (Starts at zero)
+  // Automatically synchronize orders with localStorage
+  useEffect(() => {
+    safePersist(LOCAL_STORAGE_ORDERS_KEY, orders);
+  }, [orders]);
+
+  // Payout Requests state (Synchronized with localStorage)
   const [payoutRequests, setPayoutRequests] = useState<PayoutRequest[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(LOCAL_STORAGE_PAYOUT_REQUESTS_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch (e) {}
+    }
     return [];
   });
+
+  useEffect(() => {
+    safePersist(LOCAL_STORAGE_PAYOUT_REQUESTS_KEY, payoutRequests);
+  }, [payoutRequests]);
 
   // Navigation & Filtering
   const [searchTerm, setSearchTerm] = useState('');
@@ -383,9 +419,20 @@ export default function App() {
   // Role-Based Portals Modals
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
+  const [userProfileInitialTab, setUserProfileInitialTab] = useState<'perfil' | 'pedidos' | 'produtos'>('pedidos');
   const [isAdminPortalOpen, setIsAdminPortalOpen] = useState(false);
   const [isCourierPortalOpen, setIsCourierPortalOpen] = useState(false);
   const [isAffiliatePortalOpen, setIsAffiliatePortalOpen] = useState(false);
+
+  const handleOpenClientOrders = () => {
+    setUserProfileInitialTab('pedidos');
+    setIsUserProfileOpen(true);
+  };
+
+  const handleOpenClientProducts = () => {
+    setUserProfileInitialTab('produtos');
+    setIsUserProfileOpen(true);
+  };
 
   // Active Affiliate Referral Code (from URL parameter ?ref= or localStorage)
   const [activeAffiliateRefCode, setActiveAffiliateRefCode] = useState<string>(() => {
@@ -732,11 +779,16 @@ export default function App() {
     const deliveryCode = Math.floor(1000 + Math.random() * 9000).toString();
     const orderNum = `#AO01-${Math.floor(10000 + Math.random() * 90000)}`;
 
-    // Select default active courier
-    const defaultCourier = users.find(u => u.role === 'courier' && u.courierStatus === 'aprovado');
+    // Select default active courier if any
+    const defaultCourier = users.find(u => u.role === 'courier' && u.courierStatus === 'aprovado') || users.find(u => u.role === 'courier');
 
-    // Affiliate code handling
-    const affiliateCodeClean = customerInfo.affiliateCodeUsed ? customerInfo.affiliateCodeUsed.trim().toUpperCase() : undefined;
+    // Robust Affiliate code handling: check customerInfo.affiliateCodeUsed, activeAffiliateRefCode, or localStorage
+    const rawRefCode = customerInfo.affiliateCodeUsed || activeAffiliateRefCode || (typeof window !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_AFFILIATE_REF_KEY) : null);
+    const affiliateCodeClean = rawRefCode ? rawRefCode.trim().toUpperCase() : undefined;
+    if (affiliateCodeClean && !customerInfo.affiliateCodeUsed) {
+      customerInfo.affiliateCodeUsed = affiliateCodeClean;
+    }
+
     const affiliateUser = affiliateCodeClean 
       ? users.find(u => u.affiliateCode && u.affiliateCode.trim().toUpperCase() === affiliateCodeClean) 
       : null;
@@ -744,7 +796,7 @@ export default function App() {
       ? Math.round(subtotal * ((affiliateUser.commissionRate || 8) / 100)) 
       : 0;
 
-    // Create user account if requested in checkout
+    // Create user account if requested in checkout or link to existing currentUser
     let newUserId: string | undefined = currentUser?.id;
     if (newCustomerAccount && !currentUser) {
       newUserId = `user-customer-${Date.now()}`;
@@ -761,8 +813,17 @@ export default function App() {
         defaultStreetAddress: customerInfo.streetAddress,
         defaultReferencePoint: customerInfo.referencePoint,
       };
-      setUsers(prev => [createdAccount, ...prev]);
+      setUsers(prev => {
+        const nextUsers = [createdAccount, ...prev];
+        safePersist(LOCAL_STORAGE_USERS_KEY, nextUsers);
+        return nextUsers;
+      });
       setCurrentUser(createdAccount);
+      safePersist(LOCAL_STORAGE_CURRENT_USER_KEY, createdAccount);
+    } else if (currentUser) {
+      if (!customerInfo.phone && currentUser.phone) customerInfo.phone = currentUser.phone;
+      if (!customerInfo.email && currentUser.email) customerInfo.email = currentUser.email;
+      if (!customerInfo.fullName && currentUser.name) customerInfo.fullName = currentUser.name;
     }
 
     const newOrder: Order = {
@@ -774,7 +835,7 @@ export default function App() {
       subtotal,
       deliveryFee,
       total,
-      customer: customerInfo,
+      customer: { ...customerInfo, affiliateCodeUsed: affiliateCodeClean },
       status: 'recebido',
       estimatedDeliveryDate: `Hoje (${selectedZone.estimatedHours})`,
       deliveryCode,
@@ -797,24 +858,33 @@ export default function App() {
 
     // If affiliate code was used, credit the affiliate
     if (affiliateUser && commissionAmount > 0) {
-      setUsers(prev => prev.map(u => {
-        if (u.id === affiliateUser.id) {
-          const updatedAffiliate: AppUser = {
-            ...u,
-            totalSalesCount: (u.totalSalesCount || 0) + 1,
-            totalCommissionEarned: (u.totalCommissionEarned || 0) + commissionAmount,
-            balanceAOA: (u.balanceAOA || 0) + commissionAmount,
-          };
-          if (currentUser && currentUser.id === u.id) {
-            setCurrentUser(updatedAffiliate);
+      setUsers(prev => {
+        const updated = prev.map(u => {
+          if (u.id === affiliateUser.id) {
+            const updatedAffiliate: AppUser = {
+              ...u,
+              totalSalesCount: (u.totalSalesCount || 0) + 1,
+              totalCommissionEarned: (u.totalCommissionEarned || 0) + commissionAmount,
+              balanceAOA: (u.balanceAOA || 0) + commissionAmount,
+            };
+            if (currentUser && currentUser.id === u.id) {
+              setCurrentUser(updatedAffiliate);
+              safePersist(LOCAL_STORAGE_CURRENT_USER_KEY, updatedAffiliate);
+            }
+            return updatedAffiliate;
           }
-          return updatedAffiliate;
-        }
-        return u;
-      }));
+          return u;
+        });
+        safePersist(LOCAL_STORAGE_USERS_KEY, updated);
+        return updated;
+      });
     }
 
-    setOrders((prev) => [newOrder, ...prev]);
+    setOrders((prev) => {
+      const nextOrders = [newOrder, ...prev];
+      safePersist(LOCAL_STORAGE_ORDERS_KEY, nextOrders);
+      return nextOrders;
+    });
     setCart([]);
     setIsCheckoutOpen(false);
     setNewOrderSuccess(newOrder);

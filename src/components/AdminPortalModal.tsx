@@ -2040,9 +2040,9 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                             className="bg-white border border-stone-300 rounded-xl px-2 py-1 text-xs text-stone-800 font-semibold cursor-pointer"
                           >
                             <option value="">-- Atribuir Estafeta --</option>
-                            {approvedCouriers.map((c) => (
+                            {couriers.map((c) => (
                               <option key={c.id} value={c.id}>
-                                {c.name} ({c.vehicle})
+                                {c.name} ({c.vehicle || 'Moto'}) {c.courierStatus === 'aprovado' ? '✓' : '⏳ Pendente'}
                               </option>
                             ))}
                           </select>

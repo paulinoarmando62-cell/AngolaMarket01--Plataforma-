@@ -119,9 +119,12 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
   const isApproved = currentUser.courierStatus === 'aprovado';
 
   // Orders assigned to this courier or active for Luanda
-  const assignedOrders = orders.filter(
-    (o) => o.assignedCourierId === currentUser.id || (!o.assignedCourierId && o.status !== 'entregue' && isApproved)
-  );
+  const assignedOrders = orders.filter((o) => {
+    if (o.assignedCourierId === currentUser.id) return true;
+    if (o.courier?.phone && currentUser.phone && o.courier.phone.replace(/[^0-9]/g, '') === currentUser.phone.replace(/[^0-9]/g, '')) return true;
+    if (!o.assignedCourierId && o.status !== 'entregue' && o.status !== 'cancelado') return true;
+    return false;
+  });
 
   const completedDeliveries = orders.filter(
     (o) => (o.assignedCourierId === currentUser.id || o.courier?.phone === currentUser.phone) && o.status === 'entregue'

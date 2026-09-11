@@ -14,7 +14,8 @@ import {
   LogOut,
   Truck,
   DollarSign,
-  ChevronDown
+  ChevronDown,
+  ShoppingBag
 } from 'lucide-react';
 import { LuandaZone, AppUser } from '../types';
 import { formatKwanzas } from '../data/mockData';
@@ -37,6 +38,8 @@ interface NavbarProps {
   onOpenAuth: () => void;
   onLogout: () => void;
   onOpenUserProfile?: () => void;
+  onOpenClientOrders?: () => void;
+  onOpenClientProducts?: () => void;
   onOpenAdminPortal: () => void;
   onOpenCourierPortal: () => void;
   onOpenAffiliatePortal: () => void;
@@ -60,6 +63,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAuth,
   onLogout,
   onOpenUserProfile,
+  onOpenClientOrders,
+  onOpenClientProducts,
   onOpenAdminPortal,
   onOpenCourierPortal,
   onOpenAffiliatePortal,
@@ -287,17 +292,41 @@ export const Navbar: React.FC<NavbarProps> = ({
                       )}
 
                       <button
-                        onClick={() => { if (onOpenUserProfile) onOpenUserProfile(); setShowUserDropdown(false); }}
-                        className="w-full text-left p-2 rounded-xl text-xs font-semibold text-stone-800 hover:bg-stone-100 flex items-center gap-2 cursor-pointer"
+                        onClick={() => { 
+                          if (onOpenClientOrders) onOpenClientOrders(); 
+                          else onOpenOrders(); 
+                          setShowUserDropdown(false); 
+                        }}
+                        className="w-full text-left p-2 rounded-xl text-xs font-bold text-stone-900 hover:bg-stone-100 flex items-center justify-between cursor-pointer"
                       >
-                        <User className="w-4 h-4 text-stone-600" /> Meu Perfil & Pagamentos
+                        <div className="flex items-center gap-2">
+                          <Package className="w-4 h-4 text-red-600" />
+                          <span>Meus Pedidos em Tempo Real</span>
+                        </div>
+                        {ordersCount > 0 && (
+                          <span className="w-4 h-4 rounded-full bg-red-600 text-white text-[10px] font-black flex items-center justify-center">
+                            {ordersCount}
+                          </span>
+                        )}
                       </button>
 
                       <button
-                        onClick={() => { onOpenOrders(); setShowUserDropdown(false); }}
+                        onClick={() => { 
+                          if (onOpenClientProducts) onOpenClientProducts(); 
+                          else if (onOpenUserProfile) onOpenUserProfile(); 
+                          setShowUserDropdown(false); 
+                        }}
+                        className="w-full text-left p-2 rounded-xl text-xs font-semibold text-stone-800 hover:bg-stone-100 flex items-center gap-2 cursor-pointer"
+                      >
+                        <ShoppingBag className="w-4 h-4 text-amber-600" />
+                        <span>Produtos Comprados (Histórico)</span>
+                      </button>
+
+                      <button
+                        onClick={() => { if (onOpenUserProfile) onOpenUserProfile(); setShowUserDropdown(false); }}
                         className="w-full text-left p-2 rounded-xl text-xs font-semibold text-stone-700 hover:bg-stone-100 flex items-center gap-2 cursor-pointer"
                       >
-                        <Package className="w-4 h-4" /> Minhas Compras ({ordersCount})
+                        <User className="w-4 h-4 text-stone-600" /> Meu Perfil & Pagamentos
                       </button>
 
                       <button
@@ -320,6 +349,24 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
               )}
             </div>
+
+            {/* Quick Orders Button on Desktop if user is logged in */}
+            {currentUser && (
+              <button
+                type="button"
+                onClick={onOpenClientOrders || onOpenOrders}
+                className="hidden md:flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-2xl bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-800 text-xs font-bold transition-all cursor-pointer shrink-0"
+                title="Acompanhamento de Pedidos em Tempo Real"
+              >
+                <Package className="w-4 h-4 text-red-600" />
+                <span>Meus Pedidos</span>
+                {ordersCount > 0 && (
+                  <span className="w-4 h-4 rounded-full bg-red-600 text-white text-[10px] font-black flex items-center justify-center">
+                    {ordersCount}
+                  </span>
+                )}
+              </button>
+            )}
 
             {/* Shopping Cart Button */}
             <button
@@ -422,12 +469,36 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
 
               {currentUser && (
-                <button
-                  onClick={() => { if (onOpenUserProfile) onOpenUserProfile(); setMobileMenuOpen(false); }}
-                  className="w-full py-2.5 rounded-2xl bg-stone-200 hover:bg-stone-300 text-stone-900 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <User className="w-4 h-4 text-stone-700" /> Meu Perfil & Pagamentos
-                </button>
+                <>
+                  <button
+                    onClick={() => { 
+                      if (onOpenClientOrders) onOpenClientOrders(); 
+                      else onOpenOrders(); 
+                      setMobileMenuOpen(false); 
+                    }}
+                    className="w-full py-2.5 rounded-2xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer border border-red-200"
+                  >
+                    <Package className="w-4 h-4 text-red-600" /> Meus Pedidos em Tempo Real ({ordersCount})
+                  </button>
+
+                  <button
+                    onClick={() => { 
+                      if (onOpenClientProducts) onOpenClientProducts(); 
+                      else if (onOpenUserProfile) onOpenUserProfile(); 
+                      setMobileMenuOpen(false); 
+                    }}
+                    className="w-full py-2.5 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer border border-amber-200"
+                  >
+                    <ShoppingBag className="w-4 h-4 text-amber-600" /> Produtos Comprados (Histórico com Fotos)
+                  </button>
+
+                  <button
+                    onClick={() => { if (onOpenUserProfile) onOpenUserProfile(); setMobileMenuOpen(false); }}
+                    className="w-full py-2.5 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-900 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <User className="w-4 h-4 text-stone-700" /> Meu Perfil & Pagamentos
+                  </button>
+                </>
               )}
 
               {!currentUser && (

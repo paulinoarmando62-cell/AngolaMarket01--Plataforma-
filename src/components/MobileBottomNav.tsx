@@ -9,6 +9,7 @@ import {
   Truck, 
   DollarSign,
   Package,
+  ShoppingBag,
   LogOut
 } from 'lucide-react';
 import { AppUser } from '../types';
@@ -23,6 +24,8 @@ interface MobileBottomNavProps {
   currentUser: AppUser | null;
   onOpenAuth: () => void;
   onOpenUserProfile?: () => void;
+  onOpenClientOrders?: () => void;
+  onOpenClientProducts?: () => void;
   onOpenAdminPortal: () => void;
   onOpenCourierPortal: () => void;
   onOpenAffiliatePortal: () => void;
@@ -40,6 +43,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   currentUser,
   onOpenAuth,
   onOpenUserProfile,
+  onOpenClientOrders,
+  onOpenClientProducts,
   onOpenAdminPortal,
   onOpenCourierPortal,
   onOpenAffiliatePortal,
@@ -160,12 +165,26 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                 type="button"
                 onClick={() => {
                   setShowUserMenu(false);
-                  onOpenOrders();
+                  if (onOpenClientOrders) onOpenClientOrders();
+                  else onOpenOrders();
                 }}
-                className="w-full p-3 rounded-2xl bg-stone-100 text-stone-800 hover:bg-stone-200 font-semibold text-xs flex items-center gap-2.5 transition-colors cursor-pointer"
+                className="w-full p-3 rounded-2xl bg-stone-100 text-stone-900 hover:bg-stone-200 font-bold text-xs flex items-center gap-2.5 transition-colors cursor-pointer"
               >
-                <Package className="w-4 h-4 text-stone-600" />
-                <span>Minhas Encomendas</span>
+                <Package className="w-4 h-4 text-red-600" />
+                <span>Meus Pedidos em Tempo Real</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowUserMenu(false);
+                  if (onOpenClientProducts) onOpenClientProducts();
+                  else if (onOpenUserProfile) onOpenUserProfile();
+                }}
+                className="w-full p-3 rounded-2xl bg-stone-100 text-stone-900 hover:bg-stone-200 font-bold text-xs flex items-center gap-2.5 transition-colors cursor-pointer"
+              >
+                <ShoppingBag className="w-4 h-4 text-amber-600" />
+                <span>Produtos Comprados (Histórico)</span>
               </button>
 
               <button
