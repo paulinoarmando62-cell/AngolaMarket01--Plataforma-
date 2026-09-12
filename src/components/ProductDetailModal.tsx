@@ -164,19 +164,19 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             
             {/* LEFT COLUMN: Gallery & Guarantees */}
             <div className="lg:col-span-6 space-y-4">
-              <div className="relative aspect-4/3 sm:aspect-square w-full rounded-3xl bg-white overflow-hidden border border-stone-200 flex items-center justify-center shadow-sm">
+              <div className="relative aspect-4/3 sm:aspect-square w-full rounded-3xl bg-white overflow-hidden border border-stone-200 flex items-center justify-center p-4 sm:p-6 shadow-sm">
                 <img
                   src={currentImage}
                   alt={product.title}
                   referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover object-center"
+                  className="w-full h-full object-contain object-center"
                 />
                 {product.discountPercent && (
-                  <span className="absolute top-4 left-4 bg-red-600 text-white font-black text-xs px-3 py-1.5 rounded-full shadow-md">
+                  <span className="absolute top-4 left-4 bg-red-600 text-white font-black text-xs px-3 py-1.5 rounded-full shadow-md z-10">
                     -{product.discountPercent}% DESCONTO
                   </span>
                 )}
-                <span className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md text-emerald-800 border border-emerald-200 text-xs font-bold px-3.5 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
+                <span className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md text-emerald-800 border border-emerald-200 text-xs font-bold px-3.5 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm z-10">
                   <CreditCard className="w-4 h-4 text-emerald-600" />
                   Pagar só na Entrega em Luanda
                 </span>
@@ -189,11 +189,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     <button
                       key={idx}
                       onClick={() => setSelectedImage(img)}
-                      className={`w-20 h-20 rounded-2xl overflow-hidden border-2 shrink-0 transition-all cursor-pointer bg-white ${
-                        currentImage === img ? 'border-red-600 ring-2 ring-red-100 scale-95 shadow-sm' : 'border-stone-200 opacity-60 hover:opacity-100'
+                      className={`w-20 h-20 rounded-2xl overflow-hidden border-2 shrink-0 transition-all cursor-pointer bg-white p-1.5 flex items-center justify-center ${
+                        currentImage === img ? 'border-red-600 ring-2 ring-red-100 scale-95 shadow-sm' : 'border-stone-200 opacity-70 hover:opacity-100'
                       }`}
                     >
-                      <img src={img} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      <img src={img} alt="" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
                     </button>
                   ))}
                 </div>

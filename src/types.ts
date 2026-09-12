@@ -217,6 +217,8 @@ export interface PayoutRequest {
   affiliateCode?: string;
   amount: number; // in AOA (Kwanzas)
   amountAOA?: number; // alias for amount in AOA
+  feeAmount?: number; // Taxa fixa da plataforma (ex: 200 Kz no saque de afiliado para o ADM)
+  netAmount?: number; // Valor líquido a transferir ao solicitante (amount - feeAmount)
   iban?: string;
   multicaixaExpressPhone?: string;
   bankName?: string;

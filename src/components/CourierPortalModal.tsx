@@ -25,7 +25,8 @@ import {
   Camera,
   Upload,
   Building2,
-  Smartphone
+  Smartphone,
+  AlertTriangle
 } from 'lucide-react';
 import { AppUser, Order, OrderStatus, CourierTab, PayoutRequest, CourierSettlement } from '../types';
 import { formatKwanzas, COURIER_COMMISSION_PER_DELIVERY_AOA } from '../data/mockData';
@@ -112,6 +113,9 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
   const [courierPayoutAmount, setCourierPayoutAmount] = useState('');
   const [courierPayoutMethod, setCourierPayoutMethod] = useState<'multicaixa_express' | 'transferencia_iban'>('multicaixa_express');
   const [courierPayoutRequested, setCourierPayoutRequested] = useState(false);
+  const [courierPayoutError, setCourierPayoutError] = useState('');
+
+  const MIN_COURIER_PAYOUT = 500;
 
   if (!isOpen) return null;
 
@@ -187,8 +191,23 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
 
   const handleCourierRequestPayout = (e: React.FormEvent) => {
     e.preventDefault();
+    setCourierPayoutError('');
+
+    if (totalEarnedDeliveryFees < MIN_COURIER_PAYOUT) {
+      setCourierPayoutError(`Saque Indisponível: Saldo insuficiente. O valor mínimo para solicitar saque é de ${formatKwanzas(MIN_COURIER_PAYOUT)}. O seu saldo atual é de ${formatKwanzas(totalEarnedDeliveryFees)}.`);
+      return;
+    }
+
     const amountNum = Number(courierPayoutAmount) || totalEarnedDeliveryFees;
-    if (amountNum <= 0) return;
+    if (amountNum < MIN_COURIER_PAYOUT) {
+      setCourierPayoutError(`O valor mínimo para solicitação de saque é de ${formatKwanzas(MIN_COURIER_PAYOUT)}.`);
+      return;
+    }
+
+    if (amountNum > totalEarnedDeliveryFees) {
+      setCourierPayoutError(`Saldo insuficiente. Você possui apenas ${formatKwanzas(totalEarnedDeliveryFees)} disponíveis para saque.`);
+      return;
+    }
 
     if (onRequestPayout) {
       onRequestPayout({
@@ -197,6 +216,8 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
         requesterName: currentUser.name || 'Estafeta Oficial',
         requesterRole: `Entregador Oficial (${currentUser.vehicle || 'Moto Luanda'})`,
         amountAOA: amountNum,
+        feeAmount: 0,
+        netAmount: amountNum,
         paymentMethod: courierPayoutMethod,
         multicaixaExpressPhone: courierExpress || currentUser.phone,
         iban: courierIban,
@@ -206,6 +227,7 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
     }
 
     setCourierPayoutRequested(true);
+    setCourierPayoutError('');
     setTimeout(() => {
       setCourierPayoutRequested(false);
       setCourierPayoutAmount('');
@@ -519,6 +541,24 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
                   </span>
                 </div>
 
+                {/* Insufficient balance notice */}
+                {totalEarnedDeliveryFees < MIN_COURIER_PAYOUT && (
+                  <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2.5">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+                    <div>
+                      <span className="font-black text-red-600 uppercase tracking-wide mr-1.5">[Indisponível]</span>
+                      <span>Saldo insuficiente para efetuar levantamento. É necessário ter no mínimo <strong>{formatKwanzas(MIN_COURIER_PAYOUT)}</strong> acumulados de entregas (Seu saldo atual: <strong>{formatKwanzas(totalEarnedDeliveryFees)}</strong>).</span>
+                    </div>
+                  </div>
+                )}
+
+                {courierPayoutError && (
+                  <div className="p-3 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                    <span>{courierPayoutError}</span>
+                  </div>
+                )}
+
                 {courierPayoutRequested ? (
                   <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center gap-2">
                     <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
@@ -528,24 +568,32 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
                   <form onSubmit={handleCourierRequestPayout} className="space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-stone-700">Valor do Saque (Kz) *</label>
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold text-stone-700">Valor do Saque (Kz) *</label>
+                          <span className="text-[10px] text-stone-500 font-bold">Mínimo: {formatKwanzas(MIN_COURIER_PAYOUT)}</span>
+                        </div>
                         <input
                           type="number"
                           required
-                          min={1000}
-                          max={totalEarnedDeliveryFees > 0 ? totalEarnedDeliveryFees : 500000}
+                          disabled={totalEarnedDeliveryFees < MIN_COURIER_PAYOUT}
+                          min={MIN_COURIER_PAYOUT}
+                          max={totalEarnedDeliveryFees}
                           value={courierPayoutAmount}
-                          onChange={(e) => setCourierPayoutAmount(e.target.value)}
-                          placeholder={`${totalEarnedDeliveryFees > 0 ? totalEarnedDeliveryFees : 15000}`}
-                          className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-emerald-500"
+                          onChange={(e) => {
+                            setCourierPayoutAmount(e.target.value);
+                            setCourierPayoutError('');
+                          }}
+                          placeholder={totalEarnedDeliveryFees >= MIN_COURIER_PAYOUT ? `${totalEarnedDeliveryFees}` : 'Saldo insuficiente'}
+                          className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         />
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-bold text-stone-700">Forma de Recebimento</label>
                         <select 
+                          disabled={totalEarnedDeliveryFees < MIN_COURIER_PAYOUT}
                           value={courierPayoutMethod}
                           onChange={(e) => setCourierPayoutMethod(e.target.value as any)}
-                          className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 font-bold focus:outline-none focus:border-emerald-500"
+                          className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 font-bold focus:outline-none focus:border-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <option value="multicaixa_express">📱 Multicaixa Express ({courierExpress || currentUser.phone || '9XX XXX XXX'})</option>
                           <option value="transferencia_iban">🏦 Transferência Bancária IBAN ({courierIban ? courierIban.slice(0, 16) + '...' : 'IBAN'})</option>
@@ -553,16 +601,25 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
                       <button
                         type="submit"
-                        disabled={totalEarnedDeliveryFees <= 0 && !courierPayoutAmount}
-                        className="px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs shadow-sm cursor-pointer transition-all"
+                        disabled={totalEarnedDeliveryFees < MIN_COURIER_PAYOUT}
+                        className={`px-5 py-2.5 rounded-2xl font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-2 ${
+                          totalEarnedDeliveryFees < MIN_COURIER_PAYOUT
+                            ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
+                            : 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
+                        }`}
                       >
-                        Enviar Solicitação de Saque
+                        <CreditCard className="w-4 h-4" />
+                        <span>
+                          {totalEarnedDeliveryFees < MIN_COURIER_PAYOUT 
+                            ? 'Indisponível (Saldo Insuficiente)' 
+                            : 'Enviar Solicitação de Saque'}
+                        </span>
                       </button>
                       <span className="text-[11px] text-stone-400">
-                        O ADM pagará via Express ou Transferência Bancária
+                        O Administrador processará o pagamento diretamente
                       </span>
                     </div>
                   </form>

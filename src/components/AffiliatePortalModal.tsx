@@ -30,7 +30,8 @@ import {
   Zap,
   Camera,
   Upload,
-  Package
+  Package,
+  AlertTriangle
 } from 'lucide-react';
 import { AppUser, Product, Order, AffiliateTab, PayoutRequest } from '../types';
 import { formatKwanzas } from '../data/mockData';
@@ -71,6 +72,10 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
   const [payoutRequested, setPayoutRequested] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState('');
   const [payoutMethod, setPayoutMethod] = useState<'multicaixa_express' | 'transferencia_iban'>('multicaixa_express');
+  const [payoutError, setPayoutError] = useState('');
+
+  const MIN_AFFILIATE_PAYOUT = 500;
+  const AFFILIATE_PAYOUT_FEE = 200;
   
   // Multi-select batch affiliation state
   const [selectedBatchIds, setSelectedBatchIds] = useState<string[]>([]);
@@ -148,7 +153,9 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
     return sum + (o.affiliateCommissionAmount || Math.round(o.subtotal * (commissionRate / 100)));
   }, 0);
   const totalEarned = Math.max(currentUser.totalCommissionEarned || 0, ordersCommissionSum);
-  const balance = currentUser.balanceAOA !== undefined && currentUser.balanceAOA > 0 ? currentUser.balanceAOA : Math.max(0, totalEarned - (currentUser.withdrawnAOA || 0));
+  const balance = currentUser.balanceAOA !== undefined 
+    ? currentUser.balanceAOA 
+    : Math.max(0, totalEarned - (currentUser.withdrawnAOA || 0));
   const withdrawn = currentUser.withdrawnAOA || 0;
   const affiliatedIds = currentUser.affiliatedProductIds || [];
 
@@ -228,8 +235,25 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
 
   const handleRequestPayout = (e: React.FormEvent) => {
     e.preventDefault();
+    setPayoutError('');
+
+    if (balance < MIN_AFFILIATE_PAYOUT) {
+      setPayoutError(`Saque Indisponível: Saldo insuficiente. O valor mínimo para solicitar saque é de ${formatKwanzas(MIN_AFFILIATE_PAYOUT)}. O seu saldo disponível é de ${formatKwanzas(balance)}.`);
+      return;
+    }
+
     const amountNum = Number(payoutAmount) || balance;
-    if (amountNum <= 0) return;
+    if (amountNum < MIN_AFFILIATE_PAYOUT) {
+      setPayoutError(`O valor mínimo para solicitação de saque é de ${formatKwanzas(MIN_AFFILIATE_PAYOUT)}.`);
+      return;
+    }
+
+    if (amountNum > balance) {
+      setPayoutError(`Saldo insuficiente. Você possui apenas ${formatKwanzas(balance)} disponíveis para saque.`);
+      return;
+    }
+
+    const netAmount = Math.max(0, amountNum - AFFILIATE_PAYOUT_FEE);
 
     if (onRequestPayout) {
       onRequestPayout({
@@ -238,6 +262,8 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
         requesterName: currentUser.name || 'Afiliado Oficial',
         requesterRole: 'Afiliado AngolaMarket',
         amountAOA: amountNum,
+        feeAmount: AFFILIATE_PAYOUT_FEE,
+        netAmount: netAmount,
         paymentMethod: payoutMethod,
         multicaixaExpressPhone: affExpress,
         iban: affIban,
@@ -247,6 +273,7 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
     }
 
     setPayoutRequested(true);
+    setPayoutError('');
     setTimeout(() => {
       setPayoutRequested(false);
       setPayoutAmount('');
@@ -569,33 +596,63 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
                   </span>
                 </div>
 
+                {/* Insufficient balance notice */}
+                {balance < MIN_AFFILIATE_PAYOUT && (
+                  <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2.5">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+                    <div>
+                      <span className="font-black text-red-600 uppercase tracking-wide mr-1.5">[Indisponível]</span>
+                      <span>Saldo insuficiente para efetuar levantamento. É necessário ter no mínimo <strong>{formatKwanzas(MIN_AFFILIATE_PAYOUT)}</strong> em comissões disponíveis (Seu saldo atual: <strong>{formatKwanzas(balance)}</strong>).</span>
+                    </div>
+                  </div>
+                )}
+
+                {payoutError && (
+                  <div className="p-3 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                    <span>{payoutError}</span>
+                  </div>
+                )}
+
                 {payoutRequested ? (
                   <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center gap-2">
                     <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                    <span>Pedido de levantamento de {formatKwanzas(Number(payoutAmount) || balance)} enviado com sucesso! O Administrador irá processar o pagamento na aba Gestão Financeira.</span>
+                    <span>
+                      Pedido de levantamento de {formatKwanzas(Number(payoutAmount) || balance)} enviado com sucesso!
+                      Taxa de {formatKwanzas(AFFILIATE_PAYOUT_FEE)} descontada para a plataforma.
+                      Valor líquido a receber: {formatKwanzas(Math.max(0, (Number(payoutAmount) || balance) - AFFILIATE_PAYOUT_FEE))}.
+                    </span>
                   </div>
                 ) : (
                   <form onSubmit={handleRequestPayout} className="space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-stone-700">Valor a Levantar (Kz) *</label>
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold text-stone-700">Valor a Levantar (Kz) *</label>
+                          <span className="text-[10px] text-stone-500 font-bold">Mínimo: {formatKwanzas(MIN_AFFILIATE_PAYOUT)}</span>
+                        </div>
                         <input
                           type="number"
                           required
-                          min={1000}
-                          max={balance > 0 ? balance : 1000000}
+                          disabled={balance < MIN_AFFILIATE_PAYOUT}
+                          min={MIN_AFFILIATE_PAYOUT}
+                          max={balance}
                           value={payoutAmount}
-                          onChange={(e) => setPayoutAmount(e.target.value)}
-                          placeholder={`${balance > 0 ? balance : 25000}`}
-                          className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-blue-500"
+                          onChange={(e) => {
+                            setPayoutAmount(e.target.value);
+                            setPayoutError('');
+                          }}
+                          placeholder={balance >= MIN_AFFILIATE_PAYOUT ? `${balance}` : 'Saldo insuficiente'}
+                          className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         />
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-bold text-stone-700">Canal de Recebimento</label>
                         <select 
+                          disabled={balance < MIN_AFFILIATE_PAYOUT}
                           value={payoutMethod}
                           onChange={(e) => setPayoutMethod(e.target.value as any)}
-                          className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 font-bold focus:outline-none focus:border-blue-500"
+                          className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs text-stone-900 font-bold focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <option value="multicaixa_express">📱 Multicaixa Express ({affExpress || currentUser.phone || '9XX XXX XXX'})</option>
                           <option value="transferencia_iban">🏦 Transferência Bancária IBAN ({affIban ? affIban.slice(0, 14) + '...' : 'IBAN'})</option>
@@ -603,13 +660,44 @@ export const AffiliatePortalModal: React.FC<AffiliatePortalModalProps> = ({
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-1">
+                    {/* Fixed Fee Breakdown */}
+                    <div className="p-3 rounded-2xl bg-stone-50 border border-stone-200 text-xs space-y-1.5">
+                      <div className="flex items-center justify-between text-stone-600">
+                        <span>Montante bruto solicitado:</span>
+                        <span className="font-mono font-bold text-stone-900">
+                          {formatKwanzas(Number(payoutAmount) || (balance >= MIN_AFFILIATE_PAYOUT ? balance : 0))}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-red-600">
+                        <span>Taxa fixa da plataforma (creditada ao ADM):</span>
+                        <span className="font-mono font-bold">-{formatKwanzas(AFFILIATE_PAYOUT_FEE)}</span>
+                      </div>
+                      <div className="border-t border-stone-200 pt-1.5 flex items-center justify-between font-bold text-stone-900">
+                        <span>Valor líquido a transferir para sua conta:</span>
+                        <span className="font-mono font-black text-emerald-600">
+                          {formatKwanzas(
+                            Math.max(0, (Number(payoutAmount) || (balance >= MIN_AFFILIATE_PAYOUT ? balance : 0)) - AFFILIATE_PAYOUT_FEE)
+                          )}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
                       <button
                         type="submit"
-                        disabled={balance <= 0 && !payoutAmount}
-                        className="px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs shadow-sm cursor-pointer transition-all"
+                        disabled={balance < MIN_AFFILIATE_PAYOUT}
+                        className={`px-5 py-2.5 rounded-2xl font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-2 ${
+                          balance < MIN_AFFILIATE_PAYOUT
+                            ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
+                            : 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
+                        }`}
                       >
-                        Enviar Solicitação ao ADM
+                        <CreditCard className="w-4 h-4" />
+                        <span>
+                          {balance < MIN_AFFILIATE_PAYOUT
+                            ? 'Indisponível (Saldo Insuficiente)'
+                            : 'Enviar Solicitação ao ADM'}
+                        </span>
                       </button>
                       <span className="text-[11px] text-stone-400">
                         Processamento direto pelo painel de gestão do ADM

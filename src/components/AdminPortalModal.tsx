@@ -147,10 +147,9 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
   const [prodOrigPrice, setProdOrigPrice] = useState('');
   const [prodStock, setProdStock] = useState('10');
   
-  // 3 distinct images as requested by the user
+  // Exactly 2 distinct images as requested by the user
   const [prodImage1, setProdImage1] = useState('');
   const [prodImage2, setProdImage2] = useState('');
-  const [prodImage3, setProdImage3] = useState('');
 
   const [prodDesc, setProdDesc] = useState('');
   const [prodFeatures, setProdFeatures] = useState('Entrega rápida em Luanda\nPagamento TPA ou Dinheiro no ato\nGarantia incluída');
@@ -158,20 +157,18 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
   // Affiliate commission configured by ADM from 0% to 100%
   const [prodAffiliateCommission, setProdAffiliateCommission] = useState<number>(10);
 
-  const handleImageFileUpload = async (slot: 1 | 2 | 3, file: File) => {
+  const handleImageFileUpload = async (slot: 1 | 2, file: File) => {
     if (!file) return;
     try {
       const res = await compressImageFile(file, 1000, 1000, 0.82);
       if (slot === 1) setProdImage1(res);
       else if (slot === 2) setProdImage2(res);
-      else if (slot === 3) setProdImage3(res);
     } catch {
       const reader = new FileReader();
       reader.onload = () => {
         const res = reader.result as string;
         if (slot === 1) setProdImage1(res);
         else if (slot === 2) setProdImage2(res);
-        else if (slot === 3) setProdImage3(res);
       };
       reader.readAsDataURL(file);
     }
@@ -354,7 +351,12 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
     .filter(o => o.status === 'em_transito' && o.customer.paymentMethod === 'dinheiro_entrega')
     .reduce((acc, o) => acc + o.total, 0);
 
-  const platformNetProfit = Math.max(0, totalDeliveredRevenue - totalCourierCommissionsPaid - totalCommissionsOwed - totalWithdrawalsAmount);
+  // Affiliate withdrawal fees credited to Admin (200 Kz per non-rejected affiliate payout)
+  const totalAffiliateWithdrawalFees = payoutRequests
+    .filter(p => p.type === 'afiliado' && p.status !== 'rejeitado')
+    .reduce((acc, p) => acc + (p.feeAmount ?? 200), 0);
+
+  const platformNetProfit = Math.max(0, totalDeliveredRevenue - totalCourierCommissionsPaid - totalCommissionsOwed - totalWithdrawalsAmount + totalAffiliateWithdrawalFees);
 
   const pendingSettlements = courierSettlements.filter(s => s.status === 'pendente');
 
@@ -367,7 +369,8 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
     const featuresArr = prodFeatures.split('\n').map(f => f.trim()).filter(Boolean);
     const commPercent = Math.min(100, Math.max(0, Number(prodAffiliateCommission) || 0));
 
-    const galleryImgs = [prodImage1, prodImage2, prodImage3].filter(Boolean);
+    // Strictly 2 images allowed
+    const galleryImgs = [prodImage1, prodImage2].filter(Boolean);
     const mainImg = galleryImgs[0] || '';
 
     if (editingProductId) {
@@ -439,7 +442,6 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
     setProdDesc('');
     setProdImage1('');
     setProdImage2('');
-    setProdImage3('');
     setProdAffiliateCommission(10);
     setActiveTab('meus_produtos');
   };
@@ -452,11 +454,10 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
     setProdOrigPrice(p.originalPrice ? p.originalPrice.toString() : '');
     setProdStock(p.stockCount.toString());
     
-    // Populate the 3 image slots
+    // Populate the 2 image slots
     const g = p.gallery || [p.image];
     setProdImage1(g[0] || p.image || '');
     setProdImage2(g[1] || '');
-    setProdImage3(g[2] || '');
 
     setProdDesc(p.description);
     setProdFeatures(p.features.join('\n'));
@@ -1495,13 +1496,19 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                   <form onSubmit={handleWithdrawalSubmit} className="space-y-4 text-xs">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-stone-700">Montante a Levantar (Kz) *</label>
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold text-stone-700">Montante a Levantar (Kz) *</label>
+                          <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded font-bold">
+                            Sem valor mínimo
+                          </span>
+                        </div>
                         <input
                           type="number"
                           required
+                          min={1}
                           value={withdrawalAmount}
                           onChange={(e) => setWithdrawalAmount(e.target.value)}
-                          placeholder="Ex: 50000"
+                          placeholder="Qualquer montante em Kz (sem mínimo)..."
                           className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-3.5 py-2.5 text-xs font-mono font-bold text-stone-900 focus:bg-white focus:outline-none focus:border-red-500"
                         />
                       </div>
@@ -1659,7 +1666,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                 <p className="text-xs text-stone-500">Relatório detalhado de entradas, despesas operacionais e taxas por estafeta</p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 text-xs">
                 <div className="p-4 rounded-2xl bg-white border border-stone-200 shadow-sm space-y-1">
                   <span className="text-[10px] uppercase font-bold text-stone-400">Total de Fretes Cobrados</span>
                   <span className="font-mono font-bold text-lg text-stone-900 block">{formatKwanzas(totalDeliveryFeesCollected)}</span>
@@ -1692,6 +1699,12 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                   <span className="text-[10px] uppercase font-bold text-stone-400">Comissões Afiliados</span>
                   <span className="font-mono font-bold text-lg text-blue-600 block">{formatKwanzas(totalCommissionsOwed)}</span>
                   <span className="text-[10px] text-stone-500">Vendas por link de divulgação</span>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 shadow-sm space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-amber-900">Taxas Saques Afiliados</span>
+                  <span className="font-mono font-bold text-lg text-amber-700 block">{formatKwanzas(totalAffiliateWithdrawalFees)}</span>
+                  <span className="text-[10px] text-amber-800">+200 Kz/saque (Lucro ADM)</span>
                 </div>
               </div>
 
@@ -1785,111 +1798,144 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                             </div>
 
                             {/* Amount & Status / Actions */}
-                            <div className="flex flex-col sm:flex-row md:flex-col items-start md:items-end justify-between gap-3 min-w-[200px]">
-                              <div className="text-left md:text-right">
-                                <span className="text-[10px] uppercase font-bold text-stone-400 block">Valor a Pagar</span>
-                                <span className="text-xl font-black font-mono text-stone-900 block">
-                                  {formatKwanzas(payout.amountAOA || payout.amount || 0)}
-                                </span>
-                              </div>
+                            {(() => {
+                              const grossAmt = payout.amountAOA || payout.amount || 0;
+                              const feeAmt = payout.feeAmount ?? (isAffiliate ? 200 : 0);
+                              const netAmt = payout.netAmount ?? (isAffiliate ? Math.max(0, grossAmt - feeAmt) : grossAmt);
 
-                              <div className="flex items-center gap-2">
-                                {isPaid ? (
-                                  <div className="text-right">
-                                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-3 py-1 rounded-xl">
-                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                      <span>Pago com Sucesso</span>
+                              return (
+                                <div className="flex flex-col sm:flex-row md:flex-col items-start md:items-end justify-between gap-3 min-w-[220px]">
+                                  <div className="text-left md:text-right space-y-0.5">
+                                    {isAffiliate && (
+                                      <div className="text-[10px] space-y-0.5 mb-1">
+                                        <div className="text-stone-500 font-medium">
+                                          Solicitado: <span className="font-mono font-bold text-stone-700">{formatKwanzas(grossAmt)}</span>
+                                        </div>
+                                        <div className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded font-bold inline-block">
+                                          Taxa Fixa ADM: +{formatKwanzas(feeAmt)}
+                                        </div>
+                                      </div>
+                                    )}
+                                    <span className="text-[10px] uppercase font-bold text-stone-400 block">
+                                      {isAffiliate ? 'Valor Líquido a Pagar' : 'Valor a Pagar'}
                                     </span>
-                                    {(payout.transactionRef || payout.paymentProofReference) && (
-                                      <span className="block text-[10px] font-mono text-emerald-700 mt-0.5">
-                                        Ref: {payout.transactionRef || payout.paymentProofReference}
+                                    <span className="text-xl font-black font-mono text-stone-900 block">
+                                      {formatKwanzas(netAmt)}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    {isPaid ? (
+                                      <div className="text-right">
+                                        <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-3 py-1 rounded-xl">
+                                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                          <span>Pago com Sucesso</span>
+                                        </span>
+                                        {(payout.transactionRef || payout.paymentProofReference) && (
+                                          <span className="block text-[10px] font-mono text-emerald-700 mt-0.5">
+                                            Ref: {payout.transactionRef || payout.paymentProofReference}
+                                          </span>
+                                        )}
+                                      </div>
+                                    ) : isPending ? (
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <button
+                                          type="button"
+                                          onClick={() => setPayingRequestId(isBeingPaid ? null : payout.id)}
+                                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm cursor-pointer flex items-center gap-1.5 transition-all"
+                                        >
+                                          <CreditCard className="w-3.5 h-3.5" />
+                                          <span>Pagar Agora</span>
+                                        </button>
+
+                                        {onRejectPayoutRequest && (
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              if (confirm(`Tem a certeza que deseja rejeitar o pedido de ${formatKwanzas(grossAmt)} de ${payout.requesterName}? O saldo será devolvido à conta do utilizador.`)) {
+                                                onRejectPayoutRequest(payout.id, 'Dados bancários divergentes ou saldo indisponível');
+                                              }
+                                            }}
+                                            className="px-3 py-2 rounded-xl bg-stone-200 hover:bg-red-100 hover:text-red-700 text-stone-700 font-bold text-xs transition-colors cursor-pointer"
+                                            title="Rejeitar solicitação"
+                                          >
+                                            Rejeitar
+                                          </button>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span className="text-xs font-bold text-red-700 bg-red-100 border border-red-200 px-3 py-1 rounded-xl">
+                                        Rejeitado
                                       </span>
                                     )}
                                   </div>
-                                ) : isPending ? (
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <button
-                                      type="button"
-                                      onClick={() => setPayingRequestId(isBeingPaid ? null : payout.id)}
-                                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm cursor-pointer flex items-center gap-1.5 transition-all"
-                                    >
-                                      <CreditCard className="w-3.5 h-3.5" />
-                                      <span>Pagar Agora</span>
-                                    </button>
-
-                                    {onRejectPayoutRequest && (
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          if (confirm(`Tem a certeza que deseja rejeitar o pedido de ${formatKwanzas(payout.amountAOA || payout.amount || 0)} de ${payout.requesterName}?`)) {
-                                            onRejectPayoutRequest(payout.id, 'Dados bancários divergentes');
-                                          }
-                                        }}
-                                        className="px-3 py-2 rounded-xl bg-stone-200 hover:bg-red-100 hover:text-red-700 text-stone-700 font-bold text-xs transition-colors cursor-pointer"
-                                        title="Rejeitar solicitação"
-                                      >
-                                        Rejeitar
-                                      </button>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <span className="text-xs font-bold text-red-700 bg-red-100 border border-red-200 px-3 py-1 rounded-xl">
-                                    Rejeitado
-                                  </span>
-                                )}
-                              </div>
-                            </div>
+                                </div>
+                              );
+                            })()}
                           </div>
 
                           {/* Payment Confirmation Drawer / Inline Box */}
-                          {isBeingPaid && (
-                            <div className="mt-3 pt-3 border-t border-amber-200 bg-white p-4 rounded-xl space-y-3 animate-in fade-in">
-                              <div className="flex items-center justify-between">
-                                <h5 className="font-bold text-xs text-stone-900 flex items-center gap-1.5">
-                                  <CreditCard className="w-4 h-4 text-emerald-600" />
-                                  <span>Confirmar Pagamento de {formatKwanzas(payout.amountAOA || payout.amount || 0)} para {payout.requesterName}</span>
-                                </h5>
-                                <button
-                                  type="button"
-                                  onClick={() => setPayingRequestId(null)}
-                                  className="text-stone-400 hover:text-stone-700 text-xs font-bold"
-                                >
-                                  Cancelar
-                                </button>
+                          {isBeingPaid && (() => {
+                            const grossAmt = payout.amountAOA || payout.amount || 0;
+                            const feeAmt = payout.feeAmount ?? (isAffiliate ? 200 : 0);
+                            const netAmt = payout.netAmount ?? (isAffiliate ? Math.max(0, grossAmt - feeAmt) : grossAmt);
+
+                            return (
+                              <div className="mt-3 pt-3 border-t border-amber-200 bg-white p-4 rounded-xl space-y-3 animate-in fade-in">
+                                <div className="flex items-center justify-between">
+                                  <h5 className="font-bold text-xs text-stone-900 flex items-center gap-1.5">
+                                    <CreditCard className="w-4 h-4 text-emerald-600" />
+                                    <span>
+                                      Confirmar Pagamento de {formatKwanzas(netAmt)} para {payout.requesterName}
+                                      {isAffiliate && (
+                                        <span className="text-[11px] font-normal text-emerald-700 ml-1">
+                                          (200 Kz de taxa retidos para a loja)
+                                        </span>
+                                      )}
+                                    </span>
+                                  </h5>
+                                  <button
+                                    type="button"
+                                    onClick={() => setPayingRequestId(null)}
+                                    className="text-stone-400 hover:text-stone-700 text-xs font-bold"
+                                  >
+                                    Cancelar
+                                  </button>
+                                </div>
+
+                                <p className="text-xs text-stone-600">
+                                  Efetue a transferência no seu aplicativo Multicaixa Express / Internet Banking para {payout.paymentMethod === 'multicaixa_express' || (!payout.iban && payout.multicaixaExpressPhone) ? (payout.multicaixaExpressPhone || payout.requesterPhone) : payout.iban} e insira o código de referência abaixo:
+                                </p>
+
+                                <div className="flex flex-col sm:flex-row items-center gap-2">
+                                  <input
+                                    type="text"
+                                    placeholder="Ex: MCX-884920 ou BAI-TX-99321 (Opcional)"
+                                    value={paymentRefInput}
+                                    onChange={(e) => setPaymentRefInput(e.target.value)}
+                                    className="w-full sm:flex-1 bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-emerald-500"
+                                  />
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const ref = paymentRefInput.trim() || `MCX-${Math.floor(100000 + Math.random() * 900000)}`;
+                                      if (onApprovePayoutRequest) {
+                                        onApprovePayoutRequest(payout.id, ref);
+                                      }
+                                      setPayingRequestId(null);
+                                      setPaymentRefInput('');
+                                      setPayoutSuccessMessage(`Pagamento de ${formatKwanzas(netAmt)} a ${payout.requesterName} confirmado com sucesso! (Ref: ${ref})`);
+                                      setTimeout(() => setPayoutSuccessMessage(null), 5000);
+                                    }}
+                                    className="w-full sm:w-auto px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm cursor-pointer whitespace-nowrap"
+                                  >
+                                    Confirmar e Marcar como Pago
+                                  </button>
+                                </div>
                               </div>
-
-                              <p className="text-xs text-stone-600">
-                                Efetue a transferência no seu aplicativo Multicaixa Express / Internet Banking para {payout.paymentMethod === 'multicaixa_express' || (!payout.iban && payout.multicaixaExpressPhone) ? (payout.multicaixaExpressPhone || payout.requesterPhone) : payout.iban} e insira o código de referência abaixo:
-                              </p>
-
-                              <div className="flex flex-col sm:flex-row items-center gap-2">
-                                <input
-                                  type="text"
-                                  placeholder="Ex: MCX-884920 ou BAI-TX-99321 (Opcional)"
-                                  value={paymentRefInput}
-                                  onChange={(e) => setPaymentRefInput(e.target.value)}
-                                  className="w-full sm:flex-1 bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-emerald-500"
-                                />
-
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const ref = paymentRefInput.trim() || `MCX-${Math.floor(100000 + Math.random() * 900000)}`;
-                                    if (onApprovePayoutRequest) {
-                                      onApprovePayoutRequest(payout.id, ref);
-                                    }
-                                    setPayingRequestId(null);
-                                    setPaymentRefInput('');
-                                    setPayoutSuccessMessage(`Pagamento de ${formatKwanzas(payout.amountAOA || payout.amount || 0)} a ${payout.requesterName} confirmado com sucesso! (Ref: ${ref})`);
-                                    setTimeout(() => setPayoutSuccessMessage(null), 5000);
-                                  }}
-                                  className="w-full sm:w-auto px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm cursor-pointer whitespace-nowrap"
-                                >
-                                  Confirmar e Marcar como Pago
-                                </button>
-                              </div>
-                            </div>
-                          )}
+                            );
+                          })()}
                         </div>
                       );
                     })}
@@ -2842,11 +2888,11 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                         >
                           {/* Product Info & Thumbnail */}
                           <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
-                            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-stone-100 border border-stone-200 shrink-0">
+                            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-stone-100 border border-stone-200 shrink-0 flex items-center justify-center">
                               <img 
                                 src={p.image} 
                                 alt={p.title} 
-                                className="w-full h-full object-cover" 
+                                className="w-full h-full object-contain p-1" 
                                 referrerPolicy="no-referrer" 
                               />
                               {isOutOfStock && (
@@ -3153,22 +3199,22 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                     </p>
                   </div>
 
-                  {/* CRITICAL REQUIRED FEATURE: 3 Product Images with Upload & Previews */}
+                  {/* REQUIRED FEATURE: Exactly 2 Product Images with Upload & Previews */}
                   <div className="space-y-3 p-4 rounded-2xl bg-stone-50 border border-stone-200">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                       <label className="text-xs font-black text-stone-900 flex items-center gap-1.5">
                         <ImageIcon className="w-4 h-4 text-red-600" />
-                        <span>Fotografias do Artigo (3 Imagens):</span>
+                        <span>Fotografias do Artigo (Exatamente 2 Imagens):</span>
                       </label>
                       <span className="text-[11px] text-stone-500 font-medium">
-                        Upload direto do dispositivo ou link
+                        Upload direto do dispositivo ou link (apenas 2 imagens)
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {/* Slot 1: Principal */}
-                      <div className="p-3 rounded-2xl bg-white border border-stone-200 space-y-2 flex flex-col justify-between">
-                        <div className="space-y-1">
+                      <div className="p-3.5 rounded-2xl bg-white border border-stone-200 space-y-2 flex flex-col justify-between shadow-2xs">
+                        <div className="space-y-1.5">
                           <div className="flex items-center justify-between">
                             <span className="text-[11px] font-bold text-red-600">Imagem 1 (Principal / Capa) *</span>
                             {prodImage1 && (
@@ -3182,21 +3228,21 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                             )}
                           </div>
 
-                          <div className="relative aspect-video rounded-xl overflow-hidden bg-stone-100 border border-stone-200 flex items-center justify-center">
+                          <div className="relative aspect-video rounded-xl overflow-hidden bg-stone-100 border border-stone-200 flex items-center justify-center p-1">
                             {prodImage1 ? (
-                              <img src={prodImage1} alt="Slot 1" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                              <img src={prodImage1} alt="Slot 1" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
                             ) : (
                               <div className="flex flex-col items-center gap-1 text-stone-400 p-2 text-center">
                                 <ImageIcon className="w-6 h-6" />
-                                <span className="text-[10px]">Sem imagem</span>
+                                <span className="text-[10px]">Sem imagem de capa</span>
                               </div>
                             )}
                           </div>
                         </div>
 
                         <div className="space-y-1.5 pt-1">
-                          <label className="block w-full text-center py-1.5 px-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-[11px] font-bold cursor-pointer transition-colors border border-stone-200">
-                            <span>📁 Escolher Arquivo 1</span>
+                          <label className="block w-full text-center py-2 px-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-[11px] font-bold cursor-pointer transition-colors border border-stone-200">
+                            <span>📁 Escolher Arquivo 1 (Dispositivo)</span>
                             <input
                               type="file"
                               accept="image/*"
@@ -3210,17 +3256,17 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                             type="url"
                             value={prodImage1}
                             onChange={(e) => setProdImage1(e.target.value)}
-                            placeholder="Ou URL da imagem 1..."
-                            className="w-full bg-stone-50 border border-stone-200 rounded-xl px-2.5 py-1 text-[11px] text-stone-800"
+                            placeholder="Ou cole a URL direta da imagem 1..."
+                            className="w-full bg-stone-50 border border-stone-200 rounded-xl px-2.5 py-1.5 text-[11px] text-stone-800 focus:bg-white focus:outline-none focus:border-red-500"
                           />
                         </div>
                       </div>
 
                       {/* Slot 2 */}
-                      <div className="p-3 rounded-2xl bg-white border border-stone-200 space-y-2 flex flex-col justify-between">
-                        <div className="space-y-1">
+                      <div className="p-3.5 rounded-2xl bg-white border border-stone-200 space-y-2 flex flex-col justify-between shadow-2xs">
+                        <div className="space-y-1.5">
                           <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-bold text-stone-700">Imagem 2 (Segundo Ângulo / Detalhe)</span>
+                            <span className="text-[11px] font-bold text-stone-700">Imagem 2 (Segundo Ângulo / Detalhes) *</span>
                             {prodImage2 && (
                               <button
                                 type="button"
@@ -3232,21 +3278,21 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                             )}
                           </div>
 
-                          <div className="relative aspect-video rounded-xl overflow-hidden bg-stone-100 border border-stone-200 flex items-center justify-center">
+                          <div className="relative aspect-video rounded-xl overflow-hidden bg-stone-100 border border-stone-200 flex items-center justify-center p-1">
                             {prodImage2 ? (
-                              <img src={prodImage2} alt="Slot 2" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                              <img src={prodImage2} alt="Slot 2" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
                             ) : (
                               <div className="flex flex-col items-center gap-1 text-stone-400 p-2 text-center">
                                 <ImageIcon className="w-6 h-6" />
-                                <span className="text-[10px]">Opcional</span>
+                                <span className="text-[10px]">Sem segunda imagem</span>
                               </div>
                             )}
                           </div>
                         </div>
 
                         <div className="space-y-1.5 pt-1">
-                          <label className="block w-full text-center py-1.5 px-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-[11px] font-bold cursor-pointer transition-colors border border-stone-200">
-                            <span>📁 Escolher Arquivo 2</span>
+                          <label className="block w-full text-center py-2 px-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-[11px] font-bold cursor-pointer transition-colors border border-stone-200">
+                            <span>📁 Escolher Arquivo 2 (Dispositivo)</span>
                             <input
                               type="file"
                               accept="image/*"
@@ -3260,58 +3306,8 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                             type="url"
                             value={prodImage2}
                             onChange={(e) => setProdImage2(e.target.value)}
-                            placeholder="Ou URL da imagem 2..."
-                            className="w-full bg-stone-50 border border-stone-200 rounded-xl px-2.5 py-1 text-[11px] text-stone-800"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Slot 3 */}
-                      <div className="p-3 rounded-2xl bg-white border border-stone-200 space-y-2 flex flex-col justify-between">
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-bold text-stone-700">Imagem 3 (Embalagem / Uso)</span>
-                            {prodImage3 && (
-                              <button
-                                type="button"
-                                onClick={() => setProdImage3('')}
-                                className="text-[10px] text-red-500 hover:text-red-700 font-bold"
-                              >
-                                Limpar
-                              </button>
-                            )}
-                          </div>
-
-                          <div className="relative aspect-video rounded-xl overflow-hidden bg-stone-100 border border-stone-200 flex items-center justify-center">
-                            {prodImage3 ? (
-                              <img src={prodImage3} alt="Slot 3" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                            ) : (
-                              <div className="flex flex-col items-center gap-1 text-stone-400 p-2 text-center">
-                                <ImageIcon className="w-6 h-6" />
-                                <span className="text-[10px]">Opcional</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="space-y-1.5 pt-1">
-                          <label className="block w-full text-center py-1.5 px-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-[11px] font-bold cursor-pointer transition-colors border border-stone-200">
-                            <span>📁 Escolher Arquivo 3</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => {
-                                if (e.target.files?.[0]) handleImageFileUpload(3, e.target.files[0]);
-                              }}
-                            />
-                          </label>
-                          <input
-                            type="url"
-                            value={prodImage3}
-                            onChange={(e) => setProdImage3(e.target.value)}
-                            placeholder="Ou URL da imagem 3..."
-                            className="w-full bg-stone-50 border border-stone-200 rounded-xl px-2.5 py-1 text-[11px] text-stone-800"
+                            placeholder="Ou cole a URL direta da imagem 2..."
+                            className="w-full bg-stone-50 border border-stone-200 rounded-xl px-2.5 py-1.5 text-[11px] text-stone-800 focus:bg-white focus:outline-none focus:border-red-500"
                           />
                         </div>
                       </div>

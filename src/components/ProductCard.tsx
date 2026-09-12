@@ -37,24 +37,24 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Image & Badges Container */}
       <div 
         onClick={() => onOpenDetails(product)} 
-        className="relative h-36 sm:h-52 w-full bg-stone-100 rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer flex items-center justify-center"
+        className="relative h-44 sm:h-56 w-full bg-white rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer flex items-center justify-center p-2.5 sm:p-3 border border-stone-100"
       >
         <img
           src={product.image}
           alt={product.title}
           referrerPolicy="no-referrer"
-          className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+          className="w-full h-full object-contain object-center group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
         />
 
         {/* Top Badges */}
-        <div className="absolute top-1.5 sm:top-2.5 left-1.5 sm:left-2.5 right-1.5 sm:right-2.5 flex items-center justify-between gap-1 pointer-events-none">
+        <div className="absolute top-1.5 sm:top-2.5 left-1.5 sm:left-2.5 right-1.5 sm:right-2.5 flex items-center justify-between gap-1 pointer-events-none z-10">
           {product.discountPercent ? (
             <span className="bg-red-600 text-white text-[9px] sm:text-[11px] font-black px-2 py-0.5 rounded-full shadow-sm">
               -{product.discountPercent}%
             </span>
           ) : (
-            <span className="bg-white/90 backdrop-blur-sm text-stone-800 text-[8px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-stone-200 shadow-sm">
+            <span className="bg-white/95 backdrop-blur-sm text-stone-800 text-[8px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-stone-200 shadow-sm">
               {product.condition}
             </span>
           )}
@@ -68,13 +68,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           )}
         </div>
 
+        {/* 2 Photos indicator if available */}
+        {product.gallery && product.gallery.length > 1 && (
+          <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded-md bg-stone-900/60 text-white text-[9px] font-mono font-bold backdrop-blur-xs pointer-events-none">
+            1/{product.gallery.length} fotos
+          </div>
+        )}
+
         {/* Quick View Button on Hover (desktop) */}
         <button
           onClick={(e) => {
             e.stopPropagation();
             onOpenDetails(product);
           }}
-          className="hidden sm:flex absolute inset-x-3 bottom-3 py-2 rounded-2xl bg-white/95 hover:bg-white text-stone-900 text-xs font-bold backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center gap-1.5 border border-stone-200 shadow-sm cursor-pointer"
+          className="hidden sm:flex absolute inset-x-3 bottom-3 py-2 rounded-2xl bg-white/95 hover:bg-white text-stone-900 text-xs font-bold backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center gap-1.5 border border-stone-200 shadow-sm cursor-pointer z-10"
         >
           <Eye className="w-3.5 h-3.5 text-red-600" />
           <span>Ver Detalhes</span>

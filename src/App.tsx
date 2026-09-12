@@ -634,17 +634,53 @@ export default function App() {
 
   // Payout Handlers (Afiliados & Entregadores)
   const handleRequestPayout = (newRequestData: Omit<PayoutRequest, 'id' | 'requestedAt' | 'status'>) => {
+    const reqAmount = newRequestData.amount || newRequestData.amountAOA || 0;
+    const isAffiliate = newRequestData.type === 'afiliado';
+    const fee = isAffiliate ? 200 : (newRequestData.feeAmount || 0);
+    const net = Math.max(0, reqAmount - fee);
+
     const newReq: PayoutRequest = {
       ...newRequestData,
       id: `payout-${Date.now()}`,
-      amount: newRequestData.amount || newRequestData.amountAOA || 0,
-      amountAOA: newRequestData.amountAOA || newRequestData.amount || 0,
+      amount: reqAmount,
+      amountAOA: reqAmount,
+      feeAmount: fee,
+      netAmount: net,
       status: 'pendente',
       requestedAt: new Date().toLocaleDateString('pt-AO') + ' ' + new Date().toLocaleTimeString('pt-AO', { hour: '2-digit', minute: '2-digit' })
     };
 
+    // Deduct immediately from requester's balance
+    setUsers(prev => prev.map(u => {
+      if (u.id === newRequestData.requesterId) {
+        if (isAffiliate) {
+          const newBal = Math.max(0, (u.balanceAOA || 0) - reqAmount);
+          const updated: AppUser = {
+            ...u,
+            balanceAOA: newBal,
+            withdrawnAOA: (u.withdrawnAOA || 0) + reqAmount
+          };
+          if (currentUser?.id === u.id) setCurrentUser(updated);
+          return updated;
+        } else {
+          const newBal = Math.max(0, (u.courierBalanceAOA || 0) - reqAmount);
+          const updated: AppUser = {
+            ...u,
+            courierBalanceAOA: newBal
+          };
+          if (currentUser?.id === u.id) setCurrentUser(updated);
+          return updated;
+        }
+      }
+      return u;
+    }));
+
     setPayoutRequests(prev => [newReq, ...prev]);
-    showToast(`Solicitação de saque de ${formatKwanzas(newReq.amount)} enviada ao Administrador!`);
+    showToast(
+      isAffiliate
+        ? `Solicitação de saque de ${formatKwanzas(reqAmount)} enviada (Taxa de 200 Kz deduzida para a plataforma. Valor líquido a receber: ${formatKwanzas(net)})!`
+        : `Solicitação de saque de ${formatKwanzas(reqAmount)} enviada ao Administrador!`
+    );
   };
 
   const handleApprovePayout = (requestId: string, transactionRef?: string) => {
@@ -666,6 +702,34 @@ export default function App() {
   };
 
   const handleRejectPayout = (requestId: string, reason?: string) => {
+    const targetReq = payoutRequests.find(r => r.id === requestId);
+    if (targetReq && targetReq.status === 'pendente') {
+      const refundAmt = targetReq.amountAOA || targetReq.amount || 0;
+      setUsers(prev => prev.map(u => {
+        if (u.id === targetReq.requesterId) {
+          if (targetReq.type === 'afiliado') {
+            const restoredBal = (u.balanceAOA || 0) + refundAmt;
+            const updated: AppUser = {
+              ...u,
+              balanceAOA: restoredBal,
+              withdrawnAOA: Math.max(0, (u.withdrawnAOA || 0) - refundAmt)
+            };
+            if (currentUser?.id === u.id) setCurrentUser(updated);
+            return updated;
+          } else {
+            const restoredBal = (u.courierBalanceAOA || 0) + refundAmt;
+            const updated: AppUser = {
+              ...u,
+              courierBalanceAOA: restoredBal
+            };
+            if (currentUser?.id === u.id) setCurrentUser(updated);
+            return updated;
+          }
+        }
+        return u;
+      }));
+    }
+
     setPayoutRequests(prev => prev.map(req => {
       if (req.id === requestId) {
         return {
@@ -677,7 +741,7 @@ export default function App() {
       return req;
     }));
 
-    showToast('Solicitação de saque rejeitada.');
+    showToast('Solicitação de saque rejeitada e saldo devolvido à conta.');
   };
 
   const showToast = (message: string) => {
