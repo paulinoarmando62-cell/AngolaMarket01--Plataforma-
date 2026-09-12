@@ -127,6 +127,7 @@ export type PaymentMethodType = 'dinheiro_entrega' | 'express_transferencia';
 export interface OrderCustomerInfo {
   fullName: string;
   phone: string;
+  email?: string;
   alternatePhone?: string;
   municipalityId: string;
   municipalityName: string;

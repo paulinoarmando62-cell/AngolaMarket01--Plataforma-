@@ -172,7 +172,6 @@ if (typeof window !== 'undefined') {
       }
 
       localStorage.setItem('angolamarket_app_clean_ver', CURRENT_APP_CLEAN_VERSION);
-    }
   } catch (e) {
     // ignore
   }
