@@ -94,8 +94,24 @@ import {
   AlertCircle,
   Banknote,
   Package,
-  Plus
+  Plus,
+  Cloud
 } from 'lucide-react';
+import { 
+  subscribeToProducts, 
+  cloudSaveProduct, 
+  cloudDeleteProduct,
+  subscribeToUsers, 
+  cloudSaveUser,
+  subscribeToOrders, 
+  cloudSaveOrder,
+  subscribeToZones, 
+  cloudSaveZone, 
+  cloudDeleteZone,
+  subscribeToPayouts, 
+  cloudSavePayout,
+  seedLocalDataToCloud 
+} from './services/firestoreSync';
 
 const LOCAL_STORAGE_CART_KEY = 'angolamarket01_cart';
 const LOCAL_STORAGE_ORDERS_KEY = 'angolamarket01_orders';
@@ -401,6 +417,88 @@ export default function App() {
     safePersist(LOCAL_STORAGE_PAYOUT_REQUESTS_KEY, payoutRequests);
   }, [payoutRequests]);
 
+  // Real-time Cloud Synchronization (Firebase Firestore) across all devices and phones
+  useEffect(() => {
+    // 1. Initial push: If this device has local products, users, orders, or zones created earlier,
+    // seed them to the cloud database so other phones can access them immediately.
+    seedLocalDataToCloud(products, users, orders, luandaZones, payoutRequests);
+
+    // 2. Real-time subscription to Products
+    const unsubProducts = subscribeToProducts((cloudProds) => {
+      if (cloudProds && cloudProds.length > 0) {
+        setProducts(cloudProds);
+        safePersist(LOCAL_STORAGE_PRODUCTS_KEY, cloudProds);
+      }
+    });
+
+    // 3. Real-time subscription to Users (Admins, Couriers, Affiliates, Clients)
+    const unsubUsers = subscribeToUsers((cloudUsers) => {
+      if (cloudUsers && cloudUsers.length > 0) {
+        setUsers((prevUsers) => {
+          const map = new Map<string, AppUser>();
+          INITIAL_USERS.forEach((u) => map.set(u.id, u));
+          cloudUsers.forEach((u) => map.set(u.id, u));
+          prevUsers.forEach((u) => {
+            if (!map.has(u.id)) map.set(u.id, u);
+          });
+          const merged = Array.from(map.values());
+          safePersist(LOCAL_STORAGE_USERS_KEY, merged);
+          return merged;
+        });
+
+        // Update currently logged in user if their cloud profile changed
+        setCurrentUser((current) => {
+          if (!current) return null;
+          const updated = cloudUsers.find((u) => u.id === current.id);
+          if (updated) {
+            safePersist(LOCAL_STORAGE_CURRENT_USER_KEY, updated);
+            return updated;
+          }
+          return current;
+        });
+      }
+    });
+
+    // 4. Real-time subscription to Orders & Delivery Schedules
+    const unsubOrders = subscribeToOrders((cloudOrders) => {
+      if (cloudOrders && cloudOrders.length > 0) {
+        setOrders(cloudOrders);
+        safePersist(LOCAL_STORAGE_ORDERS_KEY, cloudOrders);
+      }
+    });
+
+    // 5. Real-time subscription to Luanda Delivery Zones
+    const unsubZones = subscribeToZones((cloudZones) => {
+      if (cloudZones && cloudZones.length > 0) {
+        setLuandaZones(cloudZones);
+        safePersist(LOCAL_STORAGE_ZONES_LIST_KEY, cloudZones);
+        setSelectedZone((currentZone) => {
+          if (!currentZone || currentZone.id === 'zone-default' || !currentZone.neighborhood) {
+            return cloudZones[0] || currentZone;
+          }
+          const matched = cloudZones.find((z) => z.id === currentZone.id);
+          return matched || currentZone;
+        });
+      }
+    });
+
+    // 6. Real-time subscription to Payout Requests
+    const unsubPayouts = subscribeToPayouts((cloudPayouts) => {
+      if (cloudPayouts && cloudPayouts.length > 0) {
+        setPayoutRequests(cloudPayouts);
+        safePersist(LOCAL_STORAGE_PAYOUT_REQUESTS_KEY, cloudPayouts);
+      }
+    });
+
+    return () => {
+      unsubProducts();
+      unsubUsers();
+      unsubOrders();
+      unsubZones();
+      unsubPayouts();
+    };
+  }, []);
+
   // Navigation & Filtering
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<CategoryId>('todos');
@@ -520,6 +618,7 @@ export default function App() {
   const handleUpdateUserProfile = (updatedUser: AppUser) => {
     setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
     setCurrentUser(updatedUser);
+    cloudSaveUser(updatedUser);
     showToast('Perfil atualizado com sucesso!');
   };
 
@@ -576,6 +675,7 @@ export default function App() {
 
     setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
     setCurrentUser(updatedUser);
+    cloudSaveUser(updatedUser);
     showToast(exists ? 'Produto removido das suas afiliações.' : 'Produto adicionado às suas afiliações com sucesso!');
   };
 
@@ -592,6 +692,7 @@ export default function App() {
 
     setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
     setCurrentUser(updatedUser);
+    cloudSaveUser(updatedUser);
     showToast(`Afiliado com sucesso a ${productIds.length} produtos de uma vez!`);
   };
 
@@ -661,6 +762,7 @@ export default function App() {
             withdrawnAOA: (u.withdrawnAOA || 0) + reqAmount
           };
           if (currentUser?.id === u.id) setCurrentUser(updated);
+          cloudSaveUser(updated);
           return updated;
         } else {
           const newBal = Math.max(0, (u.courierBalanceAOA || 0) - reqAmount);
@@ -669,6 +771,7 @@ export default function App() {
             courierBalanceAOA: newBal
           };
           if (currentUser?.id === u.id) setCurrentUser(updated);
+          cloudSaveUser(updated);
           return updated;
         }
       }
@@ -676,6 +779,7 @@ export default function App() {
     }));
 
     setPayoutRequests(prev => [newReq, ...prev]);
+    cloudSavePayout(newReq);
     showToast(
       isAffiliate
         ? `Solicitação de saque de ${formatKwanzas(reqAmount)} enviada (Taxa de 200 Kz deduzida para a plataforma. Valor líquido a receber: ${formatKwanzas(net)})!`
@@ -684,9 +788,10 @@ export default function App() {
   };
 
   const handleApprovePayout = (requestId: string, transactionRef?: string) => {
+    let approvedReq: PayoutRequest | null = null;
     setPayoutRequests(prev => prev.map(req => {
       if (req.id === requestId) {
-        return {
+        approvedReq = {
           ...req,
           status: 'pago',
           paidAt: new Date().toLocaleDateString('pt-AO') + ' ' + new Date().toLocaleTimeString('pt-AO', { hour: '2-digit', minute: '2-digit' }),
@@ -694,9 +799,14 @@ export default function App() {
           paymentProofReference: transactionRef || `MCX-${Math.floor(100000 + Math.random() * 900000)}`,
           paidByAdminName: currentUser?.name || 'Administrador Geral'
         };
+        return approvedReq;
       }
       return req;
     }));
+
+    if (approvedReq) {
+      cloudSavePayout(approvedReq);
+    }
 
     showToast('Pagamento confirmado e marcado como pago com sucesso!');
   };
@@ -715,6 +825,7 @@ export default function App() {
               withdrawnAOA: Math.max(0, (u.withdrawnAOA || 0) - refundAmt)
             };
             if (currentUser?.id === u.id) setCurrentUser(updated);
+            cloudSaveUser(updated);
             return updated;
           } else {
             const restoredBal = (u.courierBalanceAOA || 0) + refundAmt;
@@ -723,6 +834,7 @@ export default function App() {
               courierBalanceAOA: restoredBal
             };
             if (currentUser?.id === u.id) setCurrentUser(updated);
+            cloudSaveUser(updated);
             return updated;
           }
         }
@@ -730,16 +842,22 @@ export default function App() {
       }));
     }
 
+    let rejectedReq: PayoutRequest | null = null;
     setPayoutRequests(prev => prev.map(req => {
       if (req.id === requestId) {
-        return {
+        rejectedReq = {
           ...req,
           status: 'rejeitado',
           notes: reason || 'Rejeitado pelo Administrador'
         };
+        return rejectedReq;
       }
       return req;
     }));
+
+    if (rejectedReq) {
+      cloudSavePayout(rejectedReq);
+    }
 
     showToast('Solicitação de saque rejeitada e saldo devolvido à conta.');
   };
@@ -774,6 +892,7 @@ export default function App() {
 
   const handleRegister = (newUser: AppUser) => {
     setUsers(prev => [newUser, ...prev]);
+    cloudSaveUser(newUser);
     showToast(`Conta registada com sucesso para ${newUser.name}!`);
   };
 
@@ -883,6 +1002,7 @@ export default function App() {
       });
       setCurrentUser(createdAccount);
       safePersist(LOCAL_STORAGE_CURRENT_USER_KEY, createdAccount);
+      cloudSaveUser(createdAccount);
     } else if (currentUser) {
       if (!customerInfo.phone && currentUser.phone) customerInfo.phone = currentUser.phone;
       if (!customerInfo.email && currentUser.email) customerInfo.email = currentUser.email;
@@ -934,6 +1054,7 @@ export default function App() {
               setCurrentUser(updatedAffiliate);
               safePersist(LOCAL_STORAGE_CURRENT_USER_KEY, updatedAffiliate);
             }
+            cloudSaveUser(updatedAffiliate);
             return updatedAffiliate;
           }
           return u;
@@ -948,6 +1069,7 @@ export default function App() {
       safePersist(LOCAL_STORAGE_ORDERS_KEY, nextOrders);
       return nextOrders;
     });
+    cloudSaveOrder(newOrder);
     setCart([]);
     setIsCheckoutOpen(false);
     setNewOrderSuccess(newOrder);
@@ -963,12 +1085,14 @@ export default function App() {
     const courierIdToCredit = targetOrder.assignedCourierId || currentUser?.id;
 
     // Update order status to delivered
+    const updatedOrder: Order = { ...targetOrder, status: 'entregue' };
     setOrders(prev => prev.map(o => {
       if (o.id === orderId) {
-        return { ...o, status: 'entregue' };
+        return updatedOrder;
       }
       return o;
     }));
+    cloudSaveOrder(updatedOrder);
 
     // Credit courier 1.000 Kz commission (from delivery fee profit) & update cash collected
     if (courierIdToCredit) {
@@ -985,6 +1109,7 @@ export default function App() {
           if (currentUser && currentUser.id === u.id) {
             setCurrentUser(updatedUser);
           }
+          cloudSaveUser(updatedUser);
           return updatedUser;
         }
         return u;
@@ -1001,12 +1126,18 @@ export default function App() {
     const wasNotDelivered = targetOrder && targetOrder.status !== 'entregue';
     const isNowDelivered = nextStatus === 'entregue';
 
+    let updatedOrderObj: Order | null = null;
     setOrders((prev) =>
       prev.map((order) => {
         if (order.id !== orderId) return order;
-        return { ...order, status: nextStatus };
+        updatedOrderObj = { ...order, status: nextStatus };
+        return updatedOrderObj;
       })
     );
+
+    if (updatedOrderObj) {
+      cloudSaveOrder(updatedOrderObj);
+    }
 
     // If marked as delivered from admin or courier, credit 1000 Kz to assigned courier if not already credited
     if (wasNotDelivered && isNowDelivered && targetOrder?.assignedCourierId) {
@@ -1024,6 +1155,7 @@ export default function App() {
           if (currentUser && currentUser.id === u.id) {
             setCurrentUser(updatedUser);
           }
+          cloudSaveUser(updatedUser);
           return updatedUser;
         }
         return u;
@@ -1035,9 +1167,10 @@ export default function App() {
 
   const handleAssignCourierToOrder = (orderId: string, courierId: string) => {
     const courierObj = users.find(u => u.id === courierId);
+    let updatedAssignedOrder: Order | null = null;
     setOrders(prev => prev.map(o => {
       if (o.id === orderId) {
-        return {
+        updatedAssignedOrder = {
           ...o,
           assignedCourierId: courierId,
           courier: courierObj ? {
@@ -1047,18 +1180,30 @@ export default function App() {
             avatar: courierObj.avatar
           } : o.courier
         };
+        return updatedAssignedOrder;
       }
       return o;
     }));
+    if (updatedAssignedOrder) {
+      cloudSaveOrder(updatedAssignedOrder);
+    }
     showToast('Estafeta atribuído à encomenda com sucesso.');
   };
 
   const handleCancelOrder = (orderId: string) => {
+    let cancelledOrder: Order | null = null;
     setOrders((prev) =>
-      prev.map((order) =>
-        order.id === orderId ? { ...order, status: 'cancelado' } : order
-      )
+      prev.map((order) => {
+        if (order.id === orderId) {
+          cancelledOrder = { ...order, status: 'cancelado' };
+          return cancelledOrder;
+        }
+        return order;
+      })
     );
+    if (cancelledOrder) {
+      cloudSaveOrder(cancelledOrder);
+    }
     showToast('Pedido cancelado.');
   };
 
@@ -1069,6 +1214,7 @@ export default function App() {
       safePersist(LOCAL_STORAGE_PRODUCTS_KEY, next);
       return next;
     });
+    cloudSaveProduct(newProd);
     showToast('Artigo publicado no catálogo do AngolaMarket 01!');
   };
 
@@ -1078,6 +1224,7 @@ export default function App() {
       safePersist(LOCAL_STORAGE_PRODUCTS_KEY, next);
       return next;
     });
+    cloudSaveProduct(updatedProd);
     showToast('Artigo atualizado com sucesso!');
   };
 
@@ -1087,6 +1234,7 @@ export default function App() {
       safePersist(LOCAL_STORAGE_PRODUCTS_KEY, next);
       return next;
     });
+    cloudDeleteProduct(productId);
     showToast('Artigo removido do catálogo.');
   };
 
@@ -1096,6 +1244,7 @@ export default function App() {
     if (!selectedZone || selectedZone.id === 'zone-default' || selectedZone.id === 'luanda_geral' || !selectedZone.neighborhood) {
       setSelectedZone(newZone);
     }
+    cloudSaveZone(newZone);
     showToast(`Bairro ${newZone.neighborhood || newZone.name} adicionado com sucesso!`);
   };
 
@@ -1104,6 +1253,7 @@ export default function App() {
     if (selectedZone.id === updatedZone.id) {
       setSelectedZone(updatedZone);
     }
+    cloudSaveZone(updatedZone);
     showToast(`Taxa do bairro ${updatedZone.neighborhood || updatedZone.name} atualizada para ${formatKwanzas(updatedZone.deliveryFee)}!`);
   };
 
@@ -1115,6 +1265,7 @@ export default function App() {
       }
       return remaining;
     });
+    cloudDeleteZone(zoneId);
     showToast('Bairro removido das taxas de entrega.');
   };
 
@@ -1122,7 +1273,9 @@ export default function App() {
   const handleAdminApproveCourier = (userId: string) => {
     setUsers(prev => prev.map(u => {
       if (u.id === userId) {
-        return { ...u, courierStatus: 'aprovado' };
+        const updated: AppUser = { ...u, courierStatus: 'aprovado' };
+        cloudSaveUser(updated);
+        return updated;
       }
       return u;
     }));
@@ -1136,7 +1289,9 @@ export default function App() {
   const handleAdminRejectCourier = (userId: string) => {
     setUsers(prev => prev.map(u => {
       if (u.id === userId) {
-        return { ...u, courierStatus: 'pendente' };
+        const updated: AppUser = { ...u, courierStatus: 'pendente' };
+        cloudSaveUser(updated);
+        return updated;
       }
       return u;
     }));

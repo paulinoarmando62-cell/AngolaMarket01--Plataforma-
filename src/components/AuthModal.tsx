@@ -185,7 +185,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <h1 className="font-black text-sm sm:text-base text-stone-900">
               {tab === 'login' ? 'Entrar no AngolaMarket 01' : 'Registar Nova Conta'}
             </h1>
-            <p className="text-[11px] text-stone-500 font-medium">Plataforma Oficial de Luanda • Pagamento na Entrega</p>
+            <p className="text-[11px] text-stone-500 font-medium flex items-center gap-1.5">
+              <span>Plataforma Oficial de Luanda</span>
+              <span>•</span>
+              <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                Nuvem Ativa
+              </span>
+            </p>
           </div>
         </div>
 

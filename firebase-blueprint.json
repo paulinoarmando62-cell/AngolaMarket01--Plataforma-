@@ -1,0 +1,101 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Mercadorias e artigos vendidos no marketplace",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "priceAOA": { "type": "number" },
+        "originalPriceAOA": { "type": "number" },
+        "image": { "type": "string" },
+        "images": { "type": "array" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "rating": { "type": "number" },
+        "reviewsCount": { "type": "number" },
+        "badge": { "type": "string" },
+        "isExpress": { "type": "boolean" },
+        "stock": { "type": "number" },
+        "sellerName": { "type": "string" },
+        "sellerRole": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "title", "priceAOA", "image"]
+    },
+    "AppUser": {
+      "title": "AppUser",
+      "description": "Contas de utilizadores (Admin, Estafeta, Afiliado, Cliente)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string" },
+        "phone": { "type": "string" },
+        "password": { "type": "string" }
+      },
+      "required": ["id", "email", "role"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Encomendas e agendamentos de entregas",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "orderNumber": { "type": "string" },
+        "status": { "type": "string" },
+        "buyerName": { "type": "string" },
+        "totalAOA": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "orderNumber", "status", "totalAOA"]
+    },
+    "LuandaZone": {
+      "title": "LuandaZone",
+      "description": "Zonas e taxas de entrega de Luanda",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "municipality": { "type": "string" },
+        "deliveryFeeAOA": { "type": "number" }
+      },
+      "required": ["id", "municipality"]
+    },
+    "PayoutRequest": {
+      "title": "PayoutRequest",
+      "description": "Pedidos de levantamento de saldo de estafetas e afiliados",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "requesterId": { "type": "string" },
+        "amountAOA": { "type": "number" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "requesterId", "amountAOA", "status"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Catálogo público de produtos sincronizado"
+    },
+    "/users/{userId}": {
+      "schema": "AppUser",
+      "description": "Perfis de utilizador sincronizados"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Agendamentos e encomendas sincronizados"
+    },
+    "/zones/{zoneId}": {
+      "schema": "LuandaZone",
+      "description": "Zonas de entrega configuradas"
+    },
+    "/payouts/{payoutId}": {
+      "schema": "PayoutRequest",
+      "description": "Solicitações de saque sincronizadas"
+    }
+  }
+}

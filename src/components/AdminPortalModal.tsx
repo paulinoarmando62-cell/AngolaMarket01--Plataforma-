@@ -606,6 +606,10 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                 <span className="text-[9px] sm:text-[10px] bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded-md border border-red-200 uppercase">
                   Dono
                 </span>
+                <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-md border border-emerald-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Nuvem Ativa • Multi-dispositivo
+                </span>
               </div>
               <p className="text-[11px] text-stone-500 mt-0.5">
                 AngolaMarket 01 • Gestão Central de Catálogo, Estafetas & Vendas COD
