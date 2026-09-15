@@ -3,16 +3,19 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-// Register PWA Service Worker
+// Clean up any stale service workers to enforce 100% online cloud sync
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(registration => {
-        console.log('Service Worker registrado:', registration.scope);
-      })
-      .catch(error => {
-        console.error('Erro ao registrar Service Worker:', error);
-      });
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (const reg of registrations) {
+      reg.unregister();
+    }
+  });
+}
+if ('caches' in window) {
+  caches.keys().then((keys) => {
+    for (const key of keys) {
+      caches.delete(key);
+    }
   });
 }
 

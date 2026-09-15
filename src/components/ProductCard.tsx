@@ -137,16 +137,33 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             </span>
           </div>
 
+          {/* Available Units in Stock */}
+          <div className="flex items-center justify-between text-[10px] pt-0.5">
+            {product.stockCount > 0 && product.inStock ? (
+              <span className="flex items-center gap-1 text-stone-600 font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                <span>Disponível: <strong className="text-stone-900 font-bold">{product.stockCount} un.</strong></span>
+              </span>
+            ) : (
+              <span className="text-red-700 font-bold bg-red-50 px-2 py-0.5 rounded-md border border-red-200 text-[10px]">
+                Esgotado
+              </span>
+            )}
+          </div>
+
           {/* Action Buttons */}
           <div className="grid grid-cols-2 gap-1.5 sm:gap-2 pt-0.5">
             <button
               id={`add-cart-${product.id}`}
               type="button"
+              disabled={product.stockCount === 0 || !product.inStock}
               onClick={(e) => onAddToCart(product, e)}
-              className={`py-2 px-1 sm:px-2 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
-                isAddedToCart
-                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
-                  : 'bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-200'
+              className={`py-2 px-1 sm:px-2 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold flex items-center justify-center gap-1 transition-all ${
+                product.stockCount === 0 || !product.inStock
+                  ? 'bg-stone-100 text-stone-400 border border-stone-200 cursor-not-allowed opacity-60'
+                  : isAddedToCart
+                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-300 cursor-pointer'
+                  : 'bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-200 cursor-pointer'
               }`}
             >
               {isAddedToCart ? (
@@ -165,11 +182,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <button
               id={`buy-now-${product.id}`}
               type="button"
+              disabled={product.stockCount === 0 || !product.inStock}
               onClick={(e) => onBuyNow(product, e)}
-              className="py-2 px-1 sm:px-2 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold bg-red-600 hover:bg-red-700 text-white shadow-sm flex items-center justify-center gap-1 transition-all transform active:scale-95 cursor-pointer"
+              className={`py-2 px-1 sm:px-2 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold shadow-sm flex items-center justify-center gap-1 transition-all transform active:scale-95 ${
+                product.stockCount === 0 || !product.inStock
+                  ? 'bg-stone-200 text-stone-400 cursor-not-allowed'
+                  : 'bg-red-600 hover:bg-red-700 text-white cursor-pointer'
+              }`}
             >
-              <Zap className="w-3 h-3 text-amber-300 fill-amber-300 shrink-0" />
-              <span className="truncate">Comprar</span>
+              {product.stockCount === 0 || !product.inStock ? (
+                <span className="truncate">Esgotado</span>
+              ) : (
+                <>
+                  <Zap className="w-3 h-3 text-amber-300 fill-amber-300 shrink-0" />
+                  <span className="truncate">Comprar</span>
+                </>
+              )}
             </button>
           </div>
         </div>

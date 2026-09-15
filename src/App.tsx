@@ -531,6 +531,45 @@ export default function App() {
     setIsUserProfileOpen(true);
   };
 
+  // Local storage session orders for guests/clients
+  const [sessionOrderIds, setSessionOrderIds] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem('angolamarket_user_order_ids');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Isolate orders so each user ONLY sees their own bookings/orders
+  const userOrders = useMemo(() => {
+    if (currentUser?.role === 'admin') {
+      return orders;
+    }
+    return orders.filter(o => {
+      // 1. Matched by ID
+      if (currentUser && o.customerId && o.customerId === currentUser.id) return true;
+      // 2. Orders placed in this device session
+      if (sessionOrderIds.includes(o.id)) return true;
+      if (!currentUser) return false;
+      // 3. Matched by phone
+      const uPhone = (currentUser.phone || '').replace(/[^0-9]/g, '');
+      const oPhone = (o.customer?.phone || '').replace(/[^0-9]/g, '');
+      if (uPhone && oPhone && oPhone.length >= 7 && (uPhone.endsWith(oPhone) || oPhone.endsWith(uPhone))) {
+        return true;
+      }
+      // 4. Matched by email
+      const uEmail = (currentUser.email || '').toLowerCase().trim();
+      const oEmail = (o.customer?.email || '').toLowerCase().trim();
+      if (uEmail && oEmail && uEmail === oEmail) return true;
+      // 5. Matched by customer full name
+      const uName = (currentUser.name || '').toLowerCase().trim();
+      const oName = (o.customer?.fullName || '').toLowerCase().trim();
+      if (uName && oName && uName === oName) return true;
+      return false;
+    });
+  }, [orders, currentUser, sessionOrderIds]);
+
   // Active Affiliate Referral Code (from URL parameter ?ref= or localStorage)
   const [activeAffiliateRefCode, setActiveAffiliateRefCode] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -1064,6 +1103,39 @@ export default function App() {
       });
     }
 
+    // Decrement stock count for each purchased product
+    setProducts((prev) => {
+      const nextProds = prev.map((prod) => {
+        const itemInCart = cart.find(ci => ci.product.id === prod.id);
+        if (itemInCart) {
+          const currentStock = typeof prod.stockCount === 'number' ? prod.stockCount : 10;
+          const newStock = Math.max(0, currentStock - itemInCart.quantity);
+          const updatedProd: Product = {
+            ...prod,
+            stockCount: newStock,
+            inStock: newStock > 0,
+          };
+          cloudSaveProduct(updatedProd);
+          return updatedProd;
+        }
+        return prod;
+      });
+      safePersist(LOCAL_STORAGE_PRODUCTS_KEY, nextProds);
+      return nextProds;
+    });
+
+    // Save order ID to device session for customer order tracking
+    try {
+      const rawStored = localStorage.getItem('angolamarket_user_order_ids');
+      const parsedIds = rawStored ? JSON.parse(rawStored) : [];
+      if (!parsedIds.includes(newOrder.id)) {
+        parsedIds.push(newOrder.id);
+        localStorage.setItem('angolamarket_user_order_ids', JSON.stringify(parsedIds));
+      }
+    } catch {}
+
+    setSessionOrderIds(prev => [...prev, newOrder.id]);
+
     setOrders((prev) => {
       const nextOrders = [newOrder, ...prev];
       safePersist(LOCAL_STORAGE_ORDERS_KEY, nextOrders);
@@ -1203,8 +1275,27 @@ export default function App() {
     );
     if (cancelledOrder) {
       cloudSaveOrder(cancelledOrder);
+      // Restore product stock count
+      setProducts((prev) => {
+        const next = prev.map((p) => {
+          const item = (cancelledOrder as Order).items.find(ci => ci.product.id === p.id);
+          if (item) {
+            const restoredStock = (p.stockCount ?? 0) + item.quantity;
+            const updated: Product = {
+              ...p,
+              stockCount: restoredStock,
+              inStock: restoredStock > 0,
+            };
+            cloudSaveProduct(updated);
+            return updated;
+          }
+          return p;
+        });
+        safePersist(LOCAL_STORAGE_PRODUCTS_KEY, next);
+        return next;
+      });
     }
-    showToast('Pedido cancelado.');
+    showToast('Pedido cancelado com sucesso.');
   };
 
   // ADM Product Handlers (Only ADM can add/edit/delete)
@@ -1420,7 +1511,7 @@ export default function App() {
         cartTotal={cartTotal}
         onOpenCart={() => setIsCartOpen(true)}
         onOpenOrders={() => setCurrentView('orders')}
-        ordersCount={orders.filter(o => o.status !== 'entregue' && o.status !== 'cancelado').length}
+        ordersCount={userOrders.filter(o => o.status !== 'entregue' && o.status !== 'cancelado').length}
         onOpenDeliveryInfo={() => setIsDeliveryInfoModalOpen(true)}
         onResetFilters={() => {
           setSelectedCategory('todos');
@@ -1431,6 +1522,8 @@ export default function App() {
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onLogout={handleLogout}
         onOpenUserProfile={() => setIsUserProfileOpen(true)}
+        onOpenClientOrders={handleOpenClientOrders}
+        onOpenClientProducts={handleOpenClientProducts}
         onOpenAdminPortal={handleOpenAdminPortal}
         onOpenCourierPortal={handleOpenCourierPortal}
         onOpenAffiliatePortal={handleOpenAffiliatePortal}
@@ -1441,19 +1534,10 @@ export default function App() {
       {currentView === 'orders' ? (
         <main className="flex-1">
           <OrderTrackingView
-            orders={orders}
+            orders={userOrders}
             onBack={() => setCurrentView('marketplace')}
-            onAdvanceStatus={(orderId) => {
-              const ord = orders.find(o => o.id === orderId);
-              if (ord) {
-                let next: OrderStatus = ord.status;
-                if (ord.status === 'recebido') next = 'preparando';
-                else if (ord.status === 'preparando') next = 'em_transito';
-                else if (ord.status === 'em_transito') next = 'entregue';
-                handleUpdateOrderStatus(orderId, next);
-              }
-            }}
             onCancelOrder={handleCancelOrder}
+            onOpenAuth={() => setIsAuthModalOpen(true)}
           />
         </main>
       ) : (
@@ -1688,6 +1772,10 @@ export default function App() {
           onClose={() => setIsUserProfileOpen(false)}
           currentUser={currentUser}
           onUpdateUser={handleUpdateUserProfile}
+          orders={orders}
+          initialTab={userProfileInitialTab}
+          onAddToCart={handleAddToCart}
+          onOpenProductDetail={(p) => setSelectedProduct(p)}
         />
       )}
 
@@ -1720,6 +1808,8 @@ export default function App() {
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onOpenUserProfile={() => setIsUserProfileOpen(true)}
+        onOpenClientOrders={handleOpenClientOrders}
+        onOpenClientProducts={handleOpenClientProducts}
         onOpenAdminPortal={handleOpenAdminPortal}
         onOpenCourierPortal={handleOpenCourierPortal}
         onOpenAffiliatePortal={handleOpenAffiliatePortal}

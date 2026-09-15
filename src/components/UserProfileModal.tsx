@@ -69,6 +69,17 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     return 'dados';
   });
 
+  // Keep active tab in sync when opened from outside
+  useEffect(() => {
+    if (isOpen) {
+      if (initialTab) {
+        setActiveSection(initialTab);
+      } else if (currentUser.role === 'buyer') {
+        setActiveSection('pedidos');
+      }
+    }
+  }, [isOpen, initialTab, currentUser.role]);
+
   // Filter for customer's orders
   const [orderFilter, setOrderFilter] = useState<'todos' | 'em_curso' | 'entregues'>('todos');
   const [addedItemToast, setAddedItemToast] = useState<string | null>(null);
@@ -132,12 +143,22 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     if (!currentUser) return [];
     const userPhoneClean = (currentUser.phone || '').replace(/[^0-9]/g, '');
     const userEmailClean = (currentUser.email || '').toLowerCase().trim();
+    const userNameClean = (currentUser.name || '').toLowerCase().trim();
+
+    let localSavedOrderIds: string[] = [];
+    try {
+      const stored = localStorage.getItem('angolamarket_user_order_ids');
+      if (stored) localSavedOrderIds = JSON.parse(stored);
+    } catch {}
 
     return orders.filter(o => {
       // 1. Direct ID match
       if (o.customerId && o.customerId === currentUser.id) return true;
 
-      // 2. Phone match (ignoring spaces, dashes, +244)
+      // 2. Saved order IDs in client session
+      if (localSavedOrderIds.includes(o.id)) return true;
+
+      // 3. Phone match (ignoring spaces, dashes, +244)
       const orderPhoneClean = (o.customer?.phone || '').replace(/[^0-9]/g, '');
       if (userPhoneClean && orderPhoneClean) {
         if (orderPhoneClean.length >= 7 && (userPhoneClean.endsWith(orderPhoneClean) || orderPhoneClean.endsWith(userPhoneClean))) {
@@ -145,9 +166,15 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         }
       }
 
-      // 3. Email match
+      // 4. Email match
       const orderEmailClean = (o.customer?.email || (o as any).customerEmail || '').toLowerCase().trim();
       if (userEmailClean && orderEmailClean && userEmailClean === orderEmailClean) {
+        return true;
+      }
+
+      // 5. Customer full name match
+      const orderNameClean = (o.customer?.fullName || '').toLowerCase().trim();
+      if (userNameClean && orderNameClean && userNameClean === orderNameClean) {
         return true;
       }
 

@@ -153,6 +153,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     e.preventDefault();
     setHasError(null);
 
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setHasError('Sem ligação à internet. Por favor conecte os dados móveis ou Wi-Fi para que a encomenda seja registada na base de dados na nuvem do AngolaMarket.');
+      return;
+    }
+
     if (!fullName.trim()) {
       setHasError('Por favor informe o seu Nome Completo.');
       return;
@@ -197,7 +202,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       affiliateCodeUsed: affiliateCode.trim() || undefined,
     };
 
-    const newCustomerAccount = (!currentUser && accountMode === 'create') ? {
+    const newCustomerAccount = !currentUser ? {
       name: fullName.trim(),
       phone: phone.trim(),
       password: clientPassword || '123456',

@@ -12,7 +12,6 @@ import {
   AlertCircle, 
   ArrowLeft,
   X,
-  Play,
   RotateCcw,
   ShieldCheck,
   ShoppingBag
@@ -23,15 +22,15 @@ import { formatKwanzas } from '../data/mockData';
 interface OrderTrackingViewProps {
   orders: Order[];
   onBack: () => void;
-  onAdvanceStatus: (orderId: string) => void;
   onCancelOrder: (orderId: string) => void;
+  onOpenAuth?: () => void;
 }
 
 export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
   orders,
   onBack,
-  onAdvanceStatus,
   onCancelOrder,
+  onOpenAuth,
 }) => {
   const [selectedOrderId, setSelectedOrderId] = useState<string>(
     orders.length > 0 ? orders[0].id : ''
@@ -80,35 +79,33 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
             </p>
           </div>
         </div>
-
-        {/* Demo Advance Status Helper */}
-        {currentOrder && currentOrder.status !== 'entregue' && currentOrder.status !== 'cancelado' && (
-          <button
-            onClick={() => onAdvanceStatus(currentOrder.id)}
-            className="px-4 py-2.5 rounded-2xl bg-stone-900 hover:bg-black text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
-            title="Simular avanço do estafeta no trânsito de Luanda"
-          >
-            <Play className="w-3.5 h-3.5 fill-white text-white" />
-            <span>Simular Próxima Etapa do Estafeta</span>
-          </button>
-        )}
       </div>
 
       {orders.length === 0 ? (
-        <div className="p-12 text-center bg-white border border-stone-200 rounded-3xl space-y-4 max-w-lg mx-auto shadow-sm">
-          <div className="w-16 h-16 rounded-3xl bg-stone-100 flex items-center justify-center mx-auto text-stone-400">
+        <div className="p-10 sm:p-12 text-center bg-white border border-stone-200 rounded-3xl space-y-4 max-w-lg mx-auto shadow-sm">
+          <div className="w-16 h-16 rounded-3xl bg-red-50 text-red-600 flex items-center justify-center mx-auto">
             <Package className="w-8 h-8" />
           </div>
-          <h2 className="text-lg font-bold text-stone-900">Nenhum Pedido Registado Ainda</h2>
-          <p className="text-xs text-stone-500">
-            Explore os produtos no AngolaMarket 01 e faça a sua primeira compra com pagamento no ato da entrega em Luanda.
+          <h2 className="text-lg font-bold text-stone-900">Nenhum Pedido Nesta Conta</h2>
+          <p className="text-xs text-stone-500 leading-relaxed">
+            Os agendamentos e pedidos feitos na plataforma ficam associados exclusivamente à conta de quem os solicitou.
           </p>
-          <button
-            onClick={onBack}
-            className="px-6 py-2.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-sm cursor-pointer"
-          >
-            Ver Catálogo de Produtos
-          </button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
+            <button
+              onClick={onBack}
+              className="w-full sm:w-auto px-6 py-2.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
+            >
+              Explorar Catálogo
+            </button>
+            {onOpenAuth && (
+              <button
+                onClick={onOpenAuth}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold transition-all cursor-pointer"
+              >
+                Mudar de Conta
+              </button>
+            )}
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
