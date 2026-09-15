@@ -3,9 +3,7 @@ import {
   doc,
   setDoc,
   deleteDoc,
-  onSnapshot,
-  getDocs,
-  writeBatch
+  onSnapshot
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Product, AppUser, Order, LuandaZone, PayoutRequest } from '../types';
@@ -253,93 +251,66 @@ export async function cloudSavePayout(payout: PayoutRequest): Promise<boolean> {
   }
 }
 
+const SEED_STORAGE_KEY = 'angolamarket_cloud_seeded_done';
+
 /**
- * Syncs any existing local data (from phone 1 or local storage) up to Firestore,
- * ensuring seamless migration and zero data loss between devices.
+ * Syncs initial catalog and default data up to Firestore in the background.
+ * Uses setDoc with merge so operations queue to offline cache without network errors.
  */
-export async function seedLocalDataToCloud(
+export function seedLocalDataToCloud(
   localProducts: Product[],
   localUsers: AppUser[],
   localOrders: Order[],
   localZones: LuandaZone[],
   localPayouts: PayoutRequest[]
 ) {
-  try {
-    // 1. Seed Products if Firestore is currently empty or has missing ones
-    if (localProducts.length > 0) {
-      try {
-        const snap = await getDocs(collection(db, 'products'));
-        const existingIds = new Set(snap.docs.map((d) => d.id));
-        for (const p of localProducts) {
-          if (!existingIds.has(p.id)) {
-            await cloudSaveProduct(p);
-          }
-        }
-      } catch (err: any) {
-        if (err?.code !== 'unavailable') console.warn('[Firestore] Product seed sync note:', err?.message || err);
+  if (typeof window !== 'undefined') {
+    try {
+      if (localStorage.getItem(SEED_STORAGE_KEY)) {
+        return;
       }
+    } catch {
+      // ignore
     }
-
-    // 2. Seed Users if missing
-    if (localUsers.length > 0) {
-      try {
-        const snap = await getDocs(collection(db, 'users'));
-        const existingIds = new Set(snap.docs.map((d) => d.id));
-        for (const u of localUsers) {
-          if (!existingIds.has(u.id)) {
-            await cloudSaveUser(u);
-          }
-        }
-      } catch (err: any) {
-        if (err?.code !== 'unavailable') console.warn('[Firestore] Users seed sync note:', err?.message || err);
-      }
-    }
-
-    // 3. Seed Orders if missing
-    if (localOrders.length > 0) {
-      try {
-        const snap = await getDocs(collection(db, 'orders'));
-        const existingIds = new Set(snap.docs.map((d) => d.id));
-        for (const o of localOrders) {
-          if (!existingIds.has(o.id)) {
-            await cloudSaveOrder(o);
-          }
-        }
-      } catch (err: any) {
-        if (err?.code !== 'unavailable') console.warn('[Firestore] Orders seed sync note:', err?.message || err);
-      }
-    }
-
-    // 4. Seed Zones if missing
-    if (localZones.length > 0) {
-      try {
-        const snap = await getDocs(collection(db, 'zones'));
-        const existingIds = new Set(snap.docs.map((d) => d.id));
-        for (const z of localZones) {
-          if (!existingIds.has(z.id)) {
-            await cloudSaveZone(z);
-          }
-        }
-      } catch (err: any) {
-        if (err?.code !== 'unavailable') console.warn('[Firestore] Zones seed sync note:', err?.message || err);
-      }
-    }
-
-    // 5. Seed Payouts if missing
-    if (localPayouts.length > 0) {
-      try {
-        const snap = await getDocs(collection(db, 'payouts'));
-        const existingIds = new Set(snap.docs.map((d) => d.id));
-        for (const pay of localPayouts) {
-          if (!existingIds.has(pay.id)) {
-            await cloudSavePayout(pay);
-          }
-        }
-      } catch (err: any) {
-        if (err?.code !== 'unavailable') console.warn('[Firestore] Payouts seed sync note:', err?.message || err);
-      }
-    }
-  } catch (err) {
-    console.warn('[Firestore] Initial sync deferred to offline cache:', err);
   }
+
+  // Defer seeding slightly so Firestore has completed its initial handshake
+  setTimeout(async () => {
+    try {
+      if (localProducts?.length) {
+        for (const p of localProducts) {
+          await cloudSaveProduct(p);
+        }
+      }
+      if (localUsers?.length) {
+        for (const u of localUsers) {
+          await cloudSaveUser(u);
+        }
+      }
+      if (localZones?.length) {
+        for (const z of localZones) {
+          await cloudSaveZone(z);
+        }
+      }
+      if (localOrders?.length) {
+        for (const o of localOrders) {
+          await cloudSaveOrder(o);
+        }
+      }
+      if (localPayouts?.length) {
+        for (const pay of localPayouts) {
+          await cloudSavePayout(pay);
+        }
+      }
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem(SEED_STORAGE_KEY, 'true');
+        } catch {
+          // ignore
+        }
+      }
+    } catch {
+      // Offline-first queue will flush automatically when connected
+    }
+  }, 3500);
 }

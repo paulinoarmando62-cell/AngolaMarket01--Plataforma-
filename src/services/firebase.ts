@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { initializeFirestore, getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { initializeFirestore, getFirestore, setLogLevel } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 // Initialize Firebase App singleton
@@ -9,15 +9,19 @@ const customDbId = firebaseConfig.firestoreDatabaseId && firebaseConfig.firestor
   ? firebaseConfig.firestoreDatabaseId
   : undefined;
 
-const isBrowser = typeof window !== 'undefined';
+// Suppress transient network offline/reconnection messages from polluting console
+try {
+  setLogLevel('error');
+} catch {
+  // Ignore in environments where setLogLevel may not be available
+}
 
-// Initialize Firestore with long-polling in browser environments to avoid WebSocket/proxy blocks
+// Initialize Firestore singleton
 export const db = (() => {
   try {
     return initializeFirestore(
       firebaseApp,
       {
-        ...(isBrowser ? { experimentalForceLongPolling: true } : {}),
         ignoreUndefinedProperties: true
       },
       customDbId
@@ -28,27 +32,3 @@ export const db = (() => {
   }
 })();
 
-/**
- * Validates connection to the Firestore server
- */
-export async function testConnection(): Promise<boolean> {
-  try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-    console.log('[Firebase] Connection validated with Firestore server.');
-    return true;
-  } catch (error) {
-    if (error instanceof Error && (error.message.includes('offline') || error.message.includes('unavailable'))) {
-      console.warn('[Firebase] Firestore running with local persistence/reconnecting.');
-      return false;
-    }
-    // Any other response (like document not found or permission check) confirms reachability to the server
-    return true;
-  }
-}
-
-// Initial connection test deferred slightly so the app mounts first
-if (isBrowser) {
-  setTimeout(() => {
-    testConnection().catch(() => {});
-  }, 1000);
-}
