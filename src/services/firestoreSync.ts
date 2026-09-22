@@ -3,10 +3,12 @@ import {
   doc,
   setDoc,
   deleteDoc,
-  onSnapshot
+  onSnapshot,
+  getDocs,
+  getDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { Product, AppUser, Order, LuandaZone, PayoutRequest } from '../types';
+import { Product, AppUser, Order, LuandaZone, PayoutRequest, StorePaymentConfig } from '../types';
 
 /**
  * Removes any undefined properties to prevent Firestore serialization errors
@@ -251,11 +253,114 @@ export async function cloudSavePayout(payout: PayoutRequest): Promise<boolean> {
   }
 }
 
-const SEED_STORAGE_KEY = 'angolamarket_cloud_seeded_done';
+// ==========================================
+// 6. CONFIGURAÇÕES DE PAGAMENTO (PAYMENT CONFIG)
+// ==========================================
+
+export function subscribeToPaymentConfig(onUpdate: (config: StorePaymentConfig) => void) {
+  try {
+    const docRef = doc(db, 'settings', 'paymentConfig');
+    return onSnapshot(
+      docRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          if (data && (data.bankAccounts || data.expressAccounts)) {
+            onUpdate(data as StorePaymentConfig);
+          }
+        }
+      },
+      (error) => {
+        if (error.code === 'unavailable' || error.message?.includes('unavailable')) return;
+        console.warn('[Firestore] Error subscribing to payment config:', error);
+      }
+    );
+  } catch (err) {
+    console.warn('[Firestore] Failed to attach payment config listener:', err);
+    return () => {};
+  }
+}
+
+export async function cloudSavePaymentConfig(config: StorePaymentConfig): Promise<boolean> {
+  try {
+    const docRef = doc(db, 'settings', 'paymentConfig');
+    await setDoc(docRef, sanitizeForFirestore(config), { merge: true });
+    return true;
+  } catch (err) {
+    console.error('[Firestore] Failed to save payment config:', err);
+    return false;
+  }
+}
 
 /**
- * Syncs initial catalog and default data up to Firestore in the background.
- * Uses setDoc with merge so operations queue to offline cache without network errors.
+ * Directly fetch fresh products from Firestore on demand (e.g. when connecting online)
+ */
+export async function fetchFreshProducts(): Promise<Product[] | null> {
+  try {
+    const colRef = collection(db, 'products');
+    const snapshot = await getDocs(colRef);
+    const prods: Product[] = [];
+    snapshot.forEach((doc) => {
+      const d = doc.data();
+      if (d && d.id) {
+        prods.push(d as Product);
+      }
+    });
+    return prods;
+  } catch (err) {
+    console.warn('[Firestore] Error fetching fresh products:', err);
+    return null;
+  }
+}
+
+/**
+ * Directly fetch fresh orders from Firestore on demand
+ */
+export async function fetchFreshOrders(): Promise<Order[] | null> {
+  try {
+    const colRef = collection(db, 'orders');
+    const snapshot = await getDocs(colRef);
+    const orders: Order[] = [];
+    snapshot.forEach((doc) => {
+      const d = doc.data();
+      if (d && d.id) {
+        orders.push(d as Order);
+      }
+    });
+    orders.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    return orders;
+  } catch (err) {
+    console.warn('[Firestore] Error fetching fresh orders:', err);
+    return null;
+  }
+}
+
+/**
+ * Directly fetch fresh users from Firestore on demand
+ */
+export async function fetchFreshUsers(): Promise<AppUser[] | null> {
+  try {
+    const colRef = collection(db, 'users');
+    const snapshot = await getDocs(colRef);
+    const users: AppUser[] = [];
+    snapshot.forEach((doc) => {
+      const d = doc.data();
+      if (d && d.id) {
+        users.push(d as AppUser);
+      }
+    });
+    return users;
+  } catch (err) {
+    console.warn('[Firestore] Error fetching fresh users:', err);
+    return null;
+  }
+}
+
+const SEED_STORAGE_KEY = 'angolamarket_cloud_seeded_done_v2';
+
+/**
+ * Seeds initial catalog ONLY IF the database collection is empty.
+ * Never overwrites existing stock numbers or existing orders.
  */
 export function seedLocalDataToCloud(
   localProducts: Product[],
@@ -277,31 +382,31 @@ export function seedLocalDataToCloud(
   // Defer seeding slightly so Firestore has completed its initial handshake
   setTimeout(async () => {
     try {
-      if (localProducts?.length) {
+      // Check products: only seed if products collection is completely empty
+      const prodSnap = await getDocs(collection(db, 'products'));
+      if (prodSnap.empty && localProducts?.length) {
         for (const p of localProducts) {
           await cloudSaveProduct(p);
         }
       }
-      if (localUsers?.length) {
+
+      // Check users: only seed if users collection is empty
+      const userSnap = await getDocs(collection(db, 'users'));
+      if (userSnap.empty && localUsers?.length) {
         for (const u of localUsers) {
           await cloudSaveUser(u);
         }
       }
-      if (localZones?.length) {
+
+      // Check zones: only seed if zones collection is empty
+      const zoneSnap = await getDocs(collection(db, 'zones'));
+      if (zoneSnap.empty && localZones?.length) {
         for (const z of localZones) {
           await cloudSaveZone(z);
         }
       }
-      if (localOrders?.length) {
-        for (const o of localOrders) {
-          await cloudSaveOrder(o);
-        }
-      }
-      if (localPayouts?.length) {
-        for (const pay of localPayouts) {
-          await cloudSavePayout(pay);
-        }
-      }
+
+      // Mark seeded
       if (typeof window !== 'undefined') {
         try {
           localStorage.setItem(SEED_STORAGE_KEY, 'true');
@@ -310,7 +415,7 @@ export function seedLocalDataToCloud(
         }
       }
     } catch {
-      // Offline-first queue will flush automatically when connected
+      // Ignore network errors
     }
-  }, 3500);
+  }, 4000);
 }

@@ -854,8 +854,10 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
                             </span>
                           </div>
 
-                          <span className="font-mono font-black text-sm text-red-600">
-                            {formatKwanzas(ord.total)} (a cobrar)
+                          <span className={`font-mono font-black text-sm ${
+                            ord.customer.paymentMethod === 'dinheiro_entrega' ? 'text-red-600' : 'text-emerald-600'
+                          }`}>
+                            {formatKwanzas(ord.total)} {ord.customer.paymentMethod === 'dinheiro_entrega' ? '(A Cobrar em Dinheiro)' : '(Já Pago na Plataforma)'}
                           </span>
                         </div>
 
@@ -914,8 +916,13 @@ export const CourierPortalModal: React.FC<CourierPortalModalProps> = ({
 
                           <div className="pt-2 border-t border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px]">
                             <span className="text-stone-500">
-                              Forma de Pagamento: <strong>{ord.customer.paymentMethod === 'dinheiro_entrega' ? '💵 Dinheiro Físico no ato' : '📱 Multicaixa Express'}</strong>
-                              {ord.customer.needChangeFor ? ` (Troco para ${formatKwanzas(ord.customer.needChangeFor)})` : ''}
+                              Forma de Pagamento:{' '}
+                              <strong className="text-stone-900">
+                                {ord.customer.paymentMethod === 'dinheiro_entrega' && '💵 Dinheiro Físico na Entrega (sem TPA)'}
+                                {(ord.customer.paymentMethod === 'multicaixa_express' || ord.customer.paymentMethod === 'express_transferencia') && '📱 Multicaixa Express (Pela Plataforma - Não cobrar)'}
+                                {ord.customer.paymentMethod === 'transferencia_bancaria' && '🏦 Transferência Bancária / IBAN (Pela Plataforma - Não cobrar)'}
+                              </strong>
+                              {ord.customer.needChangeFor ? ` (Levar troco p/ ${formatKwanzas(ord.customer.needChangeFor)})` : ''}
                             </span>
                             <div className="flex items-center gap-2">
                               <span className="text-stone-400">Taxa Cliente: {formatKwanzas(ord.deliveryFee)}</span>

@@ -17,9 +17,22 @@ import {
   Navigation,
   Lock,
   LogIn,
-  UserPlus
+  UserPlus,
+  Copy,
+  Check,
+  Building2,
+  HelpCircle
 } from 'lucide-react';
-import { CartItem, LuandaZone, OrderCustomerInfo, PaymentMethodType, DeliveryType, AppUser } from '../types';
+import { 
+  CartItem, 
+  LuandaZone, 
+  OrderCustomerInfo, 
+  PaymentMethodType, 
+  DeliveryType, 
+  AppUser,
+  StorePaymentConfig,
+  DEFAULT_PAYMENT_CONFIG
+} from '../types';
 import { formatKwanzas } from '../data/mockData';
 
 interface CheckoutModalProps {
@@ -37,6 +50,7 @@ interface CheckoutModalProps {
   currentUser?: AppUser | null;
   users?: AppUser[];
   onLoginUser?: (user: AppUser) => void;
+  paymentConfig?: StorePaymentConfig;
 }
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
@@ -51,6 +65,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   currentUser,
   users = [],
   onLoginUser,
+  paymentConfig = DEFAULT_PAYMENT_CONFIG,
 }) => {
   const [fullName, setFullName] = useState(currentUser?.name || '');
   const [phone, setPhone] = useState(currentUser?.phone || '');
@@ -72,9 +87,35 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [streetAddress, setStreetAddress] = useState(currentUser?.defaultStreetAddress || '');
   const [referencePoint, setReferencePoint] = useState(currentUser?.defaultReferencePoint || '');
   const [deliveryNotes, setDeliveryNotes] = useState('');
+  
+  // Payment methods
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('dinheiro_entrega');
   const [needChangeFor, setNeedChangeFor] = useState<number | undefined>(undefined);
   const [customChangeInput, setCustomChangeInput] = useState('');
+
+  // Platform payment details (Transferência Bancária e Multicaixa Express)
+  const activeBankAccounts = (paymentConfig?.bankAccounts && paymentConfig.bankAccounts.length > 0)
+    ? paymentConfig.bankAccounts.filter(b => b.isActive)
+    : DEFAULT_PAYMENT_CONFIG.bankAccounts;
+  const activeExpressAccounts = (paymentConfig?.expressAccounts && paymentConfig.expressAccounts.length > 0)
+    ? paymentConfig.expressAccounts.filter(e => e.isActive)
+    : DEFAULT_PAYMENT_CONFIG.expressAccounts;
+  
+  const [selectedIbanId, setSelectedIbanId] = useState<string>(activeBankAccounts[0]?.id || '');
+  const [paymentReference, setPaymentReference] = useState('');
+  const [paymentPhoneUsed, setPaymentPhoneUsed] = useState('');
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const handleCopyToClipboard = (text: string, key: string) => {
+    try {
+      navigator.clipboard.writeText(text);
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 2500);
+    } catch {
+      // Fallback
+    }
+  };
+
   const [affiliateCode, setAffiliateCode] = useState(affiliateRefCode || '');
   const [hasError, setHasError] = useState<string | null>(null);
 
@@ -183,6 +224,19 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       return;
     }
 
+    if (paymentMethod === 'multicaixa_express' && !paymentPhoneUsed.trim()) {
+      setHasError('Por favor informe o seu número de telemóvel ou código de operação com que realizou o pagamento por Multicaixa Express.');
+      return;
+    }
+
+    if (paymentMethod === 'transferencia_bancaria' && !paymentReference.trim()) {
+      setHasError('Por favor informe o número de referência ou identificador do comprovativo da sua transferência bancária.');
+      return;
+    }
+
+    const selectedBankObj = activeBankAccounts.find(b => b.id === selectedIbanId) || activeBankAccounts[0];
+    const selectedExpressObj = activeExpressAccounts[0];
+
     const customerInfo: OrderCustomerInfo = {
       fullName,
       phone,
@@ -199,6 +253,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       needChangeFor: paymentMethod === 'dinheiro_entrega' 
         ? (customChangeInput ? Number(customChangeInput) : needChangeFor) 
         : undefined,
+      paymentReference: paymentMethod === 'transferencia_bancaria' ? paymentReference.trim() : undefined,
+      paymentPhoneUsed: (paymentMethod === 'multicaixa_express' || paymentMethod === 'express_transferencia') ? paymentPhoneUsed.trim() : undefined,
+      selectedIbanId: paymentMethod === 'transferencia_bancaria' ? selectedBankObj?.id : undefined,
+      selectedIbanDetails: (paymentMethod === 'transferencia_bancaria' && selectedBankObj) ? `${selectedBankObj.bankName}: ${selectedBankObj.iban}` : undefined,
+      selectedExpressPhone: (paymentMethod === 'multicaixa_express' || paymentMethod === 'express_transferencia') ? (selectedExpressObj?.phone || '938243909') : undefined,
       affiliateCodeUsed: affiliateCode.trim() || undefined,
     };
 
@@ -668,93 +727,339 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </div>
           </div>
 
-          {/* Section 3: Cash on Delivery Payment Method in Luanda */}
+          {/* Section 3: Payment Method Selection */}
           <div className="space-y-3">
             <div className="flex items-center justify-between pb-1 border-b border-stone-100">
               <div className="flex items-center gap-2 text-sm font-bold text-stone-900">
                 <Banknote className="w-4 h-4 text-emerald-600" />
-                <span>3. Modalidade de Pagamento no Ato da Entrega</span>
+                <span>3. Forma de Pagamento</span>
               </div>
               <span className="text-[11px] font-semibold text-stone-500">
-                Sem TPA (Dinheiro ou Express)
+                Escolha a sua preferência
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Option 1: Dinheiro Físico */}
-              <div
+            {/* 3 Payment Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              {/* Option 1: Dinheiro Físico na Entrega */}
+              <button
+                type="button"
                 onClick={() => setPaymentMethod('dinheiro_entrega')}
-                className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                className={`p-3.5 rounded-2xl border text-left cursor-pointer transition-all flex flex-col justify-between ${
                   paymentMethod === 'dinheiro_entrega'
-                    ? 'bg-emerald-50/70 border-emerald-500 text-stone-900 shadow-sm ring-1 ring-emerald-400'
+                    ? 'bg-emerald-50/70 border-emerald-500 text-stone-900 shadow-sm ring-2 ring-emerald-400/40'
                     : 'bg-stone-50 border-stone-200 text-stone-600 hover:border-stone-300'
                 }`}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <Banknote className={`w-5 h-5 ${paymentMethod === 'dinheiro_entrega' ? 'text-emerald-600' : 'text-stone-400'}`} />
-                  <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
-                    Mais Utilizado
-                  </span>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Banknote className={`w-5 h-5 ${paymentMethod === 'dinheiro_entrega' ? 'text-emerald-600' : 'text-stone-400'}`} />
+                    <span className="text-[9px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                      Na Entrega
+                    </span>
+                  </div>
+                  <h4 className="font-bold text-xs text-stone-900">Dinheiro Físico</h4>
+                  <p className="text-[11px] text-stone-500 mt-1 leading-snug">
+                    Pague em notas físicas de Kwanzas ao estafeta no ato de entrega.
+                  </p>
                 </div>
-                <h4 className="font-bold text-xs text-stone-900">Dinheiro Físico no Ato (Kwanzas)</h4>
-                <p className="text-[11px] text-stone-500 mt-1 leading-snug">
-                  Pague em notas de Kwanzas após conferir o produto com o estafeta. Indique se necessita de troco abaixo.
-                </p>
-              </div>
-
-              {/* Option 2: MCX Express */}
-              <div
-                onClick={() => setPaymentMethod('express_transferencia')}
-                className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-                  paymentMethod === 'express_transferencia'
-                    ? 'bg-blue-50/70 border-blue-500 text-stone-900 shadow-sm ring-1 ring-blue-400'
-                    : 'bg-stone-50 border-stone-200 text-stone-600 hover:border-stone-300'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <Smartphone className={`w-5 h-5 ${paymentMethod === 'express_transferencia' ? 'text-blue-600' : 'text-stone-400'}`} />
-                  <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                    Telemóvel
-                  </span>
-                </div>
-                <h4 className="font-bold text-xs text-stone-900">Multicaixa Express / Transferência</h4>
-                <p className="text-[11px] text-stone-500 mt-1 leading-snug">
-                  Transfira pelo seu telemóvel instantaneamente na presença do estafeta ao receber a encomenda.
-                </p>
-              </div>
-            </div>
-
-            <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2">
-              <Info className="w-4 h-4 text-amber-700 shrink-0" />
-              <span>
-                <strong>Aviso:</strong> O estafeta não anda com terminal TPA. Tenha o valor em <strong>dinheiro físico</strong> ou utilize o <strong>Multicaixa Express</strong> no telemóvel.
-              </span>
-            </div>
-
-            {/* Change selector if Cash is chosen */}
-            {paymentMethod === 'dinheiro_entrega' && (
-              <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-2.5">
-                <span className="text-xs font-bold text-stone-800 block">
-                  Vai pagar em dinheiro. Precisa que o estafeta leve troco para quanto?
+                <span className="text-[10px] text-amber-700 font-medium mt-2 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 block">
+                  Sem TPA na entrega
                 </span>
-                <div className="flex flex-wrap gap-2 text-xs">
-                  {[0, 10000, 20000, 50000, 100000].map((val) => (
-                    <button
-                      key={val}
-                      type="button"
-                      onClick={() => {
-                        setNeedChangeFor(val);
-                        setCustomChangeInput('');
+              </button>
+
+              {/* Option 2: Multicaixa Express (Pela Plataforma) */}
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('multicaixa_express')}
+                className={`p-3.5 rounded-2xl border text-left cursor-pointer transition-all flex flex-col justify-between ${
+                  paymentMethod === 'multicaixa_express' || paymentMethod === 'express_transferencia'
+                    ? 'bg-blue-50/70 border-blue-500 text-stone-900 shadow-sm ring-2 ring-blue-400/40'
+                    : 'bg-stone-50 border-stone-200 text-stone-600 hover:border-stone-300'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Smartphone className={`w-5 h-5 ${paymentMethod === 'multicaixa_express' || paymentMethod === 'express_transferencia' ? 'text-blue-600' : 'text-stone-400'}`} />
+                    <span className="text-[9px] font-bold uppercase tracking-wider bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                      Pela Plataforma
+                    </span>
+                  </div>
+                  <h4 className="font-bold text-xs text-stone-900">Multicaixa Express</h4>
+                  <p className="text-[11px] text-stone-500 mt-1 leading-snug">
+                    Pague diretamente pelo app Express antes do envio da encomenda.
+                  </p>
+                </div>
+                <span className="text-[10px] text-blue-700 font-medium mt-2 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 block">
+                  Envio Prioritário
+                </span>
+              </button>
+
+              {/* Option 3: Transferência Bancária / IBAN */}
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('transferencia_bancaria')}
+                className={`p-3.5 rounded-2xl border text-left cursor-pointer transition-all flex flex-col justify-between ${
+                  paymentMethod === 'transferencia_bancaria'
+                    ? 'bg-purple-50/70 border-purple-500 text-stone-900 shadow-sm ring-2 ring-purple-400/40'
+                    : 'bg-stone-50 border-stone-200 text-stone-600 hover:border-stone-300'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Building2 className={`w-5 h-5 ${paymentMethod === 'transferencia_bancaria' ? 'text-purple-600' : 'text-stone-400'}`} />
+                    <span className="text-[9px] font-bold uppercase tracking-wider bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full">
+                      Pela Plataforma
+                    </span>
+                  </div>
+                  <h4 className="font-bold text-xs text-stone-900">Transferência / IBAN</h4>
+                  <p className="text-[11px] text-stone-500 mt-1 leading-snug">
+                    Transfira para as contas oficiais da loja (BAI, BFA, etc.) antes da entrega.
+                  </p>
+                </div>
+                <span className="text-[10px] text-purple-700 font-medium mt-2 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 block">
+                  Comprovativo Online
+                </span>
+              </button>
+            </div>
+
+            {/* Payment Details Panel 1: Dinheiro Físico */}
+            {paymentMethod === 'dinheiro_entrega' && (
+              <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-3 animate-in fade-in duration-200">
+                <div className="flex items-start gap-2.5 text-xs text-amber-900 bg-amber-50 p-3 rounded-xl border border-amber-200">
+                  <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="block text-amber-950">Atenção sobre pagamento na entrega:</strong>
+                    <span>O estafeta recebe <strong>exclusivamente notas físicas de Kwanzas</strong>. O estafeta <strong>NÃO transporta terminal TPA</strong>. Se preferir pagar digitalmente, selecione Multicaixa Express ou Transferência Bancária acima.</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-stone-800 block">
+                    Precisa que o estafeta leve troco para quanto?
+                  </span>
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    {[0, 10000, 20000, 50000, 100000].map((val) => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => {
+                          setNeedChangeFor(val);
+                          setCustomChangeInput('');
+                        }}
+                        className={`px-3 py-1.5 rounded-xl border font-mono transition-colors cursor-pointer text-xs ${
+                          needChangeFor === val && !customChangeInput
+                            ? 'bg-red-600 text-white border-red-600 font-bold'
+                            : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-100'
+                        }`}
+                      >
+                        {val === 0 ? 'Sem Troco (Valor Exato)' : `Troco p/ ${formatKwanzas(val)}`}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="pt-1">
+                    <input
+                      type="number"
+                      value={customChangeInput}
+                      onChange={(e) => {
+                        setCustomChangeInput(e.target.value);
+                        setNeedChangeFor(e.target.value ? Number(e.target.value) : undefined);
                       }}
-                      className={`px-3 py-1.5 rounded-xl border font-mono transition-colors cursor-pointer text-xs ${
-                        needChangeFor === val && !customChangeInput
-                          ? 'bg-red-600 text-white border-red-600 font-bold'
-                          : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-100'
+                      placeholder="Ou digite outro valor para troco em Kz..."
+                      className="w-full sm:w-64 px-3 py-2 text-xs border border-stone-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none bg-white font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Payment Details Panel 2: Multicaixa Express (Pela Plataforma) */}
+            {(paymentMethod === 'multicaixa_express' || paymentMethod === 'express_transferencia') && (
+              <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-200 space-y-3.5 animate-in fade-in duration-200">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-blue-950 flex items-center gap-1.5">
+                    <Smartphone className="w-4 h-4 text-blue-600" />
+                    Pagamento via Multicaixa Express (Antes da Entrega)
+                  </span>
+                  <span className="text-[11px] font-bold text-blue-700 bg-blue-100 px-2.5 py-0.5 rounded-full">
+                    Total: {formatKwanzas(total)}
+                  </span>
+                </div>
+
+                <p className="text-xs text-stone-600 leading-relaxed">
+                  Envie o valor de <strong>{formatKwanzas(total)}</strong> para o número de telemóvel Express oficial da loja abaixo:
+                </p>
+
+                {/* Express Accounts List */}
+                <div className="space-y-2">
+                  {activeExpressAccounts.map((acc) => (
+                    <div 
+                      key={acc.id}
+                      className="p-3.5 rounded-xl bg-white border border-blue-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
+                    >
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base font-black font-mono text-blue-900 tracking-wide">
+                            {acc.phone.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3')}
+                          </span>
+                          <span className="text-[10px] uppercase font-bold text-blue-800 bg-blue-100 px-2 py-0.5 rounded">
+                            {acc.bankName || 'MCX Express'}
+                          </span>
+                        </div>
+                        <div className="text-xs text-stone-600">
+                          Titular: <strong>{acc.accountHolder}</strong>
+                        </div>
+                        {acc.notes && (
+                          <div className="text-[11px] text-stone-400">
+                            {acc.notes}
+                          </div>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleCopyToClipboard(acc.phone, `exp_${acc.id}`)}
+                        className={`inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          copiedKey === `exp_${acc.id}`
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
+                        }`}
+                      >
+                        {copiedKey === `exp_${acc.id}` ? (
+                          <>
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Copiado!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>Copiar Número</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Customer Proof / Confirmation Phone Input */}
+                <div className="pt-2 border-t border-blue-200/60 space-y-1.5">
+                  <label className="text-xs font-bold text-stone-800 flex items-center justify-between">
+                    <span>O seu Telemóvel ou Código da Operação Express: <span className="text-red-500">*</span></span>
+                    <span className="text-[10px] text-stone-400 font-normal">Para rápida reconciliação</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentPhoneUsed}
+                    onChange={(e) => setPaymentPhoneUsed(e.target.value)}
+                    placeholder="Ex: 923 000 000 ou cód. da operação gerado no app"
+                    className="w-full px-3.5 py-2.5 text-xs border border-stone-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-mono"
+                  />
+                  <span className="text-[11px] text-stone-500 block">
+                    Após submeter o pedido, nossa central confere a transação e despacha a encomenda de imediato com o estafeta.
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Payment Details Panel 3: Transferência Bancária / IBAN */}
+            {paymentMethod === 'transferencia_bancaria' && (
+              <div className="p-4 rounded-2xl bg-purple-50/50 border border-purple-200 space-y-3.5 animate-in fade-in duration-200">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-purple-950 flex items-center gap-1.5">
+                    <Building2 className="w-4 h-4 text-purple-600" />
+                    Contas Bancárias Oficiais (Transferência antes do Envio)
+                  </span>
+                  <span className="text-[11px] font-bold text-purple-800 bg-purple-100 px-2.5 py-0.5 rounded-full">
+                    Total: {formatKwanzas(total)}
+                  </span>
+                </div>
+
+                <p className="text-xs text-stone-600 leading-relaxed">
+                  Efetue a transferência de <strong>{formatKwanzas(total)}</strong> para um dos IBANs oficiais abaixo:
+                </p>
+
+                {/* Bank Accounts List */}
+                <div className="space-y-2.5">
+                  {activeBankAccounts.map((acc) => (
+                    <div 
+                      key={acc.id}
+                      onClick={() => setSelectedIbanId(acc.id)}
+                      className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
+                        selectedIbanId === acc.id
+                          ? 'bg-white border-purple-400 shadow-sm ring-1 ring-purple-300'
+                          : 'bg-white/80 border-stone-200 hover:border-purple-200'
                       }`}
                     >
-                      {val === 0 ? 'Sem Troco (Valor Exato)' : `Troco p/ ${formatKwanzas(val)}`}
-                    </button>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-black uppercase text-purple-900 bg-purple-100 px-2 py-0.5 rounded">
+                              {acc.bankName}
+                            </span>
+                            <span className="text-xs text-stone-700">
+                              Titular: <strong>{acc.accountHolder}</strong>
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono font-bold text-stone-900 select-all">
+                              {acc.iban}
+                            </span>
+                          </div>
+
+                          {acc.notes && (
+                            <span className="text-[11px] text-stone-400 block">
+                              {acc.notes}
+                            </span>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopyToClipboard(acc.iban.replace(/\s+/g, ''), `iban_${acc.id}`);
+                          }}
+                          className={`inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                            copiedKey === `iban_${acc.id}`
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-purple-700 hover:bg-purple-800 text-white shadow-xs'
+                          }`}
+                        >
+                          {copiedKey === `iban_${acc.id}` ? (
+                            <>
+                              <Check className="w-3.5 h-3.5" />
+                              <span>IBAN Copiado!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>Copiar IBAN</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
                   ))}
+                </div>
+
+                {/* Bank Reference Input */}
+                <div className="pt-2 border-t border-purple-200/60 space-y-1.5">
+                  <label className="text-xs font-bold text-stone-800 flex items-center justify-between">
+                    <span>Nº do Comprovativo ou Referência da Transferência: <span className="text-red-500">*</span></span>
+                    <span className="text-[10px] text-stone-400 font-normal">Ex: Ref BAI / BFA Net</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentReference}
+                    onChange={(e) => setPaymentReference(e.target.value)}
+                    placeholder="Insira o número da operação ou referência do comprovativo..."
+                    className="w-full px-3.5 py-2.5 text-xs border border-stone-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none bg-white font-mono"
+                  />
+                  <span className="text-[11px] text-stone-500 block">
+                    Após a submissão, nossa equipa financeira valida o comprovativo e o estafeta segue com a sua encomenda.
+                  </span>
                 </div>
               </div>
             )}

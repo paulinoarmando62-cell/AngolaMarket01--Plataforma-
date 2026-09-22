@@ -41,9 +41,9 @@ export const Footer: React.FC<FooterProps> = ({
               <Banknote className="w-5 h-5" />
             </div>
             <div className="space-y-1">
-              <h4 className="font-bold text-white text-xs">100% Pagamento na Entrega</h4>
+              <h4 className="font-bold text-white text-xs">Pagamento Flexível</h4>
               <p className="text-[11px] text-stone-400 leading-relaxed">
-                Pague em Kwanzas por Dinheiro físico com troco ou transferência Multicaixa Express.
+                Dinheiro físico na entrega ou Multicaixa Express e IBAN direto pela plataforma.
               </p>
             </div>
           </div>
@@ -182,16 +182,16 @@ export const Footer: React.FC<FooterProps> = ({
           {/* Payment & Security */}
           <div className="space-y-3">
             <h5 className="font-bold text-white text-xs uppercase tracking-wider">
-              Pagamentos Aceites no Local
+              Formas de Pagamento
             </h5>
             <div className="space-y-2">
               <div className="p-3 rounded-2xl bg-stone-950 border border-stone-800 space-y-1">
-                <span className="font-bold text-stone-200 block text-xs">💳 TPA Móvel Multicaixa</span>
-                <span className="text-[11px] text-stone-400 block">Rede EMIS Multicaixa (BAI, BFA, BIC, Atlântico...)</span>
+                <span className="font-bold text-stone-200 block text-xs">📱 Multicaixa Express & IBAN</span>
+                <span className="text-[11px] text-stone-400 block">Pagamento direto pela plataforma antes da entrega</span>
               </div>
               <div className="p-3 rounded-2xl bg-stone-950 border border-stone-800 space-y-1">
-                <span className="font-bold text-stone-200 block text-xs">💵 Dinheiro Físico (Kwanzas)</span>
-                <span className="text-[11px] text-stone-400 block">Com opção de troco solicitada no checkout</span>
+                <span className="font-bold text-stone-200 block text-xs">💵 Dinheiro Físico na Entrega</span>
+                <span className="text-[11px] text-stone-400 block">Pagamento em notas com estafeta (sem terminal TPA)</span>
               </div>
             </div>
           </div>

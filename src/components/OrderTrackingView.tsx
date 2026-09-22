@@ -22,14 +22,13 @@ import { formatKwanzas } from '../data/mockData';
 interface OrderTrackingViewProps {
   orders: Order[];
   onBack: () => void;
-  onCancelOrder: (orderId: string) => void;
+  onCancelOrder?: (orderId: string) => void;
   onOpenAuth?: () => void;
 }
 
 export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
   orders,
   onBack,
-  onCancelOrder,
   onOpenAuth,
 }) => {
   const [selectedOrderId, setSelectedOrderId] = useState<string>(
@@ -264,10 +263,14 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
                   <div className="space-y-1 max-w-lg">
                     <span className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
                       <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                      Garantia de Pagamento no Ato da Entrega:
+                      Garantia de Compra Segura Luanda:
                     </span>
                     <p className="text-xs text-stone-600">
-                      O motorista aguarda você verificar a integridade do artigo. O pagamento é realizado diretamente na entrega em <strong>dinheiro físico com troco</strong> ou via <strong>Multicaixa Express</strong>.
+                      {currentOrder.customer.paymentMethod === 'dinheiro_entrega' ? (
+                        <>Poderá verificar a encomenda na presença do estafeta e pagar em <strong>dinheiro físico com troco</strong> (sem terminal TPA).</>
+                      ) : (
+                        <>Pagamento processado pela <strong>plataforma ({currentOrder.customer.paymentMethod === 'transferencia_bancaria' ? 'Transferência Bancária' : 'Multicaixa Express'})</strong>. O estafeta efetua a entrega direta do artigo verificado.</>
+                      )}
                     </p>
                   </div>
 
@@ -343,8 +346,9 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
                       <Banknote className="w-3.5 h-3.5 text-emerald-600" /> Modalidade de Pagamento:
                     </span>
                     <p className="font-bold text-stone-900">
-                      {currentOrder.customer.paymentMethod === 'dinheiro_entrega' && '💵 Dinheiro Físico na Entrega'}
-                      {currentOrder.customer.paymentMethod === 'express_transferencia' && '📱 Multicaixa Express na Entrega'}
+                      {currentOrder.customer.paymentMethod === 'dinheiro_entrega' && '💵 Dinheiro Físico na Entrega (sem TPA)'}
+                      {(currentOrder.customer.paymentMethod === 'multicaixa_express' || currentOrder.customer.paymentMethod === 'express_transferencia') && '📱 Multicaixa Express (Pela Plataforma)'}
+                      {currentOrder.customer.paymentMethod === 'transferencia_bancaria' && '🏦 Transferência Bancária / IBAN (Pela Plataforma)'}
                     </p>
                     {currentOrder.customer.needChangeFor ? (
                       <p className="text-xs text-stone-700">
@@ -378,17 +382,24 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
                   </div>
                 </div>
 
-                {/* Cancel option if still in received state */}
-                {currentOrder.status === 'recebido' && (
-                  <div className="pt-2 text-right">
-                    <button
-                      onClick={() => onCancelOrder(currentOrder.id)}
-                      className="text-xs text-red-600 hover:text-red-700 underline font-bold cursor-pointer"
-                    >
-                      Cancelar este pedido
-                    </button>
+                {/* Official Protected Status Notice - Clients cannot alter order status */}
+                <div className="pt-3 border-t border-stone-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs bg-stone-50 p-3.5 rounded-2xl">
+                  <div className="flex items-center gap-2 text-stone-600">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>
+                      <strong>Estado Oficial Protegido:</strong> O progresso é sincronizado em tempo real exclusivamente pelo centro logístico e pelo estafeta em Luanda.
+                    </span>
                   </div>
-                )}
+                  <a
+                    href={`https://wa.me/244938243909?text=Ol%C3%A1%2C%20gostaria%20de%20informa%C3%A7%C3%B5es%20sobre%20o%20pedido%20${encodeURIComponent(currentOrder.orderNumber)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-xs shrink-0 transition-colors"
+                  >
+                    <Phone className="w-3.5 h-3.5" />
+                    <span>Suporte WhatsApp</span>
+                  </a>
+                </div>
 
               </div>
 

@@ -52,6 +52,11 @@ export interface AppUser {
   defaultStreetAddress?: string;
   defaultReferencePoint?: string;
   
+  // Gestão Administrativa de Clientes:
+  isBlocked?: boolean;
+  blockReason?: string;
+  adminNotes?: string;
+  
   // Entregador fields:
   courierStatus?: 'pendente' | 'aprovado' | 'rejeitado';
   vehicle?: string;
@@ -122,7 +127,70 @@ export interface CartItem {
   quantity: number;
 }
 
-export type PaymentMethodType = 'dinheiro_entrega' | 'express_transferencia';
+export type PaymentMethodType = 
+  | 'dinheiro_entrega' 
+  | 'transferencia_bancaria' 
+  | 'multicaixa_express' 
+  | 'express_transferencia';
+
+export interface AdminBankAccount {
+  id: string;
+  bankName: string; // Ex: Banco BAI, BFA, BIC, Atlântico, Standard Bank
+  accountHolder: string; // Titular
+  iban: string; // Ex: AO06 0040 ...
+  accountNumber?: string;
+  isActive: boolean;
+  notes?: string;
+}
+
+export interface AdminExpressAccount {
+  id: string;
+  phone: string; // Ex: 938243909
+  accountHolder: string; // Titular
+  bankName?: string;
+  isActive: boolean;
+  notes?: string;
+}
+
+export interface StorePaymentConfig {
+  acceptCashOnDelivery: boolean;
+  bankAccounts: AdminBankAccount[];
+  expressAccounts: AdminExpressAccount[];
+}
+
+export const DEFAULT_PAYMENT_CONFIG: StorePaymentConfig = {
+  acceptCashOnDelivery: true,
+  bankAccounts: [
+    {
+      id: 'iban_bai_main',
+      bankName: 'Banco BAI',
+      accountHolder: 'AngolaMarket 01 / Paulino Armando',
+      iban: 'AO06 0040 0000 9382 4390 9101 2',
+      accountNumber: '93824390910',
+      isActive: true,
+      notes: 'Transferências BAI Direto ou Interbancárias'
+    },
+    {
+      id: 'iban_bfa_main',
+      bankName: 'Banco BFA',
+      accountHolder: 'AngolaMarket 01 / Paulino Armando',
+      iban: 'AO06 0006 0000 9382 4390 9202 5',
+      accountNumber: '93824390920',
+      isActive: true,
+      notes: 'Transferências BFA Net ou Interbancárias'
+    }
+  ],
+  expressAccounts: [
+    {
+      id: 'exp_main',
+      phone: '938243909',
+      accountHolder: 'AngolaMarket 01 / Paulino Armando',
+      bankName: 'Multicaixa Express',
+      isActive: true,
+      notes: 'Pagamento instantâneo Multicaixa Express direto pelo telemóvel'
+    }
+  ]
+};
 
 export interface OrderCustomerInfo {
   fullName: string;
@@ -138,7 +206,12 @@ export interface OrderCustomerInfo {
   referencePoint: string; // "Ponto de referência" crucial in Luanda
   deliveryNotes?: string;
   paymentMethod: PaymentMethodType;
-  needChangeFor?: number; // Troco para quanto em dinheiro
+  needChangeFor?: number; // Troco para quanto em dinheiro físico na entrega
+  paymentReference?: string; // Nº do Comprovativo ou referência para transferência bancária
+  paymentPhoneUsed?: string; // Telemóvel do cliente que efetuou o Multicaixa Express
+  selectedIbanId?: string; // ID do IBAN selecionado
+  selectedIbanDetails?: string; // Nome do banco e IBAN para registro
+  selectedExpressPhone?: string; // Número Express da loja selecionado
   affiliateCodeUsed?: string;
 }
 
@@ -240,6 +313,8 @@ export type AdminTab =
   | 'carteira'
   | 'gestao_financeira'
   | 'gestao_pedidos'
+  | 'gestao_clientes'
+  | 'formas_pagamento'
   | 'gestao_entregadores'
   | 'gestao_afiliados'
   | 'taxa_entrega'

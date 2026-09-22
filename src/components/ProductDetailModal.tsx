@@ -493,7 +493,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   </div>
                   <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 flex justify-between items-center text-xs">
                     <span className="text-stone-500 font-medium">Modalidade de Pagamento:</span>
-                    <span className="font-bold text-emerald-700">Cash on Delivery / TPA Multicaixa</span>
+                    <span className="font-bold text-emerald-700">Dinheiro Físico / MCX Express / IBAN</span>
                   </div>
                   <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 flex justify-between items-center text-xs">
                     <span className="text-stone-500 font-medium">Garantia Comercial:</span>

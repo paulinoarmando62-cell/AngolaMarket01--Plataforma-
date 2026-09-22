@@ -145,33 +145,43 @@ export const LuandaDeliveryInfoModal: React.FC<LuandaDeliveryInfoModalProps> = (
           {/* Payment Methods Explained */}
           <div className="space-y-3 pt-2 border-t border-stone-200">
             <h3 className="font-bold text-sm text-stone-900">
-              Formas de Pagamento Aceites pelo Estafeta em Luanda:
+              Modalidades de Pagamento da Plataforma AngolaMarket 01:
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 space-y-1">
-                <div className="flex items-center gap-1.5 text-stone-900 font-bold">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div className="p-3 rounded-2xl bg-stone-50 border border-stone-200 space-y-1">
+                <div className="flex items-center gap-1.5 text-stone-900 font-bold text-xs">
                   <Banknote className="w-4 h-4 text-emerald-600" />
-                  <span>Dinheiro Físico (Kwanzas)</span>
+                  <span>Dinheiro Físico (Na Entrega)</span>
                 </div>
-                <p className="text-xs text-stone-600">
-                  Aceite em notas de Kwanzas. Caso necessite de troco, basta especificar o valor no checkout para que o estafeta leve o troco contado.
+                <p className="text-[11px] text-stone-600 leading-snug">
+                  Pague em notas físicas de Kwanzas em mãos ao estafeta no ato de entrega. Indique troco no checkout.
                 </p>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 space-y-1">
-                <div className="flex items-center gap-1.5 text-stone-900 font-bold">
+              <div className="p-3 rounded-2xl bg-stone-50 border border-stone-200 space-y-1">
+                <div className="flex items-center gap-1.5 text-stone-900 font-bold text-xs">
                   <Smartphone className="w-4 h-4 text-blue-600" />
-                  <span>Multicaixa Express</span>
+                  <span>Multicaixa Express (Plataforma)</span>
                 </div>
-                <p className="text-xs text-stone-600">
-                  Transferência em tempo real pelo telemóvel ao conferir o produto na presença do estafeta.
+                <p className="text-[11px] text-stone-600 leading-snug">
+                  Pague diretamente pelo app Express antes do envio para o número oficial da loja exibido no checkout.
+                </p>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-stone-50 border border-stone-200 space-y-1">
+                <div className="flex items-center gap-1.5 text-stone-900 font-bold text-xs">
+                  <CreditCard className="w-4 h-4 text-purple-600" />
+                  <span>Transferência / IBAN (Plataforma)</span>
+                </div>
+                <p className="text-[11px] text-stone-600 leading-snug">
+                  Transfira para as contas oficiais (BAI, BFA, etc.) antes da entrega e informe a referência do comprovativo.
                 </p>
               </div>
             </div>
 
             <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
-              ℹ️ <strong>Nota:</strong> O estafeta não anda com terminal TPA. O pagamento deve ser feito em notas físicas de Kwanzas ou transferência Multicaixa Express.
+              ℹ️ <strong>Importante:</strong> Os estafetas recebem <strong>exclusivamente dinheiro físico</strong> em notas no ato da entrega e <strong>NÃO transportam terminal TPA</strong>. Para pagar digitalmente, selecione Multicaixa Express ou Transferência Bancária antes da entrega.
             </div>
           </div>
 

@@ -3,8 +3,7 @@ import {
   initializeFirestore,
   getFirestore,
   setLogLevel,
-  persistentLocalCache,
-  persistentMultipleTabManager
+  memoryLocalCache
 } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
@@ -15,14 +14,14 @@ const customDbId = firebaseConfig.firestoreDatabaseId && firebaseConfig.firestor
   ? firebaseConfig.firestoreDatabaseId
   : undefined;
 
-// Suppress transient network offline/reconnection messages from polluting console
+// Suppress console spam
 try {
   setLogLevel('silent');
 } catch {
-  // Ignore in environments where setLogLevel may not be available
+  // Ignore
 }
 
-// Initialize Firestore singleton with long-polling and robust multi-tab offline caching
+// Initialize Firestore singleton with memory cache only to guarantee operations reach the cloud
 export const db = (() => {
   try {
     return initializeFirestore(
@@ -30,9 +29,7 @@ export const db = (() => {
       {
         ignoreUndefinedProperties: true,
         experimentalForceLongPolling: true,
-        localCache: persistentLocalCache({
-          tabManager: persistentMultipleTabManager()
-        })
+        localCache: memoryLocalCache()
       },
       customDbId
     );
@@ -47,7 +44,6 @@ export const db = (() => {
         customDbId
       );
     } catch {
-      // If already initialized, fall back to getFirestore
       return customDbId ? getFirestore(firebaseApp, customDbId) : getFirestore(firebaseApp);
     }
   }

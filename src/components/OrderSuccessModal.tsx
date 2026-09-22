@@ -100,7 +100,7 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-stone-900 flex items-center gap-1.5 uppercase tracking-wider">
                 <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                Entrega com Pagamento no Local:
+                Confirmação da Encomenda:
               </span>
               <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full">
                 100% Protegido
@@ -108,7 +108,11 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
             </div>
 
             <p className="text-xs text-stone-600 leading-relaxed">
-              O estafeta levará a sua encomenda até à sua residência em Luanda. Você pode <strong>abrir o pacote, verificar os artigos</strong> e pagar tranquilamente em <strong>dinheiro físico com troco</strong> ou por <strong>Multicaixa Express</strong>.
+              {order.customer.paymentMethod === 'dinheiro_entrega' ? (
+                <>O estafeta levará a sua encomenda até à sua residência em Luanda. Poderá <strong>abrir o pacote e verificar os artigos</strong> antes de pagar em <strong>dinheiro físico com troco</strong> (sem terminal TPA).</>
+              ) : (
+                <>A sua encomenda foi registada com pagamento pela <strong>plataforma ({order.customer.paymentMethod === 'transferencia_bancaria' ? 'Transferência Bancária / IBAN' : 'Multicaixa Express'})</strong>. Nossa equipa valida os dados e despacha de imediato.</>
+              )}
             </p>
           </div>
 
@@ -159,13 +163,17 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
 
             <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-1">
               <span className="text-stone-500 font-medium flex items-center gap-1">
-                <Banknote className="w-3.5 h-3.5 text-emerald-600" /> Total a Pagar na Entrega:
+                <Banknote className="w-3.5 h-3.5 text-emerald-600" /> {order.customer.paymentMethod === 'dinheiro_entrega' ? 'Total a Pagar na Entrega:' : 'Total Pago na Plataforma:'}
               </span>
               <p className="text-base font-black text-stone-900 font-mono">
                 {formatKwanzas(order.total)}
               </p>
               <p className="text-xs text-stone-500">
-                Forma: <strong className="text-stone-800">{order.customer.paymentMethod === 'dinheiro_entrega' ? '💵 Dinheiro Físico' : '📱 Multicaixa Express'}</strong>
+                Forma: <strong className="text-stone-800">
+                  {order.customer.paymentMethod === 'dinheiro_entrega' && '💵 Dinheiro Físico (sem TPA)'}
+                  {(order.customer.paymentMethod === 'multicaixa_express' || order.customer.paymentMethod === 'express_transferencia') && '📱 Multicaixa Express (Pela Plataforma)'}
+                  {order.customer.paymentMethod === 'transferencia_bancaria' && '🏦 Transferência Bancária / IBAN (Pela Plataforma)'}
+                </strong>
                 {order.customer.needChangeFor ? ` (Troco p/ ${formatKwanzas(order.customer.needChangeFor)})` : ''}
               </p>
             </div>

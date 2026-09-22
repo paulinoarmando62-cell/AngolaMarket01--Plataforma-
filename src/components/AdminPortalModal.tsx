@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   X, 
   ShieldCheck, 
@@ -65,10 +65,14 @@ import {
   AdminTab,
   PayoutRequest,
   CourierSettlement,
-  AdminWithdrawal
+  AdminWithdrawal,
+  StorePaymentConfig,
+  DEFAULT_PAYMENT_CONFIG
 } from '../types';
 import { CATEGORIES, formatKwanzas } from '../data/mockData';
 import { compressImageFile } from '../utils/imageOptimizer';
+import { AdminClientManagementView } from './AdminClientManagementView';
+import { AdminPaymentMethodsView } from './AdminPaymentMethodsView';
 
 interface AdminPortalModalProps {
   isOpen: boolean;
@@ -99,6 +103,9 @@ interface AdminPortalModalProps {
   onUpdateAdminProfile?: (updatedUser: AppUser) => void;
   onClearAllTestData?: () => void;
   initialTab?: AdminTab;
+  paymentConfig?: StorePaymentConfig;
+  onUpdatePaymentConfig?: (config: StorePaymentConfig) => void;
+  onUpdateUser?: (updatedUser: AppUser) => void;
 }
 
 export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
@@ -129,9 +136,26 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
   currentUser,
   onUpdateAdminProfile,
   onClearAllTestData,
-  initialTab = 'dashboard'
+  initialTab = 'dashboard',
+  paymentConfig = DEFAULT_PAYMENT_CONFIG,
+  onUpdatePaymentConfig,
+  onUpdateUser,
 }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
+
+  // Total registered clients count
+  const registeredClientsCount = useMemo(() => {
+    const idsOrPhones = new Set<string>();
+    users.forEach((u) => {
+      if (u.role !== 'admin' && u.role !== 'courier') {
+        idsOrPhones.add(u.phone || u.id);
+      }
+    });
+    orders.forEach((o) => {
+      if (o.customer?.phone) idsOrPhones.add(o.customer.phone);
+    });
+    return idsOrPhones.size;
+  }, [users, orders]);
 
   // Paying request state
   const [payingRequestId, setPayingRequestId] = useState<string | null>(null);
@@ -581,7 +605,9 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
     { tab: 'cadastrar_produtos', label: 'Cadastrar Produtos', icon: <PlusCircle className="w-4 h-4" /> },
     { tab: 'carteira', label: 'Carteira', icon: <Wallet className="w-4 h-4" />, badge: pendingSettlements.length > 0 ? pendingSettlements.length : undefined },
     { tab: 'gestao_financeira', label: 'Gestão Financeira', icon: <TrendingUp className="w-4 h-4" />, badge: payoutRequests.filter(p => p.status === 'pendente').length || undefined },
+    { tab: 'formas_pagamento', label: 'Formas de Pagamento', icon: <CreditCard className="w-4 h-4" /> },
     { tab: 'gestao_pedidos', label: 'Gestão de Pedidos', icon: <Layers className="w-4 h-4" />, badge: orders.filter(o => o.status !== 'entregue' && o.status !== 'cancelado').length },
+    { tab: 'gestao_clientes', label: 'Gestão de Clientes', icon: <Users className="w-4 h-4" />, badge: registeredClientsCount > 0 ? registeredClientsCount : undefined },
     { tab: 'gestao_entregadores', label: 'Gestão de Entregadores', icon: <Truck className="w-4 h-4" />, badge: pendingCouriers.length },
     { tab: 'gestao_afiliados', label: 'Gestão de Afiliados', icon: <DollarSign className="w-4 h-4" /> },
     { tab: 'taxa_entrega', label: 'Taxa de Entrega', icon: <MapPin className="w-4 h-4" /> },
@@ -3422,6 +3448,23 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                 </div>
               </div>
             </div>
+          )}
+
+          {/* TAB: GESTÃO DE CLIENTES */}
+          {activeTab === 'gestao_clientes' && (
+            <AdminClientManagementView
+              users={users}
+              orders={orders}
+              onUpdateUser={onUpdateUser}
+            />
+          )}
+
+          {/* TAB: FORMAS DE PAGAMENTO */}
+          {activeTab === 'formas_pagamento' && (
+            <AdminPaymentMethodsView
+              paymentConfig={paymentConfig}
+              onSavePaymentConfig={onUpdatePaymentConfig || (() => {})}
+            />
           )}
 
           {/* TAB 10: PERFIL */}

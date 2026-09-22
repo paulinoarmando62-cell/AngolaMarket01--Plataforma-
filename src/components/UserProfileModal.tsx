@@ -138,43 +138,32 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     }
   }, [initialTab]);
 
-  // Robustly filter customer's orders
+  // Robustly filter customer's orders strictly for this account
   const myOrders = useMemo(() => {
     if (!currentUser) return [];
-    const userPhoneClean = (currentUser.phone || '').replace(/[^0-9]/g, '');
-    const userEmailClean = (currentUser.email || '').toLowerCase().trim();
-    const userNameClean = (currentUser.name || '').toLowerCase().trim();
 
-    let localSavedOrderIds: string[] = [];
-    try {
-      const stored = localStorage.getItem('angolamarket_user_order_ids');
-      if (stored) localSavedOrderIds = JSON.parse(stored);
-    } catch {}
+    const normalizePhone = (p?: string) => {
+      if (!p) return '';
+      const digits = p.replace(/[^0-9]/g, '');
+      return digits.length >= 9 ? digits.slice(-9) : digits;
+    };
+
+    const userPhone9 = normalizePhone(currentUser.phone);
+    const userEmailClean = (currentUser.email || '').toLowerCase().trim();
 
     return orders.filter(o => {
       // 1. Direct ID match
       if (o.customerId && o.customerId === currentUser.id) return true;
 
-      // 2. Saved order IDs in client session
-      if (localSavedOrderIds.includes(o.id)) return true;
-
-      // 3. Phone match (ignoring spaces, dashes, +244)
-      const orderPhoneClean = (o.customer?.phone || '').replace(/[^0-9]/g, '');
-      if (userPhoneClean && orderPhoneClean) {
-        if (orderPhoneClean.length >= 7 && (userPhoneClean.endsWith(orderPhoneClean) || orderPhoneClean.endsWith(userPhoneClean))) {
-          return true;
-        }
-      }
-
-      // 4. Email match
-      const orderEmailClean = (o.customer?.email || (o as any).customerEmail || '').toLowerCase().trim();
-      if (userEmailClean && orderEmailClean && userEmailClean === orderEmailClean) {
+      // 2. Exact 9-digit phone match in Angola
+      const orderPhone9 = normalizePhone(o.customer?.phone);
+      if (userPhone9 && orderPhone9 && userPhone9 === orderPhone9) {
         return true;
       }
 
-      // 5. Customer full name match
-      const orderNameClean = (o.customer?.fullName || '').toLowerCase().trim();
-      if (userNameClean && orderNameClean && userNameClean === orderNameClean) {
+      // 3. Email match
+      const orderEmailClean = (o.customer?.email || (o as any).customerEmail || '').toLowerCase().trim();
+      if (userEmailClean && orderEmailClean && userEmailClean === orderEmailClean) {
         return true;
       }
 
@@ -727,9 +716,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                             Modalidade de Pagamento
                           </span>
                           <p className="font-bold text-stone-900">
-                            {ord.customer?.paymentMethod === 'express_transferencia'
-                              ? 'Multicaixa Express no Ato'
-                              : 'Dinheiro Físico no Ato (COD)'}
+                            {ord.customer?.paymentMethod === 'dinheiro_entrega' && 'Dinheiro Físico na Entrega (sem TPA)'}
+                            {(ord.customer?.paymentMethod === 'multicaixa_express' || ord.customer?.paymentMethod === 'express_transferencia') && 'Multicaixa Express (Pela Plataforma)'}
+                            {ord.customer?.paymentMethod === 'transferencia_bancaria' && 'Transferência Bancária / IBAN (Pela Plataforma)'}
                           </p>
                           {ord.customer?.needChangeFor ? (
                             <p className="text-stone-500">

@@ -57,8 +57,14 @@ import {
   OfflineIndicator 
 } from './components/OfflineIndicator';
 import { 
+  OfflineBlocker 
+} from './components/OfflineBlocker';
+import { 
   PWAUpdateToast 
 } from './components/PWAUpdateToast';
+import { 
+  WhatsAppFloatingButton 
+} from './components/WhatsAppFloatingButton';
 import { 
   Product, 
   CategoryId, 
@@ -68,7 +74,9 @@ import {
   LuandaZone, 
   OrderStatus,
   AppUser,
-  PayoutRequest 
+  PayoutRequest,
+  StorePaymentConfig,
+  DEFAULT_PAYMENT_CONFIG
 } from './types';
 import { 
   INITIAL_PRODUCTS, 
@@ -110,7 +118,12 @@ import {
   cloudDeleteZone,
   subscribeToPayouts, 
   cloudSavePayout,
-  seedLocalDataToCloud 
+  subscribeToPaymentConfig,
+  cloudSavePaymentConfig,
+  seedLocalDataToCloud,
+  fetchFreshProducts,
+  fetchFreshOrders,
+  fetchFreshUsers
 } from './services/firestoreSync';
 
 const LOCAL_STORAGE_CART_KEY = 'angolamarket01_cart';
@@ -122,6 +135,7 @@ const LOCAL_STORAGE_USERS_KEY = 'angolamarket01_users';
 const LOCAL_STORAGE_CURRENT_USER_KEY = 'angolamarket01_current_user';
 const LOCAL_STORAGE_PAYOUT_REQUESTS_KEY = 'angolamarket01_payout_requests';
 const LOCAL_STORAGE_AFFILIATE_REF_KEY = 'angolamarket01_affiliate_ref';
+const LOCAL_STORAGE_PAYMENT_CONFIG_KEY = 'angolamarket01_payment_config';
 
 // Clean storage versioning to immediately purge any old test data from user browsers
 const CURRENT_APP_CLEAN_VERSION = 'v7_clean_zero_all_zones_and_data_final';
@@ -339,6 +353,22 @@ export default function App() {
     return [];
   });
 
+  // Payment Config (IBANs, Multicaixa Express numbers, and Cash On Delivery guidelines)
+  const [paymentConfig, setPaymentConfig] = useState<StorePaymentConfig>(() => {
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_PAYMENT_CONFIG_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && Array.isArray(parsed.bankAccounts) && Array.isArray(parsed.expressAccounts)) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      // fallback
+    }
+    return DEFAULT_PAYMENT_CONFIG;
+  });
+
   // Dual-layer recovery on startup: checks IndexedDB in background to ensure zero data loss
   useEffect(() => {
     idbGet<Product[]>(LOCAL_STORAGE_PRODUCTS_KEY).then((idbProds) => {
@@ -490,12 +520,21 @@ export default function App() {
       }
     });
 
+    // 7. Real-time subscription to Store Payment Config
+    const unsubPayment = subscribeToPaymentConfig((cloudPayment) => {
+      if (cloudPayment && Array.isArray(cloudPayment.bankAccounts) && Array.isArray(cloudPayment.expressAccounts)) {
+        setPaymentConfig(cloudPayment);
+        safePersist(LOCAL_STORAGE_PAYMENT_CONFIG_KEY, cloudPayment);
+      }
+    });
+
     return () => {
       unsubProducts();
       unsubUsers();
       unsubOrders();
       unsubZones();
       unsubPayouts();
+      unsubPayment();
     };
   }, []);
 
@@ -546,28 +585,32 @@ export default function App() {
     if (currentUser?.role === 'admin') {
       return orders;
     }
-    return orders.filter(o => {
-      // 1. Matched by ID
-      if (currentUser && o.customerId && o.customerId === currentUser.id) return true;
-      // 2. Orders placed in this device session
-      if (sessionOrderIds.includes(o.id)) return true;
-      if (!currentUser) return false;
-      // 3. Matched by phone
-      const uPhone = (currentUser.phone || '').replace(/[^0-9]/g, '');
-      const oPhone = (o.customer?.phone || '').replace(/[^0-9]/g, '');
-      if (uPhone && oPhone && oPhone.length >= 7 && (uPhone.endsWith(oPhone) || oPhone.endsWith(uPhone))) {
-        return true;
-      }
-      // 4. Matched by email
+
+    const normalizePhone = (p?: string) => {
+      if (!p) return '';
+      const digits = p.replace(/[^0-9]/g, '');
+      return digits.length >= 9 ? digits.slice(-9) : digits;
+    };
+
+    if (currentUser) {
+      const uPhone9 = normalizePhone(currentUser.phone);
       const uEmail = (currentUser.email || '').toLowerCase().trim();
-      const oEmail = (o.customer?.email || '').toLowerCase().trim();
-      if (uEmail && oEmail && uEmail === oEmail) return true;
-      // 5. Matched by customer full name
-      const uName = (currentUser.name || '').toLowerCase().trim();
-      const oName = (o.customer?.fullName || '').toLowerCase().trim();
-      if (uName && oName && uName === oName) return true;
-      return false;
-    });
+
+      return orders.filter(o => {
+        // 1. Matched by direct User ID
+        if (o.customerId && o.customerId === currentUser.id) return true;
+        // 2. Matched by exact 9-digit phone in Angola
+        const oPhone9 = normalizePhone(o.customer?.phone);
+        if (uPhone9 && oPhone9 && uPhone9 === oPhone9) return true;
+        // 3. Matched by verified email
+        const oEmail = (o.customer?.email || '').toLowerCase().trim();
+        if (uEmail && oEmail && uEmail === oEmail) return true;
+        return false;
+      });
+    }
+
+    // Guest user (not logged in): only show orders placed during this guest session
+    return orders.filter(o => sessionOrderIds.includes(o.id));
   }, [orders, currentUser, sessionOrderIds]);
 
   // Active Affiliate Referral Code (from URL parameter ?ref= or localStorage)
@@ -659,6 +702,28 @@ export default function App() {
     setCurrentUser(updatedUser);
     cloudSaveUser(updatedUser);
     showToast('Perfil atualizado com sucesso!');
+  };
+
+  const handleAdminUpdateUser = (updatedUser: AppUser) => {
+    setUsers(prev => {
+      const exists = prev.some(u => u.id === updatedUser.id);
+      const next = exists ? prev.map(u => u.id === updatedUser.id ? updatedUser : u) : [...prev, updatedUser];
+      safePersist(LOCAL_STORAGE_USERS_KEY, next);
+      return next;
+    });
+    if (currentUser && currentUser.id === updatedUser.id) {
+      setCurrentUser(updatedUser);
+      safePersist(LOCAL_STORAGE_CURRENT_USER_KEY, updatedUser);
+    }
+    cloudSaveUser(updatedUser);
+    showToast('Cliente atualizado com sucesso!');
+  };
+
+  const handleUpdatePaymentConfig = (newConfig: StorePaymentConfig) => {
+    setPaymentConfig(newConfig);
+    safePersist(LOCAL_STORAGE_PAYMENT_CONFIG_KEY, newConfig);
+    cloudSavePaymentConfig(newConfig);
+    showToast('Formas de pagamento atualizadas com sucesso!');
   };
 
   const handleClearAllTestData = () => {
@@ -937,6 +1002,11 @@ export default function App() {
 
   const handleLogout = () => {
     setCurrentUser(null);
+    setSessionOrderIds([]);
+    try {
+      localStorage.removeItem('angolamarket_user_order_ids');
+      localStorage.removeItem(LOCAL_STORAGE_CURRENT_USER_KEY);
+    } catch {}
     showToast('Sessão terminada.');
   };
 
@@ -990,6 +1060,12 @@ export default function App() {
     customerInfo: OrderCustomerInfo,
     newCustomerAccount?: { name: string; phone: string; password: string; email?: string }
   ) => {
+    // Require active internet connection to prevent local-only orphaned orders
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      showToast('Ligação à internet necessária para enviar a encomenda para a nossa central.');
+      return;
+    }
+
     const subtotal = cart.reduce((acc, it) => acc + it.product.price * it.quantity, 0);
     const deliveryFee = customerInfo.deliveryType === 'paragem'
       ? (selectedZone.deliveryFeeBusStop ?? Math.round(selectedZone.deliveryFee * 0.6))
@@ -1048,6 +1124,8 @@ export default function App() {
       if (!customerInfo.fullName && currentUser.name) customerInfo.fullName = currentUser.name;
     }
 
+    const finalCustomerId = newUserId || currentUser?.id;
+
     const newOrder: Order = {
       id: `order-${Date.now()}`,
       orderNumber: orderNum,
@@ -1061,7 +1139,7 @@ export default function App() {
       status: 'recebido',
       estimatedDeliveryDate: `Hoje (${selectedZone.estimatedHours})`,
       deliveryCode,
-      customerId: newUserId,
+      customerId: finalCustomerId,
       assignedCourierId: defaultCourier?.id || undefined,
       affiliateCode: affiliateCodeClean,
       affiliateCommissionAmount: commissionAmount > 0 ? commissionAmount : undefined,
@@ -1103,7 +1181,8 @@ export default function App() {
       });
     }
 
-    // Decrement stock count for each purchased product
+    // Decrement stock count for each purchased product in state AND cloud
+    const updatedProductsToSync: Product[] = [];
     setProducts((prev) => {
       const nextProds = prev.map((prod) => {
         const itemInCart = cart.find(ci => ci.product.id === prod.id);
@@ -1115,7 +1194,7 @@ export default function App() {
             stockCount: newStock,
             inStock: newStock > 0,
           };
-          cloudSaveProduct(updatedProd);
+          updatedProductsToSync.push(updatedProd);
           return updatedProd;
         }
         return prod;
@@ -1124,17 +1203,26 @@ export default function App() {
       return nextProds;
     });
 
-    // Save order ID to device session for customer order tracking
-    try {
-      const rawStored = localStorage.getItem('angolamarket_user_order_ids');
-      const parsedIds = rawStored ? JSON.parse(rawStored) : [];
-      if (!parsedIds.includes(newOrder.id)) {
-        parsedIds.push(newOrder.id);
-        localStorage.setItem('angolamarket_user_order_ids', JSON.stringify(parsedIds));
+    // Synchronize decremented stocks directly to Firestore cloud immediately
+    updatedProductsToSync.forEach(p => {
+      cloudSaveProduct(p);
+      if (selectedProduct && selectedProduct.id === p.id) {
+        setSelectedProduct(p);
       }
-    } catch {}
+    });
 
-    setSessionOrderIds(prev => [...prev, newOrder.id]);
+    // Only save order ID to guest session if the customer is not logged in
+    if (!currentUser && !newUserId) {
+      try {
+        const rawStored = localStorage.getItem('angolamarket_user_order_ids');
+        const parsedIds = rawStored ? JSON.parse(rawStored) : [];
+        if (!parsedIds.includes(newOrder.id)) {
+          parsedIds.push(newOrder.id);
+          localStorage.setItem('angolamarket_user_order_ids', JSON.stringify(parsedIds));
+        }
+      } catch {}
+      setSessionOrderIds(prev => [...prev, newOrder.id]);
+    }
 
     setOrders((prev) => {
       const nextOrders = [newOrder, ...prev];
@@ -1480,9 +1568,38 @@ export default function App() {
     }, 150);
   };
 
+  // Fresh cloud synchronization when reconnecting or updating
+  const handleRefreshCloudData = async () => {
+    try {
+      const [freshProds, freshOrds, freshUsrs] = await Promise.all([
+        fetchFreshProducts(),
+        fetchFreshOrders(),
+        fetchFreshUsers()
+      ]);
+      if (freshProds && freshProds.length > 0) {
+        setProducts(freshProds);
+        safePersist(LOCAL_STORAGE_PRODUCTS_KEY, freshProds);
+      }
+      if (freshOrds && freshOrds.length > 0) {
+        setOrders(freshOrds);
+        safePersist(LOCAL_STORAGE_ORDERS_KEY, freshOrds);
+      }
+      if (freshUsrs && freshUsrs.length > 0) {
+        setUsers(freshUsrs);
+        safePersist(LOCAL_STORAGE_USERS_KEY, freshUsrs);
+      }
+      showToast('Dados sincronizados com a nuvem em tempo real.');
+    } catch {
+      // Ignore network errors
+    }
+  };
+
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900 flex flex-col font-sans selection:bg-red-500 selection:text-white pb-20 lg:pb-0">
       
+      {/* Full-Screen Offline Blocker (prevents offline use and forces real cloud sync) */}
+      <OfflineBlocker onReconnect={handleRefreshCloudData} />
+
       {/* Offline Status Bar */}
       <OfflineIndicator />
 
@@ -1671,6 +1788,7 @@ export default function App() {
         users={users}
         currentUser={currentUser}
         onLoginUser={handleLogin}
+        paymentConfig={paymentConfig}
       />
 
       {/* Order Success Modal */}
@@ -1708,7 +1826,7 @@ export default function App() {
         adminExists={adminExists}
       />
 
-      {/* Admin Portal Modal (Manage Products, Luanda Neighborhood Fees, Couriers, Orders, Affiliates, Financial Payouts) */}
+      {/* Admin Portal Modal (Manage Products, Luanda Neighborhood Fees, Couriers, Orders, Affiliates, Financial Payouts, Clients, Payment Methods) */}
       <AdminPortalModal
         isOpen={isAdminPortalOpen}
         onClose={() => setIsAdminPortalOpen(false)}
@@ -1732,6 +1850,9 @@ export default function App() {
         currentUser={currentUser || undefined}
         onUpdateAdminProfile={handleUpdateUserProfile}
         onClearAllTestData={handleClearAllTestData}
+        paymentConfig={paymentConfig}
+        onUpdatePaymentConfig={handleUpdatePaymentConfig}
+        onUpdateUser={handleAdminUpdateUser}
       />
 
       {/* Courier Portal Modal (Active Deliveries, PIN Verification & Payout / Saque Requests) */}
@@ -1788,6 +1909,9 @@ export default function App() {
         onOpenAffiliatePortal={handleOpenAffiliatePortal}
         luandaZones={luandaZones}
       />
+
+      {/* Floating WhatsApp Button for direct mobile customer support: 938 243 909 */}
+      <WhatsAppFloatingButton phoneNumber="938 243 909" />
 
       {/* Mobile Bottom Navigation Bar */}
       <MobileBottomNav
