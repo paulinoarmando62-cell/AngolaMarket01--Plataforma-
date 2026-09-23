@@ -137,16 +137,17 @@ const LOCAL_STORAGE_PAYOUT_REQUESTS_KEY = 'angolamarket01_payout_requests';
 const LOCAL_STORAGE_AFFILIATE_REF_KEY = 'angolamarket01_affiliate_ref';
 const LOCAL_STORAGE_PAYMENT_CONFIG_KEY = 'angolamarket01_payment_config';
 
-// Clean storage versioning to immediately purge any old test data from user browsers
-const CURRENT_APP_CLEAN_VERSION = 'v7_clean_zero_all_zones_and_data_final';
+// Clean storage versioning to immediately purge any old test data and affiliate codes from user browsers
+const CURRENT_APP_CLEAN_VERSION = 'v8_purge_affiliate_and_buyer_session_clean';
 
 if (typeof window !== 'undefined') {
   try {
+    // Unconditionally remove any persisted affiliate code so no old code ever haunts the checkout
+    localStorage.removeItem(LOCAL_STORAGE_AFFILIATE_REF_KEY);
+    localStorage.removeItem('angolamarket_user_order_ids');
+
     const savedVer = localStorage.getItem('angolamarket_app_clean_ver');
-    if (!savedVer) {
-      localStorage.setItem('angolamarket_app_clean_ver', CURRENT_APP_CLEAN_VERSION);
-    }
-      
+    if (savedVer !== CURRENT_APP_CLEAN_VERSION) {
       // Clean users & remove mock addresses
       const rawUsers = localStorage.getItem(LOCAL_STORAGE_USERS_KEY);
       if (rawUsers) {
@@ -179,29 +180,17 @@ if (typeof window !== 'undefined') {
         }
       }
 
-      // Clean current user
+      // If stored current user is a buyer, remove it so shopping starts as clean guest without auto-login
       const rawCurrent = localStorage.getItem(LOCAL_STORAGE_CURRENT_USER_KEY);
       if (rawCurrent) {
         const u = JSON.parse(rawCurrent);
-        if (u && typeof u === 'object') {
-          const cleanedCurrent = {
-            ...u,
-            balanceAOA: 0,
-            courierBalanceAOA: 0,
-            totalDeliveriesCompleted: 0,
-            cashCollectedToDeposit: 0,
-            totalCommissionEarned: 0,
-            defaultMunicipality: '',
-            defaultNeighborhood: '',
-            defaultStreetAddress: '',
-            defaultReferencePoint: '',
-            avatar: (u.avatar && !u.avatar.includes('images.unsplash.com')) ? u.avatar : ''
-          };
-          localStorage.setItem(LOCAL_STORAGE_CURRENT_USER_KEY, JSON.stringify(cleanedCurrent));
+        if (u && (u.role === 'buyer' || !u.role)) {
+          localStorage.removeItem(LOCAL_STORAGE_CURRENT_USER_KEY);
         }
       }
 
       localStorage.setItem('angolamarket_app_clean_ver', CURRENT_APP_CLEAN_VERSION);
+    }
   } catch (e) {
     // ignore
   }
@@ -264,7 +253,9 @@ export default function App() {
       const saved = localStorage.getItem(LOCAL_STORAGE_CURRENT_USER_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.id) {
+        // Only staff/partners (admin, courier, affiliate) who explicitly logged in with credentials persist.
+        // Public customers/buyers are always guest (null) so checkout is clean and never prefilled or auto-logged in.
+        if (parsed && parsed.id && (parsed.role === 'admin' || parsed.role === 'courier' || parsed.role === 'affiliate')) {
           return {
             ...parsed,
             balanceAOA: 0,
@@ -274,6 +265,8 @@ export default function App() {
             totalCommissionEarned: 0,
             avatar: (parsed.avatar && !parsed.avatar.includes('images.unsplash.com')) ? parsed.avatar : ''
           };
+        } else {
+          localStorage.removeItem(LOCAL_STORAGE_CURRENT_USER_KEY);
         }
       }
     } catch (e) {
@@ -613,18 +606,15 @@ export default function App() {
     return orders.filter(o => sessionOrderIds.includes(o.id));
   }, [orders, currentUser, sessionOrderIds]);
 
-  // Active Affiliate Referral Code (from URL parameter ?ref= or localStorage)
+  // Active Affiliate Referral Code (ONLY from explicit URL query parameter in current page visit, NEVER persisted)
   const [activeAffiliateRefCode, setActiveAffiliateRefCode] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       try {
         const searchParams = new URLSearchParams(window.location.search);
         const refParam = searchParams.get('ref') || searchParams.get('affiliate') || searchParams.get('afiliado');
-        if (refParam) {
-          const cleanRef = refParam.trim().toUpperCase();
-          localStorage.setItem(LOCAL_STORAGE_AFFILIATE_REF_KEY, cleanRef);
-          return cleanRef;
+        if (refParam && refParam.trim()) {
+          return refParam.trim().toUpperCase();
         }
-        return localStorage.getItem(LOCAL_STORAGE_AFFILIATE_REF_KEY) || '';
       } catch (e) {}
     }
     return '';
@@ -651,10 +641,11 @@ export default function App() {
         }
       }
 
-      if (refParam) {
+      if (refParam && refParam.trim()) {
         const cleanRef = refParam.trim().toUpperCase();
         setActiveAffiliateRefCode(cleanRef);
-        localStorage.setItem(LOCAL_STORAGE_AFFILIATE_REF_KEY, cleanRef);
+      } else {
+        setActiveAffiliateRefCode('');
       }
 
       if (prodParam) {
@@ -680,7 +671,6 @@ export default function App() {
     setActiveAffiliateRefCode(affiliateCode);
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem(LOCAL_STORAGE_AFFILIATE_REF_KEY, affiliateCode);
         const newUrl = `${window.location.pathname}?ref=${encodeURIComponent(affiliateCode)}&prod=${encodeURIComponent(product.id)}`;
         window.history.pushState({}, '', newUrl);
       } catch (e) {}
@@ -1079,8 +1069,10 @@ export default function App() {
     // Select default active courier if any
     const defaultCourier = users.find(u => u.role === 'courier' && u.courierStatus === 'aprovado') || users.find(u => u.role === 'courier');
 
-    // Robust Affiliate code handling: check customerInfo.affiliateCodeUsed, activeAffiliateRefCode, or localStorage
-    const rawRefCode = customerInfo.affiliateCodeUsed || activeAffiliateRefCode || (typeof window !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_AFFILIATE_REF_KEY) : null);
+    // Affiliate code handling: check explicit customerInfo.affiliateCodeUsed or active URL ref code only
+    const rawRefCode = (customerInfo.affiliateCodeUsed && customerInfo.affiliateCodeUsed.trim()) 
+      || (activeAffiliateRefCode && activeAffiliateRefCode.trim()) 
+      || undefined;
     const affiliateCodeClean = rawRefCode ? rawRefCode.trim().toUpperCase() : undefined;
     if (affiliateCodeClean && !customerInfo.affiliateCodeUsed) {
       customerInfo.affiliateCodeUsed = affiliateCodeClean;
@@ -1093,7 +1085,7 @@ export default function App() {
       ? Math.round(subtotal * ((affiliateUser.commissionRate || 8) / 100)) 
       : 0;
 
-    // Create user account if requested in checkout or link to existing currentUser
+    // Handle customer registration if an account was requested, without auto-switching app session
     let newUserId: string | undefined = currentUser?.id;
     if (newCustomerAccount && !currentUser) {
       newUserId = `user-customer-${Date.now()}`;
@@ -1101,8 +1093,8 @@ export default function App() {
         id: newUserId,
         name: newCustomerAccount.name,
         phone: newCustomerAccount.phone,
-        email: newCustomerAccount.email || `${newCustomerAccount.phone.replace(/[^0-9]/g, '')}@cliente.ao`,
-        password: newCustomerAccount.password,
+        email: newCustomerAccount.email || undefined,
+        password: newCustomerAccount.password || '123456',
         role: 'buyer',
         createdAt: Date.now(),
         defaultNeighborhood: customerInfo.neighborhood,
@@ -1115,13 +1107,8 @@ export default function App() {
         safePersist(LOCAL_STORAGE_USERS_KEY, nextUsers);
         return nextUsers;
       });
-      setCurrentUser(createdAccount);
-      safePersist(LOCAL_STORAGE_CURRENT_USER_KEY, createdAccount);
+      // Save in cloud so the account exists, but DO NOT auto-log into session
       cloudSaveUser(createdAccount);
-    } else if (currentUser) {
-      if (!customerInfo.phone && currentUser.phone) customerInfo.phone = currentUser.phone;
-      if (!customerInfo.email && currentUser.email) customerInfo.email = currentUser.email;
-      if (!customerInfo.fullName && currentUser.name) customerInfo.fullName = currentUser.name;
     }
 
     const finalCustomerId = newUserId || currentUser?.id;
